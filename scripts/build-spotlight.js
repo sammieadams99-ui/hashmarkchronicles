@@ -1,4 +1,4 @@
-// npm i
+// scripts/build-spotlight.js
 import fs from 'fs/promises';
 import fetch from 'node-fetch';
 
@@ -30,32 +30,26 @@ async function main(){
   const map = await readJSON(ESPN_MAP, {});
   const hist = await readJSON(OUT.hist, { last_featured: "", counts: {} });
 
-  // --- latest completed game (regular season) ---
   const games = await getJSON(`https://api.collegefootballdata.com/games?year=${YEAR}&team=${encodeURIComponent(TEAM)}&seasonType=regular`);
   const completed = (games||[]).filter(g => g.home_points != null && g.away_points != null);
-  // CFBD fields are usually snake_case
   const recent = completed.sort((a,b)=> new Date(b.start_date||b.startDate) - new Date(a.start_date||a.startDate))[0];
   const week = recent?.week;
   const lastOpp = recent ? (recent.home_team === TEAM ? recent.away_team : recent.home_team) : undefined;
 
-  // --- last game players (if we have a week) ---
   let lastPlayers = [];
   if(week){
     const gp = await getJSON(`https://api.collegefootballdata.com/games/players?year=${YEAR}&team=${encodeURIComponent(TEAM)}&week=${week}&seasonType=regular`);
     lastPlayers = scorePlayers(flatGamePlayers(gp));
   }
 
-  // --- season players ---
   const sp = await getJSON(`https://api.collegefootballdata.com/stats/player/season?year=${YEAR}&team=${encodeURIComponent(TEAM)}`);
   const seasonPlayers = scorePlayers(flatSeason(sp));
 
-  // --- split by side & take tops ---
   const [ol, dl] = splitBySide(lastPlayers, map);
   const [os, ds] = splitBySide(seasonPlayers, map);
 
   const top = arr => arr.sort((a,b)=> b.score - a.score).slice(0,3);
 
-  // If last-game arrays ended empty (bye/missing feed), fall back to season for homepage continuity
   const topOL = (ol.length ? top(ol) : top(os)).map(toCard(map, lastOpp));
   const topDL = (dl.length ? top(dl) : top(ds)).map(toCard(map, lastOpp));
   const topOS = top(os).map(toCard(map));
@@ -78,8 +72,6 @@ async function main(){
   console.log('Spotlight JSON updated.');
 }
 
-/* ----------------- helpers ----------------- */
-
 function dedupeByName(list){
   const seen = new Set(); const out = [];
   for(const p of list){ if(!seen.has(p.name)){ seen.add(p.name); out.push(p);} }
@@ -95,7 +87,8 @@ function sideOf(posRaw, mapPos){
 function splitBySide(players, map){
   const O=[], D=[];
   players.forEach(p=>{
-    const mp = map[p.name]?.pos;
+    const m = map[p.name];
+    const mp = m && typeof m === 'object' ? m.pos : undefined;
     const side = sideOf(p.position, mp);
     (side==='OFF'?O:D).push(p);
   });
@@ -104,17 +97,15 @@ function splitBySide(players, map){
 
 function scorePlayers(list){
   return list.map(p => {
-    // Offense
     const passY = toN(p.passingYards), rushY = toN(p.rushingYards), recY = toN(p.receivingYards);
     const passTD = toN(p.passingTD), rushTD = toN(p.rushingTD), recTD = toN(p.receivingTD);
-    const passINT = toN(p.interceptionsThrown || p.interceptions); // QBs
+    const passINT = toN(p.interceptionsThrown || p.interceptions);
     const fum = toN(p.fumblesLost);
 
-    // Defense
     const tkl = toN(p.tackles || p.totalTackles);
     const tfl = toN(p.tfl || p.tacklesForLoss);
     const sacks = toN(p.sacks);
-    const ints = toN(p.defInterceptions || p.interceptionsDef || p.def_int || p.defInterceptionsTotal);
+    const ints = toN(p.defInterceptions || p.interceptionsDef);
     const pbu = toN(p.passesDefended || p.passesBrokenUp);
     const ff  = toN(p.forcedFumbles);
     const fr  = toN(p.fumblesRecovered);
@@ -130,7 +121,7 @@ function scorePlayers(list){
 function toCard(map, lastOpp){
   return p => {
     const name = p.name || p.player || '';
-    const m = map[name] || {};
+    const m = (typeof map[name]==='object') ? map[name] : {};
     const id = (m.id || '').toString();
     const slugStr = m.slug || slug(name);
     const pos = p.position || m.pos || '';
@@ -158,21 +149,18 @@ function chooseFeatured(pool, hist){
   return list[0];
 }
 
-/* --- CFBD shape flatteners --- */
 function flatGamePlayers(gps){
   const arr = [];
   (gps||[]).forEach(g => (g.teams||[]).forEach(t => (t.players||[]).forEach(pl => {
     const s = pl.stats || {};
     arr.push({
       name: pl.player, position: pl.position,
-
       // offense
       cmp: s.completions, att: s.attempts, cmpPct: pct(s.completions, s.attempts),
       passingYards: s.passingYards, passingTD: s.passingTD, interceptionsThrown: s.interceptions,
       rushingYards: s.rushingYards, rushingTD: s.rushingTD, fumblesLost: s.fumblesLost,
       receptions: s.receptions, receivingYards: s.receivingYards, receivingTD: s.receivingTD,
-
-      // defense (common CFBD fields)
+      // defense
       tackles: s.tackles, tfl: s.tfl, sacks: s.sacks,
       passesDefended: s.passesDefended, defInterceptions: s.interceptionsDef,
       forcedFumbles: s.forcedFumbles, fumblesRecovered: s.fumblesRecovered,
@@ -184,13 +172,11 @@ function flatGamePlayers(gps){
 function flatSeason(sp){
   return (sp||[]).map(s => ({
     name: s.player, position: s.position,
-
     // offense
     cmp: s.completions, att: s.attempts, cmpPct: pct(s.completions, s.attempts),
     passingYards: s.passingYards, passingTD: s.passingTD, interceptionsThrown: s.interceptions,
     rushingYards: s.rushingYards, rushingTD: s.rushingTD, fumblesLost: s.fumblesLost,
     receptions: s.receptions, receivingYards: s.receivingYards, receivingTD: s.receivingTD,
-
     // defense
     tackles: s.tackles, tfl: s.tacklesForLoss || s.tfl, sacks: s.sacks,
     passesDefended: s.passesDefended, defInterceptions: s.interceptionsDef,
@@ -199,10 +185,8 @@ function flatSeason(sp){
   }));
 }
 
-/* --- pretty printers --- */
 function prettyLast(p){
   const out = {};
-  // offense (useful quick hits)
   if (p.cmp != null && p.att != null) out.cmp_att = `${p.cmp}/${p.att}`;
   if (p.passingYards) out.yds = String(p.passingYards);
   if (p.passingTD) out.td = String(p.passingTD);
@@ -212,8 +196,6 @@ function prettyLast(p){
   if (p.receptions) out.rec = String(p.receptions);
   if (p.receivingYards) out.rec_yds = String(p.receivingYards);
   if (p.receivingTD) out.rec_td = String(p.receivingTD);
-
-  // defense (fill if offensive fields absent)
   if (!Object.keys(out).length) {
     if (p.tackles) out.tkl = String(p.tackles);
     if (p.tfl) out.tfl = String(p.tfl);
@@ -237,7 +219,6 @@ function prettySeason(p){
   if (p.receptions) out.rec = String(p.receptions);
   if (p.receivingYards) out.rec_yds = String(p.receivingYards);
   if (p.receivingTD) out.rec_td = String(p.receivingTD);
-
   if (!Object.keys(out).length) {
     if (p.tackles) out.tkl = String(p.tackles);
     if (p.tfl) out.tfl = String(p.tfl);
@@ -251,7 +232,6 @@ function prettySeason(p){
   return out;
 }
 
-/* --- io --- */
 async function getJSON(url){
   const r = await fetch(url, {headers: HEADERS});
   if(!r.ok) throw new Error(`${r.status} ${r.statusText}`);
