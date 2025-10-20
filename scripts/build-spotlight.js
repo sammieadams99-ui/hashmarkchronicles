@@ -1,4 +1,4 @@
-// scripts/build-spotlight.js  (v4: fix 'scorePlayers is not defined', use per-game endpoint for 'last', resilient mapping)
+// scripts/build-spotlight.js  (v5: fixes for UK filter + season/last mapping)
 import fs from 'fs/promises';
 import fetch from 'node-fetch';
 
@@ -23,7 +23,8 @@ const ESPN_MAP_FILE = './data/espn_map.json';
 const toN = (x) => (x == null || x === '' || Number.isNaN(Number(x))) ? 0 : Number(x);
 const pct = (a,b) => (toN(b) ? Math.round((toN(a)/toN(b))*100) : 0);
 const slug = s => (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-const normalize = s => (s||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/\b(jr|sr|ii|iii|iv|v)\b/g,'').replace(/\s+/g,' ').trim();
+const normalize = s => (s||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ')
+  .replace(/\b(jr|sr|ii|iii|iv|v)\b/g,'').replace(/\s+/g,' ').trim();
 
 async function getJSON(path){
   const url = `https://api.collegefootballdata.com${path}`;
@@ -91,80 +92,82 @@ function scorePlayers(list){
 }
 
 // ------------ aggregators -------------
-// Aggregate for a single week using /stats/player/game
 function aggregateGameWeek(rows){
   const by = new Map();
-  (rows||[]).filter(r => r.team === TEAM).forEach(s => {
-    const name = s.player;
-    const cat  = (s.category || '').toLowerCase();
-    const pos  = s.position;
-    const o = by.get(name) || { name, position: pos };
-    if(cat === 'passing'){
-      o.cmp = toN(s.completions ?? s.cmp);
-      o.att = toN(s.attempts ?? s.att);
-      o.cmpPct = pct(o.cmp, o.att);
-      o.passingYards = toN(s.passing_yards ?? s.passingYards ?? s.yards);
-      o.passingTD    = toN(s.passing_tds  ?? s.passingTD  ?? s.td);
-      o.interceptionsThrown = toN(s.interceptions ?? s.int);
-    } else if(cat === 'rushing'){
-      o.rushingYards = toN(s.rushing_yards ?? s.rushingYards ?? s.yards);
-      o.rushingTD    = toN(s.rushing_tds   ?? s.rushingTD    ?? s.td);
-    } else if(cat === 'receiving'){
-      o.receptions       = toN(s.receptions ?? s.rec);
-      o.receivingYards   = toN(s.receiving_yards ?? s.receivingYards ?? s.yards);
-      o.receivingTD      = toN(s.receiving_tds   ?? s.receivingTD    ?? s.td);
-    } else if(cat === 'defense'){
-      o.tackles          = toN(s.tackles ?? s.total_tackles ?? s.tot_tackles);
-      o.tfl              = toN(s.tfl ?? s.tackles_for_loss);
-      o.sacks            = toN(s.sacks);
-      o.defInterceptions = toN(s.interceptions ?? s.int);
-      o.passesDefended   = toN(s.passes_defended ?? s.pbu);
-      o.forcedFumbles    = toN(s.forced_fumbles ?? s.ff);
-      o.fumblesRecovered = toN(s.fumbles_recovered ?? s.fr);
-      o.defensiveTD      = toN(s.defensive_td ?? s.def_td);
-    }
-    by.set(name, o);
-  });
+  (rows||[])
+    .filter(r => (r.team === TEAM || r.school === TEAM))
+    .forEach(s => {
+      const name = s.player;
+      const cat  = (s.category || '').toLowerCase();
+      const pos  = s.position;
+      const o = by.get(name) || { name, position: pos };
+      if(cat === 'passing'){
+        o.cmp = toN(s.completions ?? s.cmp);
+        o.att = toN(s.attempts ?? s.att);
+        o.cmpPct = pct(o.cmp, o.att);
+        o.passingYards = toN(s.passing_yards ?? s.passingYards ?? s.yards);
+        o.passingTD    = toN(s.passing_tds  ?? s.passingTD  ?? s.td);
+        o.interceptionsThrown = toN(s.interceptions ?? s.int);
+      } else if(cat === 'rushing'){
+        o.rushingYards = toN(s.rushing_yards ?? s.rushingYards ?? s.yards);
+        o.rushingTD    = toN(s.rushing_tds   ?? s.rushingTD    ?? s.td);
+      } else if(cat === 'receiving'){
+        o.receptions       = toN(s.receptions ?? s.rec);
+        o.receivingYards   = toN(s.receiving_yards ?? s.receivingYards ?? s.yards);
+        o.receivingTD      = toN(s.receiving_tds   ?? s.receivingTD    ?? s.td);
+      } else if(cat === 'defense'){
+        o.tackles          = toN(s.tackles ?? s.total_tackles ?? s.tot_tackles);
+        o.tfl              = toN(s.tfl ?? s.tackles_for_loss);
+        o.sacks            = toN(s.sacks);
+        o.defInterceptions = toN(s.interceptions ?? s.int);
+        o.passesDefended   = toN(s.passes_defended ?? s.pbu);
+        o.forcedFumbles    = toN(s.forced_fumbles ?? s.ff);
+        o.fumblesRecovered = toN(s.fumbles_recovered ?? s.fr);
+        o.defensiveTD      = toN(s.defensive_td ?? s.def_td);
+      }
+      by.set(name, o);
+    });
   return Array.from(by.values());
 }
 
-// Aggregate season across categories using /stats/player/season
 function aggregateSeason(rows){
   const by = new Map();
-  (rows||[]).filter(r => r.team === TEAM).forEach(s => {
-    const name = s.player;
-    const cat  = (s.category||'').toLowerCase();
-    const pos  = s.position;
-    const o = by.get(name) || { name, position: pos };
-    if(cat === 'passing'){
-      o.cmp = toN(s.completions ?? s.cmp); o.att = toN(s.attempts ?? s.att);
-      o.cmpPct = pct(o.cmp, o.att);
-      o.passingYards = toN(s.passing_yards ?? s.passingYards ?? s.pass_yds ?? s.yards);
-      o.passingTD    = toN(s.passing_tds   ?? s.passingTD    ?? s.td);
-      o.interceptionsThrown = toN(s.interceptions ?? s.int);
-    } else if(cat === 'rushing'){
-      o.rushingYards = toN(s.rushing_yards ?? s.rushingYards ?? s.rush_yds ?? s.yards);
-      o.rushingTD    = toN(s.rushing_tds   ?? s.rushingTD    ?? s.td);
-    } else if(cat === 'receiving'){
-      o.receptions       = toN(s.receptions ?? s.rec);
-      o.receivingYards   = toN(s.receiving_yards ?? s.receivingYards ?? s.rec_yds ?? s.yards);
-      o.receivingTD      = toN(s.receiving_tds   ?? s.receivingTD    ?? s.td);
-    } else if(cat === 'defense'){
-      o.tackles          = toN(s.tackles ?? s.total_tackles ?? s.tot_tackles);
-      o.tfl              = toN(s.tfl ?? s.tackles_for_loss);
-      o.sacks            = toN(s.sacks);
-      o.defInterceptions = toN(s.interceptions ?? s.int);
-      o.passesDefended   = toN(s.passes_defended ?? s.pbu);
-      o.forcedFumbles    = toN(s.forced_fumbles ?? s.ff);
-      o.fumblesRecovered = toN(s.fumbles_recovered ?? s.fr);
-      o.defensiveTD      = toN(s.defensive_td ?? s.def_td);
-    }
-    by.set(name, o);
-  });
+  (rows||[])
+    .filter(r => (r.team === TEAM || r.school === TEAM))
+    .forEach(s => {
+      const name = s.player;
+      const cat  = (s.category||'').toLowerCase();
+      const pos  = s.position;
+      const o = by.get(name) || { name, position: pos };
+      if(cat === 'passing'){
+        o.cmp = toN(s.completions ?? s.cmp); o.att = toN(s.attempts ?? s.att);
+        o.cmpPct = pct(o.cmp, o.att);
+        o.passingYards = toN(s.passing_yards ?? s.passingYards ?? s.pass_yds ?? s.yards);
+        o.passingTD    = toN(s.passing_tds   ?? s.passingTD    ?? s.td);
+        o.interceptionsThrown = toN(s.interceptions ?? s.int);
+      } else if(cat === 'rushing'){
+        o.rushingYards = toN(s.rushing_yards ?? s.rushingYards ?? s.rush_yds ?? s.yards);
+        o.rushingTD    = toN(s.rushing_tds   ?? s.rushingTD    ?? s.td);
+      } else if(cat === 'receiving'){
+        o.receptions       = toN(s.receptions ?? s.rec);
+        o.receivingYards   = toN(s.receiving_yards ?? s.receivingYards ?? s.rec_yds ?? s.yards);
+        o.receivingTD      = toN(s.receiving_tds   ?? s.receivingTD    ?? s.td);
+      } else if(cat === 'defense'){
+        o.tackles          = toN(s.tackles ?? s.total_tackles ?? s.tot_tackles);
+        o.tfl              = toN(s.tfl ?? s.tackles_for_loss);
+        o.sacks            = toN(s.sacks);
+        o.defInterceptions = toN(s.interceptions ?? s.int);
+        o.passesDefended   = toN(s.passes_defended ?? s.pbu);
+        o.forcedFumbles    = toN(s.forced_fumbles ?? s.ff);
+        o.fumblesRecovered = toN(s.fumbles_recovered ?? s.fr);
+        o.defensiveTD      = toN(s.defensive_td ?? s.def_td);
+      }
+      by.set(name, o);
+    });
   return Array.from(by.values());
 }
 
-// ------------ output shaping -------------
+// ------------ pretty + card mapping -------------
 function prettyShort(p){
   const out = {};
   if (p.cmp != null && p.att != null && (p.cmp || p.att)) out.cmp_att = `${p.cmp}/${p.att}`;
@@ -187,7 +190,25 @@ function prettyShort(p){
   return out;
 }
 
-function toCard(index, lastOpp){
+function toCardLast(index, lastOpp, seasonIndex){
+  return p => {
+    const name = p.name || p.player || '';
+    const meta = resolveMeta(index, name) || {};
+    const id = (meta.id || '').toString();
+    const pos = p.position || meta.pos || '';
+    const slugStr = meta.slug || slug(name);
+    const headshot = id ? `https://a.espncdn.com/i/headshots/college-football/players/full/${id}.png` : '';
+    const espn = id ? `https://www.espn.com/college-football/player/_/id/${id}/${slugStr}`
+                    : `https://www.espn.com/search/results?q=${encodeURIComponent(name+' Kentucky football')}`;
+    const seasonObj = seasonIndex.get(normalize(name)) || {};
+    return {
+      name, pos, slug: slugStr, headshot, espn,
+      last_game: Object.assign(lastOpp ? {opp:lastOpp} : {}, prettyShort(p)),
+      season: prettyShort(seasonObj)
+    };
+  };
+}
+function toCardSeason(index){
   return p => {
     const name = p.name || p.player || '';
     const meta = resolveMeta(index, name) || {};
@@ -199,8 +220,8 @@ function toCard(index, lastOpp){
                     : `https://www.espn.com/search/results?q=${encodeURIComponent(name+' Kentucky football')}`;
     return {
       name, pos, slug: slugStr, headshot, espn,
-      last_game: Object.assign(lastOpp ? {opp:lastOpp} : {}, prettyShort(p)),
-      season: prettyShort(p._season || {})
+      last_game: {},
+      season: prettyShort(p)
     };
   };
 }
@@ -236,32 +257,29 @@ async function main(){
   const week = recent?.week;
   const lastOpp = recent ? (recent.home_team === TEAM ? recent.away_team : recent.home_team) : undefined;
 
-  // LAST: per-game stats for last week, aggregated across categories
+  // LAST: per-game stats for last week
   let lastPlayers = [];
   if(week){
     const gp = await getJSON(`/stats/player/game?year=${YEAR}&team=${encodeURIComponent(TEAM)}&week=${week}`);
     lastPlayers = scorePlayers(aggregateGameWeek(gp)).filter(p => p.score > 0.01);
   }
 
-  // SEASON: aggregate across categories
+  // SEASON
   const sp = await getJSON(`/stats/player/season?year=${YEAR}&team=${encodeURIComponent(TEAM)}`);
   const seasonAgg = scorePlayers(aggregateSeason(sp)).filter(p => p.score > 0.01);
-
-  // attach season snapshot onto lastPlayers for toCard()
   const seasonIndex = new Map(seasonAgg.map(x => [normalize(x.name), x]));
-  lastPlayers.forEach(p => { p._season = seasonIndex.get(normalize(p.name)) || {}; });
 
-  // if lastPlayers is too thin, fall back to seasonAgg
+  // basis for Off/Def last
   const baseForSides = (lastPlayers.length >= 3) ? lastPlayers : seasonAgg;
 
   const [ol, dl] = splitBySide(baseForSides, mapRaw);
   const [os, ds] = splitBySide(seasonAgg, mapRaw);
 
   const pick3 = arr => arr.sort((a,b)=> b.score - a.score).slice(0,3);
-  const topOL = pick3(ol).map(toCard(mapIndex, lastOpp));
-  const topDL = pick3(dl).map(toCard(mapIndex, lastOpp));
-  const topOS = pick3(os).map(toCard(mapIndex));
-  const topDS = pick3(ds).map(toCard(mapIndex));
+  const topOL = pick3(ol).map(toCardLast(mapIndex, lastOpp, seasonIndex));
+  const topDL = pick3(dl).map(toCardLast(mapIndex, lastOpp, seasonIndex));
+  const topOS = pick3(os).map(toCardSeason(mapIndex));
+  const topDS = pick3(ds).map(toCardSeason(mapIndex));
 
   const featured = chooseFeatured(dedupeByName([...topOL, ...topOS, ...topDL, ...topDS]), hist);
 
