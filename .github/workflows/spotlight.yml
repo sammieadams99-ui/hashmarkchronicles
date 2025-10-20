@@ -2,11 +2,11 @@ name: Update Spotlight Feeds
 
 on:
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "0 */6 * * *"   # every 6 hours
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: write  # needed to commit JSON back to the repo
 
 jobs:
   build:
@@ -17,17 +17,20 @@ jobs:
         with:
           node-version: "20"
       - name: Install deps
-        run: npm i
+        run: npm ci || npm i
+
       - name: Build spotlight JSON
         env:
           CFBD_KEY: ${{ secrets.CFBD_KEY }}
           YEAR: "2025"
         run: npm run build:spotlight
+
       - name: Build ticker JSON
         env:
           CFBD_KEY: ${{ secrets.CFBD_KEY }}
           YEAR: "2025"
         run: npm run build:ticker
+
       - name: Commit & push
         run: |
           git config user.name "spotlight-bot"
