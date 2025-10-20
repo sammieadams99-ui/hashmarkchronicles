@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build:spotlight": "node scripts/build-spotlight.js",
-    "build:ticker": "node scripts/build-ticker.js"
+    "build": "echo 'static site, built by GitHub Pages'"
   },
   "dependencies": {
     "node-fetch": "^3.3.2"
