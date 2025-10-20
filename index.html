@@ -20,14 +20,12 @@
   <meta name="twitter:description" content="Independent Kentucky football analysis with film-room breakdowns, data-driven previews, and postgame reviews." />
   <meta name="twitter:image" content="https://artwork.espncdn.com/events/401752743/16x9/1280x720_20250324202019.png" />
 
-  <!-- GA4: keep your existing tag here -->
-
   <!-- Retro font (ticker only) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
-  <!-- Chart.js for any article charts you use -->
+  <!-- Chart.js (if your article chart uses it) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
@@ -40,102 +38,56 @@
       --accent:#1b75ff;
       --shadow:0 6px 24px rgba(0,0,0,.12);
       --radius:18px;
-
-      /* trend colors */
-      --good:#16a34a;
-      --bad:#dc2626;
-      --warn:#d97706;
+      --good:#16a34a; --bad:#dc2626; --warn:#d97706;
     }
-
     *{box-sizing:border-box}
     html,body{margin:0;padding:0}
-    body{
-      font-family: Georgia, Times, "Times New Roman", serif;
-      color: var(--ink);
-      background: #f7f8fb;
-      line-height: 1.6;
-    }
+    body{font-family: Georgia, Times, "Times New Roman", serif;color: var(--ink);background:#f7f8fb;line-height:1.6}
     a{color:var(--ky-blue); text-decoration:none}
     a:hover{color:var(--accent)}
 
     /* Top announcement bar */
-    .bar{
-      background: var(--ink);
-      color: var(--paper);
-      font: 500 14px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      padding: 8px 16px;
-      display:flex;align-items:center;justify-content:center;gap:10px;
-    }
+    .bar{background: var(--ink);color: var(--paper);font: 500 14px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:8px 16px;display:flex;align-items:center;justify-content:center;gap:10px}
     .bar .dot{width:8px;height:8px;border-radius:50%;background:var(--hc-green);display:inline-block}
 
     /* Header */
-    header{
-      position: sticky; top:0; z-index:50;
-      backdrop-filter: blur(8px);
-      background: rgba(255,255,255,.85);
-      border-bottom: 2px solid var(--muted);
-    }
+    header{position:sticky;top:0;z-index:50;backdrop-filter: blur(8px);background: rgba(255,255,255,.85);border-bottom:2px solid var(--muted)}
     .wrap{max-width:1100px;margin:auto;padding:16px}
     .row{display:flex;align-items:center;justify-content:space-between;gap:16px}
 
-    /* Brand + logo */
+    /* Brand */
     .brand{display:flex;align-items:center;gap:14px}
-    .hc-logo{
-      width:56px;height:56px; border-radius:12px; position:relative; overflow:hidden;
-      background: var(--ky-blue);
-      box-shadow: var(--shadow);
-      display:grid; place-items:center;
-    }
-    .hc-logo span{
-      font: italic 800 28px/1 system-ui, -apple-system, Segoe UI, Arial, sans-serif;
-      color:#fff; letter-spacing:.5px; transform: translateY(3px);
-    }
-    .hc-logo::before{
-      content:""; position:absolute; top:8px; left:8px; right:8px; height:5px; border-radius:5px;
-      background: linear-gradient(90deg, transparent 0%, var(--hc-green) 35%, var(--hc-green) 65%, transparent 100%);
-      filter: drop-shadow(0 0 6px rgba(57,255,20,.6)); animation: swipe 2.8s ease-in-out infinite; opacity:.95;
-    }
-    @keyframes swipe { 0%{transform:translateX(-120%)} 40%{transform:translateX(0)} 60%{transform:translateX(0)} 100%{transform:translateX(120%)} }
+    .hc-logo{width:56px;height:56px;border-radius:12px;position:relative;overflow:hidden;background:var(--ky-blue);box-shadow:var(--shadow);display:grid;place-items:center}
+    .hc-logo span{font: italic 800 28px/1 system-ui,-apple-system,Segoe UI,Arial,sans-serif;color:#fff;letter-spacing:.5px;transform: translateY(3px)}
+    .hc-logo::before{content:"";position:absolute;top:8px;left:8px;right:8px;height:5px;border-radius:5px;background:linear-gradient(90deg,transparent 0%,var(--hc-green) 35%,var(--hc-green) 65%,transparent 100%);filter:drop-shadow(0 0 6px rgba(57,255,20,.6));animation:swipe 2.8s ease-in-out infinite;opacity:.95}
+    @keyframes swipe{0%{transform:translateX(-120%)}40%{transform:translateX(0)}60%{transform:translateX(0)}100%{transform:translateX(120%)}}
     .brand-title{display:flex;flex-direction:column}
-    .brand-title strong{font: 800 20px/1.2 "Franklin Gothic Medium","Arial Narrow",Arial,sans-serif; color: var(--ink)}
-    .brand-title small{font: 600 12px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#4a5568; letter-spacing:.5px}
+    .brand-title strong{font:800 20px/1.2 "Franklin Gothic Medium","Arial Narrow",Arial,sans-serif;color:var(--ink)}
+    .brand-title small{font:600 12px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#4a5568;letter-spacing:.5px}
 
     nav ul{display:flex;gap:18px;list-style:none;margin:0;padding:0}
     nav a{font:600 14px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
 
-    /* X chip in nav */
-    .chip-x{
-      display:inline-flex; align-items:center; gap:6px;
-      padding:6px 10px; border-radius:999px;
-      border:1px solid var(--ky-blue); background:#fff; color:#ky-blue;
-      font:700 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      transition:background .15s ease,color .15s ease,border-color .15s ease;
-    }
-    .chip-x:hover{ background:var(--ky-blue); color:#fff; border-color:var(--ky-blue); text-decoration:none }
-    .chip-x .x-glyph{ font-weight:900; font-size:14px; line-height:1; display:inline-block; transform: translateY(-1px); }
+    /* X chip */
+    .chip-x{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--ky-blue);background:#fff;color:var(--ky-blue);font:700 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;transition:background .15s ease,color .15s ease,border-color .15s ease}
+    .chip-x:hover{background:var(--ky-blue);color:#fff;border-color:var(--ky-blue);text-decoration:none}
+    .chip-x .x-glyph{font-weight:900;font-size:14px;line-height:1;display:inline-block;transform:translateY(-1px)}
 
     /* Ticker — slim; only numbers colored; retro font */
-    .ticker{
-      width:100%; background:#ffffff; color:#0b0d12;
-      border-top:3px solid var(--ky-blue); border-bottom:1px solid var(--muted); overflow:hidden;
-    }
-    .ticker__track{
-      display:flex; gap:40px; list-style:none; margin:0; padding:6px 0 6px 100%;
-      font-family:'Press Start 2P', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      font-size:11px; line-height:1.1; white-space:nowrap; animation:hc-marquee 28s linear infinite;
-    }
-    @keyframes hc-marquee{ to { transform: translateX(-100%); } }
-    .ticker:hover .ticker__track{ animation-play-state: paused; }
-    @media (prefers-reduced-motion: reduce){ .ticker__track{ animation:none; padding-left:16px; } }
-    .ticker__track.trend li{ display:inline-flex; align-items:baseline; gap:6px; padding:0; border:0; background:transparent; }
+    .ticker{width:100%;background:#fff;color:#0b0d12;border-top:3px solid var(--ky-blue);border-bottom:1px solid var(--muted);overflow:hidden}
+    .ticker__track{display:flex;gap:40px;list-style:none;margin:0;padding:6px 0 6px 100%;font-family:'Press Start 2P',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:11px;line-height:1.1;white-space:nowrap;animation:hc-marquee 28s linear infinite}
+    @keyframes hc-marquee{to{transform:translateX(-100%)}}
+    .ticker:hover .ticker__track{animation-play-state:paused}
+    @media (prefers-reduced-motion:reduce){.ticker__track{animation:none;padding-left:16px}}
+    .ticker__track.trend li{display:inline-flex;align-items:baseline;gap:6px}
     .trend-dot{width:7px;height:7px;border-radius:50%}
     .label{color:#0b0d12}
-    .trend-value.good{ color:#16a34a } .trend-value.bad{ color:#dc2626 } .trend-value.warn{ color:#d97706 }
-    .trend-dot.good{ background:#16a34a } .trend-dot.bad{ background:#dc2626 } .trend-dot.warn{ background:#d97706 }
+    .trend-value.good{color:var(--good)} .trend-value.bad{color:var(--bad)} .trend-value.warn{color:var(--warn)}
+    .trend-dot.good{background:var(--good)} .trend-dot.bad{background:var(--bad)} .trend-dot.warn{background:var(--warn)}
 
-    /* Hero */
-    .hero{max-width:1100px;margin:24px auto;display:grid;grid-template-columns: 1.2fr .8fr;gap:24px}
-    .card{background:var(--paper); border:1px solid var(--muted); border-radius: var(--radius); box-shadow: var(--shadow)}
+    /* Hero and cards */
+    .hero{max-width:1100px;margin:24px auto;display:grid;grid-template-columns:1.2fr .8fr;gap:24px}
+    .card{background:var(--paper);border:1px solid var(--muted);border-radius:var(--radius);box-shadow:var(--shadow)}
     .card .pad{padding:20px}
     .hero .feature img{display:block;width:100%;height:auto;border-top-left-radius:var(--radius);border-top-right-radius:var(--radius)}
     .kicker{font:700 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;text-transform:uppercase;letter-spacing:.12em;color:var(--ky-blue)}
@@ -156,10 +108,10 @@
     article{background:var(--paper);border:1px solid var(--muted);border-radius:var(--radius);box-shadow:var(--shadow)}
     .prose{padding:24px}
     .prose h2{margin-top:22px}
-    .callout{border-left:4px solid var(--hc-green); background:#f4fff2; padding:12px 14px; border-radius:12px; margin:14px 0}
+    .callout{border-left:4px solid var(--hc-green);background:#f4fff2;padding:12px 14px;border-radius:12px;margin:14px 0}
 
     /* Article specifics */
-    .article-body h1{ font-size: 2.2em; border-bottom: 2px solid #003087; padding-bottom: .3em; margin-top: .5rem; }
+    .article-body h1{font-size:2.2em;border-bottom:2px solid #003087;padding-bottom:.3em;margin-top:.5rem}
     .header-image,.atmosphere-image,.special-teams-image{width:100%;height:auto;margin:1em 0;border-radius:6px;display:block}
     .video-container{position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin:1em 0;background:#000 url('https://via.placeholder.com/800x450?text=Video+Loading') center/cover}
     .video-container iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
@@ -173,25 +125,19 @@
     .section-divider{height:2px;background:linear-gradient(to right,#003087,#bf5700);margin:2rem 0}
 
     /* Mini Spotlight (sidebar rectangles) */
-    .mini-spotlight .row {
-      display:flex; gap:10px; align-items:center; padding:8px; border:1px solid var(--muted);
-      border-radius:10px; background:#fff; margin:8px 0;
-    }
-    .mini-spotlight .row:hover { background:#f3f6fb; }
-    .mini-spotlight img { width:48px; height:48px; border-radius:8px; object-fit:cover; border:1px solid var(--muted) }
-    .mini-spotlight .who { font:700 14px/1.2 "Franklin Gothic Medium","Arial Narrow",Arial,sans-serif; color:#0b0d12 }
-    .mini-spotlight .stat { font:600 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:#475569 }
-    .mini-spotlight .tiny { font:600 11px/1 system-ui; color:#64748b }
-    .mini-spotlight .toggles { display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 8px }
-    .mini-spotlight .chip {
-      border:1px solid var(--muted); border-radius:999px; padding:6px 10px; background:#fff;
-      font:700 12px/1 system-ui; cursor:pointer;
-    }
-    .mini-spotlight .chip.active { background:#0033a0; color:#fff; border-color:#0033a0 }
+    .mini-spotlight .row{display:flex;gap:10px;align-items:center;padding:8px;border:1px solid var(--muted);border-radius:10px;background:#fff;margin:8px 0}
+    .mini-spotlight .row:hover{background:#f3f6fb}
+    .mini-spotlight img{width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid var(--muted)}
+    .mini-spotlight .who{font:700 14px/1.2 "Franklin Gothic Medium","Arial Narrow",Arial,sans-serif;color:#0b0d12}
+    .mini-spotlight .stat{font:600 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#475569}
+    .mini-spotlight .tiny{font:600 11px/1 system-ui;color:#64748b}
+    .mini-spotlight .toggles{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 8px}
+    .mini-spotlight .chip{border:1px solid var(--muted);border-radius:999px;padding:6px 10px;background:#fff;font:700 12px/1 system-ui;cursor:pointer}
+    .mini-spotlight .chip.active{background:#0033a0;color:#fff;border-color:#0033a0}
 
     /* Pulse */
     #pulse .feeds{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-    @media (max-width: 980px){ #pulse .feeds{grid-template-columns:1fr} }
+    @media (max-width:980px){#pulse .feeds{grid-template-columns:1fr}}
 
     /* Footer */
     footer{background:var(--ink);color:#c7d2fe;padding:28px 0;margin-top:40px}
@@ -199,7 +145,7 @@
     footer a{color:#c7d2fe}
 
     /* Responsive */
-    @media (max-width: 980px){
+    @media (max-width:980px){
       .hero, main{grid-template-columns:1fr}
       nav ul{flex-wrap:wrap}
       .article-body h1{font-size:1.8em}
@@ -223,11 +169,10 @@
           <li><a href="#article">Gridiron</a></li>
           <li><a href="#hardtop">Hardtop</a></li>
           <li><a href="#pulse">The Pulse</a></li>
-          <li><a href="/posts/library.html">Articles</a></li>
+          <li><a href="posts/library.html">Articles</a></li>
           <li><a href="#about">About</a></li>
           <li>
-            <a class="chip-x" href="https://x.com/HashmarkCFB" target="_blank" rel="me noopener"
-               aria-label="Follow @HashmarkCFB on X">
+            <a class="chip-x" href="https://x.com/HashmarkCFB" target="_blank" rel="me noopener" aria-label="Follow @HashmarkCFB on X">
               <span class="x-glyph" aria-hidden="true">𝕏</span>
               <span>@HashmarkCFB</span>
             </a>
@@ -240,7 +185,7 @@
   <!-- TICKER -->
   <div class="ticker" aria-label="Season leaders & trending stats">
     <ul class="ticker__track trend" id="tickerTrack">
-      <!-- Fallback text remains until JSON or inline fallback loads -->
+      <!-- Fallback text remains until JSON loads -->
       <li><span class="trend-dot good"></span><span class="label"><strong>Explosive PA rate</strong> <span class="trend-value good">+6.3%</span> vs base</span></li>
       <li><span class="trend-dot good"></span><span class="label"><strong>Yds/Play (UK)</strong> <span class="trend-value good">5.7</span></span></li>
       <li><span class="trend-dot warn"></span><span class="label"><strong>Havoc Allowed</strong> <span class="trend-value warn">42%</span> steady</span></li>
@@ -261,7 +206,7 @@
       </div>
     </article>
 
-      <aside class="card">
+    <aside class="card">
       <div class="block">
         <div class="kicker">Next Kickoff</div>
         <h2>Kentucky @ <span style="white-space:nowrap">[Opponent]</span></h2>
@@ -289,8 +234,6 @@
   <main>
     <article id="article" class="article">
       <div class="prose article-body">
-
-        <!-- Your existing article content goes here (kept intact). Example header image + title: -->
         <img
           src="https://artwork.espncdn.com/events/401752743/16x9/1280x720_20250324202019.png"
           alt="Texas Longhorns vs Kentucky Wildcats — ESPN event graphic"
@@ -302,8 +245,7 @@
         <h2>Opening Context</h2>
         <p>…(your original copy continues)…</p>
 
-        <!-- Keep your embeds, charts, sections, etc., unchanged -->
-
+        <!-- keep your embeds/charts/sections unchanged -->
       </div>
     </article>
 
@@ -311,11 +253,8 @@
       <!-- Player Spotlight (compact rectangles) -->
       <div class="card pad mini-spotlight" id="miniSpotlight">
         <div class="kicker">Player Spotlight</div>
-
-        <!-- Featured (auto one): -->
         <div id="miniFeatured" class="row" style="display:none"></div>
 
-        <!-- Toggles -->
         <div class="toggles">
           <button class="chip" data-side="offense">Offense</button>
           <button class="chip" data-side="defense">Defense</button>
@@ -323,7 +262,6 @@
           <button class="chip" data-span="season">Season</button>
         </div>
 
-        <!-- List -->
         <div id="miniList"></div>
         <div class="tiny">Auto-updating from official stats (falls back if offline).</div>
       </div>
@@ -348,7 +286,7 @@
     </aside>
   </main>
 
-  <!-- Hardtop anchor (placeholder) -->
+  <!-- Hardtop placeholder -->
   <section id="hardtop" class="wrap" style="max-width:1100px;margin:0 auto 32px;">
     <div class="card pad">
       <div class="kicker">Hardtop</div>
@@ -404,7 +342,6 @@
   ]
   </script>
 
-  <!-- Featured -->
   <script type="application/json" id="fallback-spotlight_featured">
   {
     "name":"Cutter Boley","pos":"QB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/5141378.png",
@@ -414,7 +351,6 @@
   }
   </script>
 
-  <!-- Offense Last -->
   <script type="application/json" id="fallback-spotlight_offense_last">
   [
     {"name":"Cutter Boley","pos":"QB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/5141378.png","espn":"https://www.espn.com/college-football/player/_/id/5141378/cutter-boley","last_game":{"opp":"Texas","cmp_att":"31/39","yds":"258","td":"0","int":"1"},"season":{"cmp_pct":"64%","yds":"885","td":"4","int":"4"}},
@@ -423,7 +359,6 @@
   ]
   </script>
 
-  <!-- Offense Season -->
   <script type="application/json" id="fallback-spotlight_offense_season">
   [
     {"name":"Seth McGowan","pos":"RB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/4686468.png","espn":"https://www.espn.com/college-football/player/_/id/4686468/seth-mcgowan","season":{"car":"93","yds":"476","td":"7","avg":"5.1"}},
@@ -432,7 +367,6 @@
   ]
   </script>
 
-  <!-- Defense Last -->
   <script type="application/json" id="fallback-spotlight_defense_last">
   [
     {"name":"Alex Afari Jr.","pos":"DB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/4819224.png","espn":"https://www.espn.com/college-football/player/_/id/4819224/alex-afari-jr","last_game":{"opp":"Texas","tkl":"7","tfl":"1","pbu":"1"}},
@@ -441,7 +375,6 @@
   ]
   </script>
 
-  <!-- Defense Season -->
   <script type="application/json" id="fallback-spotlight_defense_season">
   [
     {"name":"Alex Afari Jr.","pos":"DB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/4819224.png","espn":"https://www.espn.com/college-football/player/_/id/4819224/alex-afari-jr","season":{"tkl":"38","tfl":"4","pbu":"4"}},
@@ -451,12 +384,13 @@
   </script>
   <!-- ======== END INLINE FALLBACKS ======== -->
 
-  <!-- JSON loaders: ticker + mini spotlight (tries /data first; falls back to inline JSON) -->
+  <!-- Data loaders (ticker + player spotlight) -->
   <script>
   (async function(){
-    /* Helper: fetch JSON with graceful fallback to inline <script type="application/json"> */
+    // Fetch with graceful fallback to inline JSON
     async function fetchOrFallback(primaryPath, fallbackScriptId){
-      const tryPaths = [primaryPath, primaryPath.replace(/^\//,'')];
+      // Use relative paths so it works on custom domain AND GitHub Pages subpath
+      const tryPaths = [primaryPath.replace(/^\\//,''), primaryPath]; // 'data/...' then '/data/...'
       for(const p of tryPaths){
         try{
           const r = await fetch(p, {cache:'no-store'});
@@ -470,7 +404,7 @@
 
     /* --- TICKER --- */
     (async ()=>{
-      const items = await fetchOrFallback('/data/ticker.json','fallback-ticker');
+      const items = await fetchOrFallback('data/ticker.json','fallback-ticker');
       const track = document.getElementById('tickerTrack');
       if(Array.isArray(items) && track){
         track.innerHTML = items.map(it => {
@@ -497,16 +431,16 @@
         if(btn.dataset.side){ side = btn.dataset.side; }
         if(btn.dataset.span){ span = btn.dataset.span; }
         wrap.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
-        wrap.querySelectorAll(\`.chip[data-side="\${side}"]\`).forEach(c=>c.classList.add('active'));
-        wrap.querySelectorAll(\`.chip[data-span="\${span}"]\`).forEach(c=>c.classList.add('active'));
+        wrap.querySelectorAll(`.chip[data-side="${side}"]`).forEach(c=>c.classList.add('active'));
+        wrap.querySelectorAll(`.chip[data-span="${span}"]`).forEach(c=>c.classList.add('active'));
         loadMini();
       });
     });
-    wrap.querySelector(\`.chip[data-side="\${side}"]\`)?.classList.add('active');
-    wrap.querySelector(\`.chip[data-span="\${span}"]\`)?.classList.add('active');
+    wrap.querySelector(`.chip[data-side="offense"]`)?.classList.add('active');
+    wrap.querySelector(`.chip[data-span="last"]`)?.classList.add('active');
 
     (async ()=>{
-      const data = await fetchOrFallback('/data/spotlight_featured.json','fallback-spotlight_featured');
+      const data = await fetchOrFallback('data/spotlight_featured.json','fallback-spotlight_featured');
       if(data && data.name){
         featuredEl.innerHTML = rowHTML(data, true);
         featuredEl.style.display = 'flex';
@@ -514,8 +448,8 @@
     })();
 
     async function loadMini(){
-      const file = \`/data/spotlight_\${side}_\${span}.json\`;
-      const fallbackId = \`fallback-spotlight_\${side}_\${span}\`;
+      const file = `data/spotlight_${side}_${span}.json`;
+      const fallbackId = `fallback-spotlight_${side}_${span}`;
       const players = await fetchOrFallback(file, fallbackId);
       if(Array.isArray(players) && players.length){
         list.innerHTML = players.slice(0,3).map(p => rowHTML(p)).join('');
@@ -525,19 +459,17 @@
     }
 
     function rowHTML(p, featured=false){
-      const stat = featured
-        ? shortStat(p.last_game) || shortStat(p.season) || ''
-        : shortStat(p.last_game) || shortStat(p.season) || '';
-      const initials = (p.name||'').split(/\s+/).map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'UK';
-      return \`
+      const stat = shortStat(p.last_game) || shortStat(p.season) || '';
+      const initials = (p.name||'').split(/\\s+/).map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'UK';
+      return `
         <div class="row">
-          <img src="\${p.headshot||''}" alt="\${p.name} headshot"
-               onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div style=&quot;width:48px;height:48px;border-radius:8px;display:grid;place-items:center;background:#0033a0;color:#fff;font:800 14px/1 system-ui&quot;>\${initials}</div>')">
+          <img src="${p.headshot||''}" alt="${p.name} headshot"
+               onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div style=&quot;width:48px;height:48px;border-radius:8px;display:grid;place-items:center;background:#0033a0;color:#fff;font:800 14px/1 system-ui&quot;>${initials}</div>')">
           <div>
-            <div class="who">\${p.name} <span class="tiny">• \${p.pos||''}</span></div>
-            <div class="stat">\${stat} <a href="\${p.espn||'#'}" target="_blank" rel="noopener" class="tiny">ESPN ↗</a></div>
+            <div class="who">${p.name} <span class="tiny">• ${p.pos||''}</span></div>
+            <div class="stat">${stat} <a href="${p.espn||'#'}" target="_blank" rel="noopener" class="tiny">ESPN ↗</a></div>
           </div>
-        </div>\`;
+        </div>`;
     }
     function shortStat(s){
       if(!s) return '';
