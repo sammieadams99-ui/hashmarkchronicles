@@ -1,11 +1,10 @@
 {
-  "name": "hashmarkchronicles-spotlight",
-  "private": true,
   "type": "module",
-  "scripts": {
-    "build:spotlight": "node scripts/build-spotlight.js"
-  },
   "dependencies": {
     "node-fetch": "^3.3.2"
+  },
+  "scripts": {
+    "build:spotlight": "node scripts/build-spotlight.js",
+    "build:ticker": "node scripts/build-ticker.js"
   }
 }
