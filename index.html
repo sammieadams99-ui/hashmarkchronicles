@@ -337,280 +337,421 @@
   <!-- ======== END INLINE FALLBACKS ======== -->
 
   <!-- Single inline script. No /data fetch. Offline-first, then ESPN live. -->
-  <script>
-  (function start(run){ if(document.readyState!=='loading'){ run(); } else { document.addEventListener('DOMContentLoaded', run); } })(function(){
-    (async function(){
-      // ---- CONFIG ----
-      const TEAM_ID = new URLSearchParams(location.search).get('team') || '96'; // Kentucky default
-      const POLL_MS = 30_000;
+<script>
+(function start(run){ if(document.readyState!=='loading'){ run(); } else { document.addEventListener('DOMContentLoaded', run); } })(function(){
+  (async function(){
+    // ---- CONFIG ----
+    const TEAM_ID = new URLSearchParams(location.search).get('team') || '96'; // Kentucky
+    const POLL_MS = 30_000;
 
-      // ---- UTILS ----
-      const log = (...a)=>console.log('[HC]',...a);
-      const err = (...a)=>console.error('[HC]',...a);
-      const headshot = id => id ? `https://a.espncdn.com/i/headshots/college-football/players/full/${id}.png` : '';
-      const readInlineJSON = id => { const t=document.getElementById(id); if(!t) return null; try{return JSON.parse(t.textContent);}catch(e){return null;} };
+    // ---- UTILS ----
+    const log = (...a)=>console.log('[HC]',...a);
+    const err = (...a)=>console.error('[HC]',...a);
+    const headshot = id => id ? `https://a.espncdn.com/i/headshots/college-football/players/full/${id}.png` : '';
+    const readInlineJSON = id => { const t=document.getElementById(id); if(!t) return null; try{return JSON.parse(t.textContent);}catch(e){return null;} };
+    const espnIdFromUrl = (u)=> (String(u||'').match(/\/id\/(\d+)/)||[])[1] || null;
+    const pct = (n)=> (isFinite(n)? (n*100).toFixed(0)+'%':'–');
 
-      async function j(url){
-        const res = await fetch(url,{mode:'cors',cache:'no-store'});
-        if(!res.ok) throw new Error(res.status+' '+url);
-        return res.json();
-      }
+    async function j(url){
+      const res = await fetch(url,{mode:'cors',cache:'no-store'});
+      if(!res.ok) throw new Error(res.status+' '+url);
+      return res.json();
+    }
 
-      function opponentFromComp(comp, teamId){
-        const comps = comp?.competitors||[];
-        const foe = comps.find(c=>String(c.team?.id)!==String(teamId))||comps[0];
-        return foe?.team?.displayName||'TBA';
-      }
+    function opponentFromComp(comp, teamId){
+      const comps = comp?.competitors||[];
+      const foe = comps.find(c=>String(c.team?.id)!==String(teamId))||comps[0];
+      return foe?.team?.displayName||'TBA';
+    }
+    function fmtKick(dateStr, networks){
+      const d=new Date(dateStr);
+      const when=isFinite(d)?d.toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'TBA';
+      const tv=(networks&&networks[0])?(networks[0].shortName||networks[0].name||'TV TBA'):'TV TBA';
+      return {when,tv};
+    }
+    function setKickoffUI(teamName, oppName, meta){
+      const t=document.getElementById('nextTeamName');
+      const o=document.getElementById('nextOpponent');
+      const m=document.getElementById('nextMeta');
+      if(t) t.textContent=teamName||'Kentucky';
+      if(o) o.textContent=oppName||'[Opponent]';
+      if(m) m.innerHTML=`Date • Time • TV: <b>${meta.when}</b> • <b>${meta.tv}</b>`;
+    }
 
-      function fmtKick(dateStr, networks){
-        const d=new Date(dateStr);
-        const when=isFinite(d)?d.toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'TBA';
-        const tv=(networks&&networks[0])?(networks[0].shortName||networks[0].name||'TV TBA'):'TV TBA';
-        return {when,tv};
-      }
+    // ---- ESPN DISCOVERY ----
+    async function getTeamEnv(teamId){
+      try{ return await j(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/${teamId}`); }
+      catch(e){ err('team envelope failed',e); return null; }
+    }
+    async function getSummary(eventId){
+      return await j(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=${eventId}`);
+    }
+    async function chooseEvent(env){
+      const next=env?.team?.nextEvent?.[0];
+      const prev=env?.team?.previousEvent?.[0];
 
-      function setKickoffUI(teamName, oppName, meta){
-        const t=document.getElementById('nextTeamName');
-        const o=document.getElementById('nextOpponent');
-        const m=document.getElementById('nextMeta');
-        if(t) t.textContent=teamName||'Kentucky';
-        if(o) o.textContent=oppName||'[Opponent]';
-        if(m) m.innerHTML=`Date • Time • TV: <b>${meta.when}</b> • <b>${meta.tv}</b>`;
-      }
-
-      // ---- ESPN DISCOVERY ----
-      async function getTeamEnv(teamId){
-        try{ return await j(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/${teamId}`); }
-        catch(e){ err('team envelope failed',e); return null; }
-      }
-      async function getSummary(eventId){
-        return await j(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=${eventId}`);
-      }
-      async function chooseEvent(env){
-        const next=env?.team?.nextEvent?.[0];
-        const prev=env?.team?.previousEvent?.[0];
-
-        if(next?.id){
-          try{
-            const sum=await getSummary(next.id);
-            const state=sum?.header?.competitions?.[0]?.status?.type?.state; // pre|in|post
-            if(state==='in'||state==='post'){ return {id:next.id,sum,state}; }
-            if(prev?.id){
-              const sump=await getSummary(prev.id);
-              const sp=sump?.header?.competitions?.[0]?.status?.type?.state;
-              return {id:prev.id,sum:sump,state:sp,usePrev:true,nextId:next.id};
-            }
-            return {id:next.id,sum,state};
-          }catch(e){ err('next summary failed',e); }
-        }
-        if(prev?.id){
-          try{
+      if(next?.id){
+        try{
+          const sum=await getSummary(next.id);
+          const state=sum?.header?.competitions?.[0]?.status?.type?.state; // pre|in|post
+          if(state==='in'||state==='post'){ return {id:next.id,sum,state}; }
+          if(prev?.id){
             const sump=await getSummary(prev.id);
             const sp=sump?.header?.competitions?.[0]?.status?.type?.state;
-            return {id:prev.id,sum:sump,state:sp,usePrev:true};
-          }catch(e){ err('prev summary failed',e); }
-        }
-        return null;
-      }
-
-      // ---- PARSERS ----
-      function makeRow(a, statline){
-        const id=a?.athlete?.id||a?.id;
-        const name=a?.athlete?.displayName||a?.displayName||'Unknown';
-        const pos=a?.athlete?.position?.abbreviation||a?.position?.abbreviation||'';
-        const link=id?`https://www.espn.com/college-football/player/_/id/${id}`:'#';
-        return { name, pos, headshot: headshot(id), espn: link, statline: statline||'' };
-      }
-
-      // Preferred: boxscore players
-      function offenseFromBoxscore(sum, teamId){
-        const blocks=sum?.boxscore?.players||[];
-        const teamBlock=blocks.find(b=>String(b.team?.id)===String(teamId))||blocks[0];
-        if(!teamBlock) return [];
-        const cats={}; for(const c of (teamBlock.statistics||[])) cats[c.type]=c;
-
-        const pick=(cat,labels,rankLbl)=>{
-          if(!cat) return null;
-          const L=cat.labels||[], rows=cat.athletes||[];
-          const idxY=(rankLbl && L.indexOf(rankLbl)>=0)?L.indexOf(rankLbl):(L.indexOf('YDS')>=0?L.indexOf('YDS'):1);
-          const num=v=>{const s=String(v??'0');const m=s.match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):0};
-          let best=null;
-          for(const r of rows){ const y=num(r?.stats?.[idxY]); if(!best||y>best._y) best={...r,_y:y}; }
-          if(!best) return null;
-          const line=L.map((lbl,i)=>{const v=best.stats?.[i]; if(v==null) return null; const map={'CMP-ATT':'CMP/ATT','YDS':'YDS','TD':'TD','INT':'INT','CAR':'CAR','REC':'REC'}; return `${map[lbl]||lbl} ${v}`;}).filter(Boolean).slice(0,3).join(' • ');
-          return makeRow(best, line);
-        };
-
-        const pass=pick(cats.passing,['CMP-ATT','YDS','TD','INT'],'YDS');
-        const rush=pick(cats.rushing,['CAR','YDS','TD'],'YDS');
-        const recv=pick(cats.receiving,['REC','YDS','TD'],'YDS');
-        return [pass,rush,recv].filter(Boolean);
-      }
-
-      // Fallback: competitor leaders in the summary header
-      function offenseFromLeaders(sum, teamId){
-        const comp=sum?.header?.competitions?.[0];
-        const me=comp?.competitors?.find(c=>String(c.team?.id)===String(teamId));
-        const groups=me?.leaders||sum?.leaders||[]; // try both places
-
-        const get = (keys) => {
-          const g=(groups||[]).find(x=>{
-            const name=(x?.name||x?.shortDisplayName||x?.displayName||'').toLowerCase();
-            return keys.some(k=>name.includes(k));
-          });
-          const lead=g?.leaders?.[0];
-          if(!lead) return null;
-          return makeRow(lead, lead.displayValue || lead.value || '');
-        };
-
-        const pass=get(['pass','qb','cmp','yds']);
-        const rush=get(['rush','rb','car']);
-        const recv=get(['receiv','wr','rec']);
-        return [pass,rush,recv].filter(Boolean);
-      }
-
-      function defenseFromBoxscore(sum, teamId){
-        const blocks=sum?.boxscore?.players||[];
-        const teamBlock=blocks.find(b=>String(b.team?.id)===String(teamId))||blocks[0];
-        if(!teamBlock) return [];
-        const cats={}; for(const c of (teamBlock.statistics||[])) cats[c.type]=c;
-        const def=cats.defensive||cats.defense; if(!def) return [];
-        const L=def.labels||[], rows=def.athletes||[];
-        const iTOT=L.indexOf('TOT'), iSOLO=L.indexOf('SOLO');
-        const sorted=rows.slice().sort((a,b)=>{
-          const A=parseInt(a?.stats?.[iTOT]||'0'), B=parseInt(b?.stats?.[iTOT]||'0');
-          if(B!==A) return B-A;
-          const As=parseInt(a?.stats?.[iSOLO]||'0'), Bs=parseInt(b?.stats?.[iSOLO]||'0');
-          return Bs-As;
-        }).slice(0,3);
-        return sorted.map(r=>{
-          const parts=[];
-          const push=(label,pretty)=>{const i=L.indexOf(label); if(i>=0 && r.stats?.[i]!=null) parts.push(`${pretty} ${r.stats[i]}`);};
-          push('TOT','TKL'); push('TFL','TFL'); push('SCK','SACKS'); push('SACKS','SACKS'); push('INT','INT');
-          return makeRow(r, parts.slice(0,3).join(' • '));
-        });
-      }
-
-      function defenseFromLeaders(sum, teamId){
-        const comp=sum?.header?.competitions?.[0];
-        const me=comp?.competitors?.find(c=>String(c.team?.id)===String(teamId));
-        const groups=me?.leaders||sum?.leaders||[];
-        const tackles=(groups||[]).find(x=>{
-          const n=(x?.name||x?.shortDisplayName||'').toLowerCase();
-          return n.includes('tackle');
-        });
-        const lead=tackles?.leaders?.[0];
-        return lead ? [makeRow(lead, lead.displayValue||'')] : [];
-      }
-
-      // ---- UI helpers ----
-      const wrap=document.getElementById('miniSpotlight');
-      const list=document.getElementById('miniList');
-      const featuredEl=document.getElementById('miniFeatured');
-
-      function rowHTML(p){
-        const initials=(p.name||'').split(/\s+/).map(s=>s[0]).slice(0,2).join('').toUpperCase()||'UK';
-        const stat=p.statline||'';
-        return `
-          <div class="row">
-            <img src="${p.headshot||''}" alt="${p.name} headshot"
-                 onerror="this.replaceWith((()=>{const d=document.createElement('div');d.style.cssText='width:48px;height:48px;border-radius:8px;display:grid;place-items:center;background:#0033a0;color:#fff;font:800 14px/1 system-ui';d.textContent='${initials}';return d;})())">
-            <div>
-              <div class="who">${p.name} <span class="tiny">• ${p.pos||''}</span></div>
-              <div class="stat">${stat} <a href="${p.espn||'#'}" target="_blank" rel="noopener" class="tiny">ESPN ↗</a></div>
-            </div>
-          </div>`;
-      }
-      function renderList(arr){ list.innerHTML = (arr&&arr.length) ? arr.slice(0,3).map(rowHTML).join('') : '<div class="tiny">No data available.</div>'; }
-
-      // ---- STATE ----
-      let side='offense', span='last';
-      let LIVE={ offense_last:[], defense_last:[] };
-
-      wrap?.querySelectorAll('.chip').forEach(btn=>{
-        btn.addEventListener('click',()=>{
-          if(btn.dataset.side) side=btn.dataset.side;
-          if(btn.dataset.span) span=btn.dataset.span;
-          wrap.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
-          wrap.querySelectorAll(`.chip[data-side="${side}"]`).forEach(c=>c.classList.add('active'));
-          wrap.querySelectorAll(`.chip[data-span="${span}"]`).forEach(c=>c.classList.add('active'));
-          loadMini();
-        });
-      });
-      wrap?.querySelector(`.chip[data-side="${side}"]`)?.classList.add('active');
-      wrap?.querySelector(`.chip[data-span="${span}"]`)?.classList.add('active');
-
-      // ---- TICKER: inline only ----
-      (function(){
-        const items=readInlineJSON('fallback-ticker');
-        const track=document.getElementById('tickerTrack');
-        if(Array.isArray(items)&&track){
-          track.innerHTML=items.map(it=>{
-            const trend=it.trend||'warn';
-            const suffix=it.suffix?(' '+it.suffix):'';
-            return `<li><span class="trend-dot ${trend}" aria-hidden="true"></span><span class="label"><strong>${it.label}</strong> <span class="trend-value ${trend}">${it.value}</span>${suffix}</span></li>`;
-          }).join('');
-        }
-      })();
-
-      // ---- Draw inline spotlight immediately ----
-      (function drawInlineFirst(){
-        const feat=readInlineJSON('fallback-spotlight_featured');
-        if(feat&&feat.name&&featuredEl){ featuredEl.innerHTML=rowHTML({name:feat.name,pos:feat.pos,headshot:feat.headshot,espn:feat.espn,statline:Object.entries(feat.last_game||feat.season||{}).slice(0,3).map(([k,v])=>`${k.toUpperCase().replace('_','-')} ${v}`).join(' • ')}); featuredEl.style.display='flex'; }
-        loadMini(); // will use inline arrays until LIVE arrives
-      })();
-
-      function loadMini(){
-        if(span==='last'){
-          const arr = side==='offense' ? LIVE.offense_last : LIVE.defense_last;
-          if(arr && arr.length){ renderList(arr); return; }
-        }
-        // Use inline arrays for anything else (or until LIVE present)
-        const inline = readInlineJSON(`fallback-spotlight_${side}_${span}`) || [];
-        const adapt = inline.map(p=>({ name:p.name, pos:p.pos, headshot:p.headshot, espn:p.espn, statline:Object.entries((p.last_game||p.season||{})).slice(0,3).map(([k,v])=>`${k.toUpperCase().replace('_','-')} ${v}`).join(' • ') }));
-        renderList(adapt);
-      }
-
-      // ---- ESPN live boot ----
-      async function bootLive(){
-        const env=await getTeamEnv(TEAM_ID);
-        if(env){
-          const teamName=env?.team?.displayName||'Kentucky';
-          const nxt=env?.team?.nextEvent?.[0] || env?.team?.previousEvent?.[0];
-          if(nxt){
-            const comp=nxt.competitions?.[0];
-            const meta=fmtKick(nxt.date || comp?.date, comp?.broadcasts || comp?.broadcast || []);
-            setKickoffUI(teamName, opponentFromComp(comp,TEAM_ID), meta);
+            return {id:prev.id,sum:sump,state:sp,usePrev:true,nextId:next.id};
           }
+          return {id:next.id,sum,state};
+        }catch(e){ err('next summary failed',e); }
+      }
+      if(prev?.id){
+        try{
+          const sump=await getSummary(prev.id);
+          const sp=sump?.header?.competitions?.[0]?.status?.type?.state;
+          return {id:prev.id,sum:sump,state:sp,usePrev:true};
+        }catch(e){ err('prev summary failed',e); }
+      }
+      return null;
+    }
+
+    // ---- PARSERS ----
+    function makeRow(a, statline){
+      const id=a?.athlete?.id||a?.id;
+      const name=a?.athlete?.displayName||a?.displayName||'Unknown';
+      const pos=a?.athlete?.position?.abbreviation||a?.position?.abbreviation||'';
+      const link=id?`https://www.espn.com/college-football/player/_/id/${id}`:'#';
+      return { id, name, pos, headshot: headshot(id), espn: link, statline: statline||'' };
+    }
+
+    // Parse a “statline” string into numbers we can grade
+    function parseLine(s=''){
+      const out={};
+      const mCA = s.match(/CMP\/ATT\s+(\d+)\/(\d+)/i) || s.match(/(\d+)-(\d+)/); // 29-41
+      if(mCA){ out.cmp=+mCA[1]; out.att=+mCA[2]; }
+      const mY = s.match(/YDS\s+(-?\d+)/i) || s.match(/(-?\d+)\s*YDS/i);
+      if(mY){ out.yds=+mY[1]; }
+      const mTD = s.match(/(?:^|[^\w])TD\s+(\d+)/i);
+      if(mTD){ out.td=+mTD[1]; }
+      const mINT = s.match(/INT\s+(\d+)/i);
+      if(mINT){ out.int=+mINT[1]; } // QB INT
+      const mCAR = s.match(/CAR\s+(\d+)/i);
+      if(mCAR){ out.car=+mCAR[1]; }
+      const mREC = s.match(/REC\s+(\d+)/i);
+      if(mREC){ out.rec=+mREC[1]; }
+      const mTKL = s.match(/TKL\s+(\d+)/i) || s.match(/TACKLES?\s+(\d+)/i);
+      if(mTKL){ out.tkl=+mTKL[1]; }
+      const mTFL = s.match(/TFL\s+(\d+)/i);
+      if(mTFL){ out.tfl=+mTFL[1]; }
+      const mSCK = s.match(/SACKS?\s+(\d+(?:\.\d+)?)/i);
+      if(mSCK){ out.sack=+mSCK[1]; }
+      return out;
+    }
+
+    // Letter grades (simple, transparent heuristics for the on-page card)
+    function gradeQB(m){ // yards, efficiency, TDs up; INTs down
+      const y = (m.yds||0)/25;
+      const eff = (m.att? (m.cmp||0)/m.att : 0)*10;
+      const t = (m.td||0)*10;
+      const neg = (m.int||0)*8;
+      return letter(y + eff + t - neg, [35,25,15,8]);
+    }
+    function gradeRB(m){ // yards + TD + YPC bonus
+      const y = (m.yds||0)/10;
+      const t = (m.td||0)*12;
+      const ypc = (m.car? (m.yds||0)/m.car : 0);
+      const bonus = ypc>=5 ? 3 : ypc>=4 ? 1 : ypc>0 ? -1 : 0;
+      return letter(y + t + bonus, [20,14,9,5]);
+    }
+    function gradeWR(m){ // yards + TD + volume
+      const y = (m.yds||0)/10;
+      const t = (m.td||0)*12;
+      const vol = (m.rec||0)>=6 ? 3 : (m.rec||0)>=4 ? 1 : 0;
+      return letter(y + t + vol, [20,14,9,5]);
+    }
+    function gradeDEF(m){ // tackles + TFL + sacks + INT weight
+      const s = (m.tkl||0)*1.2 + (m.tfl||0)*2.5 + (m.sack||0)*4 + (m.int||0)*8;
+      return letter(s, [18,13,8,4]);
+    }
+    function letter(score, [a,b,c,d]){ return score>=a?'A':score>=b?'B':score>=c?'C':score>=d?'D':'F'; }
+
+    // Preferred: boxscore players
+    function offenseFromBoxscore(sum, teamId){
+      const blocks=sum?.boxscore?.players||[];
+      const teamBlock=blocks.find(b=>String(b.team?.id)===String(teamId))||blocks[0];
+      if(!teamBlock) return [];
+      const cats={}; for(const c of (teamBlock.statistics||[])) cats[c.type]=c;
+
+      const pick=(cat,labels,rankLbl)=>{
+        if(!cat) return null;
+        const L=cat.labels||[], rows=cat.athletes||[];
+        const idxY=(rankLbl && L.indexOf(rankLbl)>=0)?L.indexOf(rankLbl):(L.indexOf('YDS')>=0?L.indexOf('YDS'):1);
+        const num=v=>{const s=String(v??'0');const m=s.match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):0};
+        let best=null;
+        for(const r of rows){ const y=num(r?.stats?.[idxY]); if(!best||y>best._y) best={...r,_y:y}; }
+        if(!best) return null;
+        const line=L.map((lbl,i)=>{const v=best.stats?.[i]; if(v==null) return null; const map={'CMP-ATT':'CMP/ATT','YDS':'YDS','TD':'TD','INT':'INT','CAR':'CAR','REC':'REC'}; return `${map[lbl]||lbl} ${v}`;}).filter(Boolean).slice(0,3).join(' • ');
+        const row = makeRow(best, line);
+        const m = parseLine(line);
+        row.grade = (labels[0]==='pass') ? gradeQB(m) : labels[0]==='rush' ? gradeRB(m) : gradeWR(m);
+        return row;
+      };
+
+      const pass=pick(cats.passing,['pass'],'YDS');
+      const rush=pick(cats.rushing,['rush'],'YDS');
+      const recv=pick(cats.receiving,['recv'],'YDS');
+      return [pass,rush,recv].filter(Boolean);
+    }
+
+    // Fallback: competitor leaders in the summary header
+    function offenseFromLeaders(sum, teamId){
+      const comp=sum?.header?.competitions?.[0];
+      const me=comp?.competitors?.find(c=>String(c.team?.id)===String(teamId));
+      const groups=me?.leaders||sum?.leaders||[];
+
+      const get = (keys, kind) => {
+        const g=(groups||[]).find(x=>{
+          const name=(x?.name||x?.shortDisplayName||x?.displayName||'').toLowerCase();
+          return keys.some(k=>name.includes(k));
+        });
+        const lead=g?.leaders?.[0];
+        if(!lead) return null;
+        const row = makeRow(lead, lead.displayValue || lead.value || '');
+        const m = parseLine(row.statline);
+        row.grade = kind==='pass' ? gradeQB(m) : kind==='rush' ? gradeRB(m) : gradeWR(m);
+        return row;
+      };
+
+      const pass=get(['pass','qb','cmp','yds'],'pass');
+      const rush=get(['rush','rb','car'],'rush');
+      const recv=get(['receiv','wr','rec'],'recv');
+      return [pass,rush,recv].filter(Boolean);
+    }
+
+    function defenseFromBoxscore(sum, teamId){
+      const blocks=sum?.boxscore?.players||[];
+      const teamBlock=blocks.find(b=>String(b.team?.id)===String(teamId))||blocks[0];
+      if(!teamBlock) return [];
+      const cats={}; for(const c of (teamBlock.statistics||[])) cats[c.type]=c;
+      const def=cats.defensive||cats.defense; if(!def) return [];
+      const L=def.labels||[], rows=def.athletes||[];
+      const iTOT=L.indexOf('TOT'), iSOLO=L.indexOf('SOLO');
+      const sorted=rows.slice().sort((a,b)=>{
+        const A=parseInt(a?.stats?.[iTOT]||'0'), B=parseInt(b?.stats?.[iTOT]||'0');
+        if(B!==A) return B-A;
+        const As=parseInt(a?.stats?.[iSOLO]||'0'), Bs=parseInt(b?.stats?.[iSOLO]||'0');
+        return Bs-As;
+      }).slice(0,3);
+      return sorted.map(r=>{
+        const parts=[]; const push=(label,pretty)=>{const i=L.indexOf(label); if(i>=0 && r.stats?.[i]!=null) parts.push(`${pretty} ${r.stats[i]}`);};
+        push('TOT','TKL'); push('TFL','TFL'); push('SCK','SACKS'); push('SACKS','SACKS'); push('INT','INT');
+        const line = parts.slice(0,3).join(' • ');
+        const row = makeRow(r, line);
+        row.grade = gradeDEF(parseLine(line));
+        return row;
+      });
+    }
+    function defenseFromLeaders(sum, teamId){
+      const comp=sum?.header?.competitions?.[0];
+      const me=comp?.competitors?.find(c=>String(c.team?.id)===String(teamId));
+      const groups=me?.leaders||sum?.leaders||[];
+      const tackles=(groups||[]).find(x=>{
+        const n=(x?.name||x?.shortDisplayName||'').toLowerCase();
+        return n.includes('tackle');
+      });
+      const lead=tackles?.leaders?.[0];
+      if(!lead) return [];
+      const row = makeRow(lead, lead.displayValue||'');
+      row.grade = gradeDEF(parseLine(row.statline));
+      return [row];
+    }
+
+    // ---- UI helpers ----
+    const wrap=document.getElementById('miniSpotlight');
+    const list=document.getElementById('miniList');
+    const featuredEl=document.getElementById('miniFeatured');
+
+    function rowHTML(p){
+      const initials=(p.name||'').split(/\s+/).map(s=>s[0]).slice(0,2).join('').toUpperCase()||'UK';
+      const stat=p.statline||'';
+      const grade = p.grade ? `<span class="grade-chip grade-${p.grade}" title="Auto grade">${p.grade}</span>` : '';
+      let trend = '';
+      if(typeof p.delta==='number'){
+        trend = p.delta>0 ? `<span class="trend-arrow trend-up" title="Up ${p.delta}">${'▲+'+p.delta}</span>` :
+                p.delta<0 ? `<span class="trend-arrow trend-down" title="Down ${Math.abs(p.delta)}">${'▼'+Math.abs(p.delta)}</span>` :
+                `<span class="trend-arrow trend-flat" title="No change">•</span>`;
+      }
+      return `
+        <div class="row">
+          <img src="${p.headshot||''}" alt="${p.name} headshot" loading="lazy"
+               onerror="this.replaceWith((()=>{const d=document.createElement('div');d.style.cssText='width:48px;height:48px;border-radius:8px;display:grid;place-items:center;background:#0033a0;color:#fff;font:800 14px/1 system-ui';d.textContent='${initials}';return d;})())">
+          <div>
+            <div class="who">${p.name} <span class="tiny">• ${p.pos||''}</span>${grade}${trend}</div>
+            <div class="stat">${stat} <a href="${p.espn||'#'}" target="_blank" rel="noopener" class="tiny">ESPN ↗</a></div>
+          </div>
+        </div>`;
+    }
+    function renderList(arr){ list.innerHTML = (arr&&arr.length) ? arr.slice(0,3).map(rowHTML).join('') : '<div class="tiny">No data available.</div>'; }
+
+    // ---- STATE ----
+    let side='offense', span='last';
+    let LIVE={ offense_last:[], defense_last:[], sum:null };
+
+    wrap?.querySelectorAll('.chip').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        if(btn.dataset.side) side=btn.dataset.side;
+        if(btn.dataset.span) span=btn.dataset.span;
+        wrap.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+        wrap.querySelectorAll(`.chip[data-side="${side}"]`).forEach(c=>c.classList.add('active'));
+        wrap.querySelectorAll(`.chip[data-span="${span}"]`).forEach(c=>c.classList.add('active'));
+        loadMini();
+      });
+    });
+    wrap?.querySelector(`.chip[data-side="${side}"]`)?.classList.add('active');
+    wrap?.querySelector(`.chip[data-span="${span}"]`)?.classList.add('active');
+
+    // ---- TICKER (inline first, then live) ----
+    function renderTicker(items){
+      const track=document.getElementById('tickerTrack');
+      if(!track) return;
+      track.innerHTML=items.map(it=>{
+        const trend=it.trend||'good';
+        const suffix=it.suffix?(' '+it.suffix):'';
+        return `<li><span class="trend-dot ${trend}" aria-hidden="true"></span><span class="label"><strong>${it.label}</strong> <span class="trend-value ${trend}">${it.value}</span>${suffix}</span></li>`;
+      }).join('');
+    }
+    (function(){
+      const items=readInlineJSON('fallback-ticker');
+      if(Array.isArray(items)) renderTicker(items);
+    })();
+
+    // Build a simple live ticker from leaders + score/clock
+    function liveTickerFrom(sum, off=[], def=[]){
+      const comp = sum?.header?.competitions?.[0] || {};
+      const me  = (comp.competitors||[]).find(c=>String(c.team?.id)===String(TEAM_ID))||{};
+      const foe = (comp.competitors||[]).find(c=>String(c.team?.id)!==String(TEAM_ID))||{};
+      const clock = comp.status?.displayClock || '';
+      const period = comp.status?.period ? ('Q'+comp.status.period) : (comp.status?.type?.shortDetail||'');
+      const scoreItem = {
+        label: (me.team?.abbreviation||'UK')+' Score',
+        value: `${me.score||0}-${foe.score||0} • ${period} ${clock||''}`.trim(),
+        trend:'good'
+      };
+      const items = [scoreItem];
+      if(off[0]){ // passer
+        const y = (off[0].statline.match(/YDS\s+(\d+)/)||[])[1];
+        items.push({label:`${off[0].name.split(' ')[0]} (QB)`, value: y?`${y} yds`:(off[0].statline), trend:'good'});
+      }
+      if(off[1]){ // rusher
+        const y = (off[1].statline.match(/YDS\s+(\d+)/)||[])[1];
+        items.push({label:`${off[1].name.split(' ')[0]} (RB)`, value: y?`${y} rush`:(off[1].statline), trend:'good'});
+      }
+      if(off[2]){ // receiver
+        const y = (off[2].statline.match(/YDS\s+(\d+)/)||[])[1];
+        items.push({label:`${off[2].name.split(' ')[0]} (WR)`, value: y?`${y} rec`:(off[2].statline), trend:'good'});
+      }
+      if(def[0]){ items.push({label:`${def[0].name.split(' ')[0]} (DEF)`, value:def[0].statline, trend:'good'}); }
+      return items;
+    }
+
+    // ---- Draw inline spotlight immediately ----
+    (function drawInlineFirst(){
+      const feat=readInlineJSON('fallback-spotlight_featured');
+      if(feat&&feat.name&&featuredEl){
+        const stat = Object.entries(feat.last_game||feat.season||{}).slice(0,3).map(([k,v])=>`${k.toUpperCase().replace('_','-')} ${v}`).join(' • ');
+        const p = { id: espnIdFromUrl(feat.espn), name:feat.name,pos:feat.pos,headshot:feat.headshot,espn:feat.espn, statline:stat, grade:'C' };
+        featuredEl.innerHTML=rowHTML(p); featuredEl.style.display='flex';
+      }
+      loadMini(); // inline arrays until LIVE arrives
+    })();
+
+    function adaptInlineArray(side, span){
+      const arr = readInlineJSON(`fallback-spotlight_${side}_${span}`) || [];
+      return arr.map(p=>{
+        const stat = Object.entries((p.last_game||p.season||{})).slice(0,3).map(([k,v])=>`${k.toUpperCase().replace('_','-')} ${v}`).join(' • ');
+        const id = espnIdFromUrl(p.espn);
+        const m = parseLine(stat);
+        let g='C';
+        if(side==='offense'){
+          if((p.pos||'').toUpperCase()==='QB') g=gradeQB(m);
+          else if((p.pos||'').toUpperCase()==='RB') g=gradeRB(m);
+          else g=gradeWR(m);
+        }else{
+          g=gradeDEF(m);
         }
+        return { id, name:p.name, pos:p.pos, headshot:p.headshot, espn:p.espn, statline:stat, grade:g };
+      });
+    }
 
-        const pick=await chooseEvent(env);
-        if(!pick){ log('no event found; staying on inline'); return; }
+    function idFor(p){ return p.id || espnIdFromUrl(p.espn) || p.name; }
 
-        // Prefer boxscore, then fall back to leaders
-        let off = offenseFromBoxscore(pick.sum, TEAM_ID);
-        if(!off.length){ off = offenseFromLeaders(pick.sum, TEAM_ID); log('offense from leaders fallback'); }
+    function annotateTrends(key, arr){
+      try{
+        const storageKey=`hcSpotRank_${key}`;
+        const prev = JSON.parse(localStorage.getItem(storageKey)||'[]');
+        const curIds = arr.map(idFor);
+        arr.forEach((p, idx)=>{
+          const prevIdx = prev.indexOf(idFor(p));
+          p.delta = prevIdx>=0 ? (prevIdx - idx) : (idx===0? 1 : 0); // new at top shows as rising
+        });
+        localStorage.setItem(storageKey, JSON.stringify(curIds));
+      }catch(e){}
+      return arr;
+    }
 
-        let def = defenseFromBoxscore(pick.sum, TEAM_ID);
-        if(!def.length){ def = defenseFromLeaders(pick.sum, TEAM_ID); log('defense from leaders fallback'); }
+    function loadMini(){
+      if(span==='last'){
+        const arr = side==='offense' ? LIVE.offense_last : LIVE.defense_last;
+        if(arr && arr.length){ renderList(annotateTrends(`${side}_${span}`, arr.slice(0,3))); return; }
+      }
+      const inline = adaptInlineArray(side, span);
+      renderList(annotateTrends(`${side}_${span}`, inline.slice(0,3)));
+    }
 
-        LIVE.offense_last = off;
-        LIVE.defense_last = def;
-
-        // Featured from live if available
-        const firstLive = (off && off[0]) || (def && def[0]);
-        if(firstLive && featuredEl){ featuredEl.innerHTML=rowHTML(firstLive); featuredEl.style.display='flex'; }
-
-        if(span==='last'){ loadMini(); }
+    // ---- ESPN live boot ----
+    async function bootLive(){
+      const env=await getTeamEnv(TEAM_ID);
+      if(env){
+        const teamName=env?.team?.displayName||'Kentucky';
+        const nxt=env?.team?.nextEvent?.[0] || env?.team?.previousEvent?.[0];
+        if(nxt){
+          const comp=nxt.competitions?.[0];
+          const meta=fmtKick(nxt.date || comp?.date, comp?.broadcasts || comp?.broadcast || []);
+          setKickoffUI(teamName, opponentFromComp(comp,TEAM_ID), meta);
+        }
       }
 
-      await bootLive();
-      setInterval(bootLive, POLL_MS);
+      const pick=await chooseEvent(env);
+      if(!pick){ log('no event found; staying on inline'); return; }
+      LIVE.sum = pick.sum;
 
-      // Footer year
-      const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
-    })();
-  });
-  </script>
+      // Prefer boxscore, then fall back to leaders
+      let off = offenseFromBoxscore(pick.sum, TEAM_ID);
+      if(!off.length){ off = offenseFromLeaders(pick.sum, TEAM_ID); log('offense from leaders fallback'); }
+
+      let def = defenseFromBoxscore(pick.sum, TEAM_ID);
+      if(!def.length){ def = defenseFromLeaders(pick.sum, TEAM_ID); log('defense from leaders fallback'); }
+
+      LIVE.offense_last = off;
+      LIVE.defense_last = def;
+
+      // Featured from live if available
+      const firstLive = (off && off[0]) || (def && def[0]);
+      if(firstLive && featuredEl){ featuredEl.innerHTML=rowHTML(firstLive); featuredEl.style.display='flex'; }
+
+      // Update Spotlight + Ticker if user is on "Last"
+      if(span==='last'){ loadMini(); }
+      // Live ticker swap
+      try{ renderTicker(liveTickerFrom(LIVE.sum, LIVE.offense_last, LIVE.defense_last)); } catch(e){}
+
+    }
+
+    await bootLive();
+    setInterval(async()=>{ await bootLive(); }, POLL_MS);
+
+    // Footer year
+    const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
+  })();
+});
+</script>
+
 </body>
 </html>
