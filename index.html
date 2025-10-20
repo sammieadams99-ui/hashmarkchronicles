@@ -20,13 +20,9 @@
   <meta name="twitter:description" content="Independent Kentucky football analysis with film-room breakdowns, data-driven previews, and postgame reviews." />
   <meta name="twitter:image" content="https://artwork.espncdn.com/events/401752743/16x9/1280x720_20250324202019.png" />
 
-  <!-- Retro font (ticker only) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-
-  <!-- Chart.js (if your article chart uses it) -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     :root{
@@ -46,16 +42,13 @@
     a{color:var(--ky-blue); text-decoration:none}
     a:hover{color:var(--accent)}
 
-    /* Top announcement bar */
     .bar{background: var(--ink);color: var(--paper);font: 500 14px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:8px 16px;display:flex;align-items:center;justify-content:center;gap:10px}
     .bar .dot{width:8px;height:8px;border-radius:50%;background:var(--hc-green);display:inline-block}
 
-    /* Header */
     header{position:sticky;top:0;z-index:50;backdrop-filter: blur(8px);background: rgba(255,255,255,.85);border-bottom:2px solid var(--muted)}
     .wrap{max-width:1100px;margin:auto;padding:16px}
     .row{display:flex;align-items:center;justify-content:space-between;gap:16px}
 
-    /* Brand */
     .brand{display:flex;align-items:center;gap:14px}
     .hc-logo{width:56px;height:56px;border-radius:12px;position:relative;overflow:hidden;background:var(--ky-blue);box-shadow:var(--shadow);display:grid;place-items:center}
     .hc-logo span{font: italic 800 28px/1 system-ui,-apple-system,Segoe UI,Arial,sans-serif;color:#fff;letter-spacing:.5px;transform: translateY(3px)}
@@ -68,12 +61,11 @@
     nav ul{display:flex;gap:18px;list-style:none;margin:0;padding:0}
     nav a{font:600 14px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
 
-    /* X chip */
     .chip-x{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--ky-blue);background:#fff;color:var(--ky-blue);font:700 12px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;transition:background .15s ease,color .15s ease,border-color .15s ease}
     .chip-x:hover{background:var(--ky-blue);color:#fff;border-color:var(--ky-blue);text-decoration:none}
     .chip-x .x-glyph{font-weight:900;font-size:14px;line-height:1;display:inline-block;transform:translateY(-1px)}
 
-    /* Ticker — slim; only numbers colored; retro font */
+    /* Ticker */
     .ticker{width:100%;background:#fff;color:#0b0d12;border-top:3px solid var(--ky-blue);border-bottom:1px solid var(--muted);overflow:hidden}
     .ticker__track{display:flex;gap:40px;list-style:none;margin:0;padding:6px 0 6px 100%;font-family:'Press Start 2P',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:11px;line-height:1.1;white-space:nowrap;animation:hc-marquee 28s linear infinite}
     @keyframes hc-marquee{to{transform:translateX(-100%)}}
@@ -85,7 +77,6 @@
     .trend-value.good{color:var(--good)} .trend-value.bad{color:var(--bad)} .trend-value.warn{color:var(--warn)}
     .trend-dot.good{background:var(--good)} .trend-dot.bad{background:var(--bad)} .trend-dot.warn{background:var(--warn)}
 
-    /* Hero and cards */
     .hero{max-width:1100px;margin:24px auto;display:grid;grid-template-columns:1.2fr .8fr;gap:24px}
     .card{background:var(--paper);border:1px solid var(--muted);border-radius:var(--radius);box-shadow:var(--shadow)}
     .card .pad{padding:20px}
@@ -96,33 +87,24 @@
     h2{font-size:22px;margin:0 0 10px}
     p{margin:0 0 12px}
 
-    /* Sidebar blocks */
     .block{padding:16px;border-top:3px solid var(--ky-blue)}
     .stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
     .stat{background:#f3f6fb;border:1px solid var(--muted);border-radius:12px;padding:10px}
     .stat b{display:block;font:800 18px/1.1 "Franklin Gothic Medium","Arial Narrow",Arial,sans-serif}
     .stat span{font:600 12px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#475569}
 
-    /* Main layout */
     main{max-width:1100px;margin:0 auto 48px;display:grid;grid-template-columns:1fr .38fr;gap:24px}
     article{background:var(--paper);border:1px solid var(--muted);border-radius:var(--radius);box-shadow:var(--shadow)}
     .prose{padding:24px}
     .prose h2{margin-top:22px}
     .callout{border-left:4px solid var(--hc-green);background:#f4fff2;padding:12px 14px;border-radius:12px;margin:14px 0}
 
-    /* Article specifics */
     .article-body h1{font-size:2.2em;border-bottom:2px solid #003087;padding-bottom:.3em;margin-top:.5rem}
     .header-image,.atmosphere-image,.special-teams-image{width:100%;height:auto;margin:1em 0;border-radius:6px;display:block}
     .video-container{position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin:1em 0;background:#000 url('https://via.placeholder.com/800x450?text=Video+Loading') center/cover}
     .video-container iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
     blockquote.twitter-tweet{margin:1em auto;border-left:4px solid #003087;padding-left:1em}
     .tweet-embed figcaption{color:#444;font-size:.9em;text-align:center;margin-top:.4rem}
-    table{width:100%;border-collapse:collapse;margin:1em 0;font-size:.9em}
-    th,td{border:1px solid #ddd;padding:.75em;text-align:left}
-    th{background:#003087;color:#fff;font-weight:700}
-    tr:nth-child(even){background:#f9f9f9}
-    .pull-quote{font-size:1.1em;font-style:italic;color:#333;border-left:4px solid #bf5700;padding:.5em 1em;margin:1.5em 0;background:#fff5e6}
-    .section-divider{height:2px;background:linear-gradient(to right,#003087,#bf5700);margin:2rem 0}
 
     /* Mini Spotlight (sidebar rectangles) */
     .mini-spotlight .row{display:flex;gap:10px;align-items:center;padding:8px;border:1px solid var(--muted);border-radius:10px;background:#fff;margin:8px 0}
@@ -135,20 +117,33 @@
     .mini-spotlight .chip{border:1px solid var(--muted);border-radius:999px;padding:6px 10px;background:#fff;font:700 12px/1 system-ui;cursor:pointer}
     .mini-spotlight .chip.active{background:#0033a0;color:#fff;border-color:#0033a0}
 
-    /* Pulse */
+    /* Carousel (sidebar) */
+    .carousel{margin-top:12px}
+    .carousel .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+    .carousel .viewport{position:relative;overflow:hidden;height:120px}
+    .carousel .track{display:flex;transition:transform .45s ease}
+    .carousel .card{min-width:100%;display:flex;gap:10px;align-items:center;padding:10px;border:1px solid var(--muted);border-radius:10px;background:#fff}
+    .carousel .card img{width:56px;height:56px;border-radius:10px;object-fit:cover;border:1px solid var(--muted)}
+    .carousel .name{font:700 14px/1.2 'Franklin Gothic Medium','Arial Narrow',Arial,sans-serif}
+    .carousel .meta{font:600 12px/1.2 system-ui;color:#64748b}
+    .carousel .stats{font:600 12px/1.2 system-ui;color:#475569;margin-top:2px}
+    .carousel button.nav{border:1px solid var(--muted);background:#fff;border-radius:8px;padding:4px 8px;cursor:pointer}
+    .carousel .dots{display:flex;gap:6px;margin-top:6px;justify-content:center}
+    .carousel .dots span{width:6px;height:6px;border-radius:50%;background:#cbd5e1}
+    .carousel .dots span.active{background:#0033a0}
+
     #pulse .feeds{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
     @media (max-width:980px){#pulse .feeds{grid-template-columns:1fr}}
 
-    /* Footer */
     footer{background:var(--ink);color:#c7d2fe;padding:28px 0;margin-top:40px}
     footer .cols{max-width:1100px;margin:auto;display:grid;grid-template-columns:1fr 1fr;gap:18px}
     footer a{color:#c7d2fe}
 
-    /* Responsive */
     @media (max-width:980px){
       .hero, main{grid-template-columns:1fr}
       nav ul{flex-wrap:wrap}
       .article-body h1{font-size:1.8em}
+      .carousel .viewport{height:140px}
     }
   </style>
 </head>
@@ -185,7 +180,6 @@
   <!-- TICKER -->
   <div class="ticker" aria-label="Season leaders & trending stats">
     <ul class="ticker__track trend" id="tickerTrack">
-      <!-- Fallback text remains until JSON loads -->
       <li><span class="trend-dot good"></span><span class="label"><strong>Explosive PA rate</strong> <span class="trend-value good">+6.3%</span> vs base</span></li>
       <li><span class="trend-dot good"></span><span class="label"><strong>Yds/Play (UK)</strong> <span class="trend-value good">5.7</span></span></li>
       <li><span class="trend-dot warn"></span><span class="label"><strong>Havoc Allowed</strong> <span class="trend-value warn">42%</span> steady</span></li>
@@ -218,14 +212,31 @@
           <div class="stat"><b>58%</b><span>Success Rate (PA)</span></div>
         </div>
       </div>
-      <div class="block">
-        <div class="kicker">Hashmarks</div>
-        <p style="margin:8px 0 12px">Quick-hit trends we’re tracking.</p>
-        <ul>
-          <li>RPO usage climbing on 2nd-and-medium.</li>
-          <li>Boundary corner blitz ~12% vs heavy sets.</li>
-          <li>Field-hash shots: +1.2 EPA/play.</li>
-        </ul>
+      <div class="block mini-spotlight" id="miniSpotlight">
+        <div class="kicker">Player Spotlight</div>
+        <div id="miniFeatured" class="row" style="display:none"></div>
+        <div class="toggles">
+          <button class="chip" data-side="offense">Offense</button>
+          <button class="chip" data-side="defense">Defense</button>
+          <button class="chip" data-span="last">Last</button>
+          <button class="chip" data-span="season">Season</button>
+        </div>
+        <div id="miniList"></div>
+
+        <!-- Carousel -->
+        <div class="carousel" id="spotCarousel">
+          <div class="head">
+            <div class="kicker">Rotating Spotlight</div>
+            <div>
+              <button class="nav" data-dir="-1" aria-label="Previous">‹</button>
+              <button class="nav" data-dir="1" aria-label="Next">›</button>
+            </div>
+          </div>
+          <div class="viewport">
+            <div class="track" id="carouselTrack"></div>
+          </div>
+          <div class="dots" id="carouselDots"></div>
+        </div>
       </div>
     </aside>
   </section>
@@ -234,39 +245,14 @@
   <main>
     <article id="article" class="article">
       <div class="prose article-body">
-        <img
-          src="https://artwork.espncdn.com/events/401752743/16x9/1280x720_20250324202019.png"
-          alt="Texas Longhorns vs Kentucky Wildcats — ESPN event graphic"
-          class="header-image"
-          referrerpolicy="no-referrer">
-
+        <img src="https://artwork.espncdn.com/events/401752743/16x9/1280x720_20250324202019.png" alt="Texas Longhorns vs Kentucky Wildcats — ESPN event graphic" class="header-image" referrerpolicy="no-referrer">
         <h1>Kentucky vs. Texas Football Preview – Oct. 18, 2025</h1>
-
         <h2>Opening Context</h2>
-        <p>…(your original copy continues)…</p>
-
-        <!-- keep your embeds/charts/sections unchanged -->
+        <p>(…your original copy continues…)</p>
       </div>
     </article>
 
     <aside aria-label="Sidebar">
-      <!-- Player Spotlight (compact rectangles) -->
-      <div class="card pad mini-spotlight" id="miniSpotlight">
-        <div class="kicker">Player Spotlight</div>
-        <div id="miniFeatured" class="row" style="display:none"></div>
-
-        <div class="toggles">
-          <button class="chip" data-side="offense">Offense</button>
-          <button class="chip" data-side="defense">Defense</button>
-          <button class="chip" data-span="last">Last</button>
-          <button class="chip" data-span="season">Season</button>
-        </div>
-
-        <div id="miniList"></div>
-        <div class="tiny">Auto-updating from official stats (falls back if offline).</div>
-      </div>
-
-      <!-- Newsletter -->
       <div class="card pad">
         <div class="kicker">Newsletter</div>
         <h3>Join the Film Room</h3>
@@ -278,7 +264,6 @@
         </form>
       </div>
 
-      <!-- About -->
       <div class="card pad" id="about">
         <div class="kicker">About</div>
         <p>Hashmark Chronicles is an independent Kentucky athletics outlet: film-first, data-backed, and unbothered by press-room groupthink. Football now; hoops soon.</p>
@@ -328,69 +313,28 @@
     </div>
   </footer>
 
-  <!-- X/Twitter embeds -->
   <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-  <!-- ======== INLINE FALLBACK DATA ======== -->
+  <!-- Fallback data (minimal) -->
   <script type="application/json" id="fallback-ticker">
   [
-    { "label":"Explosive PA rate", "value":"+6.3%", "trend":"good", "suffix":"vs base" },
-    { "label":"Yds/Play (UK)", "value":"5.7", "trend":"good" },
-    { "label":"Havoc Allowed", "value":"42%", "trend":"warn", "suffix":"steady" },
-    { "label":"3rd & 6+ defense", "value":"46%", "trend":"bad", "suffix":"conv. allowed" },
-    { "label":"Boley", "value":"885 yds • 4 TD", "trend":"good" }
+    { "label":"Off SR", "unit":"%", "val":"45.4", "d":"up" },
+    { "label":"Havoc Allowed", "unit":"%", "val":"14.1", "d":"down" }
   ]
   </script>
-
   <script type="application/json" id="fallback-spotlight_featured">
-  {
-    "name":"Cutter Boley","pos":"QB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/5141378.png",
-    "espn":"https://www.espn.com/college-football/player/_/id/5141378/cutter-boley",
-    "last_game":{"opp":"Texas","cmp_att":"31/39","yds":"258","td":"0","int":"1"},
-    "season":{"cmp_pct":"64%","yds":"885","td":"4","int":"4"}
-  }
+  {"name":"Cutter Boley","pos":"QB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/5141378.png","espn":"https://www.espn.com/college-football/player/_/id/5141378/cutter-boley","last_game":{"opp":"Texas","cmp_att":"31/39","yds":"258","td":"0","int":"1"},"season":{"cmp_pct":"64%","yds":"885","td":"4","int":"4"}}
   </script>
+  <script type="application/json" id="fallback-spotlight_offense_last">[]</script>
+  <script type="application/json" id="fallback-spotlight_offense_season">[]</script>
+  <script type="application/json" id="fallback-spotlight_defense_last">[]</script>
+  <script type="application/json" id="fallback-spotlight_defense_season">[]</script>
 
-  <script type="application/json" id="fallback-spotlight_offense_last">
-  [
-    {"name":"Cutter Boley","pos":"QB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/5141378.png","espn":"https://www.espn.com/college-football/player/_/id/5141378/cutter-boley","last_game":{"opp":"Texas","cmp_att":"31/39","yds":"258","td":"0","int":"1"},"season":{"cmp_pct":"64%","yds":"885","td":"4","int":"4"}},
-    {"name":"Seth McGowan","pos":"RB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/4686468.png","espn":"https://www.espn.com/college-football/player/_/id/4686468/seth-mcgowan","last_game":{"opp":"Texas","rush":"14","yds":"45","td":"0","rec":"7","rec_yds":"68"},"season":{"car":"93","yds":"476","td":"7","avg":"5.1"}},
-    {"name":"Kendrick Law","pos":"WR","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/4685441.png","espn":"https://www.espn.com/college-football/player/_/id/4685441/kendrick-law","last_game":{"opp":"Texas","rec":"3","yds":"25","td":"0"},"season":{"rec":"22","yds":"199","td":"1","avg":"9.0"}}
-  ]
-  </script>
-
-  <script type="application/json" id="fallback-spotlight_offense_season">
-  [
-    {"name":"Seth McGowan","pos":"RB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/4686468.png","espn":"https://www.espn.com/college-football/player/_/id/4686468/seth-mcgowan","season":{"car":"93","yds":"476","td":"7","avg":"5.1"}},
-    {"name":"Cutter Boley","pos":"QB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/5141378.png","espn":"https://www.espn.com/college-football/player/_/id/5141378/cutter-boley","season":{"cmp_pct":"64%","yds":"885","td":"4","int":"4"}},
-    {"name":"Ja'Mori Maclin","pos":"WR","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/4430270.png","espn":"https://www.espn.com/college-football/player/_/id/4430270/jamori-maclin","season":{"rec":"8","yds":"135","td":"0","avg":"16.9"}}
-  ]
-  </script>
-
-  <script type="application/json" id="fallback-spotlight_defense_last">
-  [
-    {"name":"Alex Afari Jr.","pos":"DB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/4819224.png","espn":"https://www.espn.com/college-football/player/_/id/4819224/alex-afari-jr","last_game":{"opp":"Texas","tkl":"7","tfl":"1","pbu":"1"}},
-    {"name":"Daveren Rayner","pos":"LB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/4430670.png","espn":"https://www.espn.com/college-football/player/_/id/4430670/daveren-rayner","last_game":{"opp":"Texas","tkl":"9","tfl":"1"}},
-    {"name":"Jordan Lovett","pos":"DB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/4683458.png","espn":"https://www.espn.com/college-football/player/_/id/4683458/jordan-lovett","last_game":{"opp":"Texas","tkl":"6"}}
-  ]
-  </script>
-
-  <script type="application/json" id="fallback-spotlight_defense_season">
-  [
-    {"name":"Alex Afari Jr.","pos":"DB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/4819224.png","espn":"https://www.espn.com/college-football/player/_/id/4819224/alex-afari-jr","season":{"tkl":"38","tfl":"4","pbu":"4"}},
-    {"name":"Daveren Rayner","pos":"LB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/4430670.png","espn":"https://www.espn.com/college-football/player/_/id/4430670/daveren-rayner","season":{"tkl":"42","tfl":"3","sck":"1"}},
-    {"name":"DJ Waller Jr.","pos":"DB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/5092262.png","espn":"https://www.espn.com/college-football/player/_/id/5092262/dj-waller-jr","season":{"tkl":"21","int":"1","pbu":"3"}}
-  ]
-  </script>
-  <!-- ======== END INLINE FALLBACKS ======== -->
-
-  <!-- Data loaders (ticker + player spotlight) -->
+  <!-- Data loaders -->
   <script>
   (async function(){
-    // Fetch with graceful fallback to inline JSON
     async function fetchOrFallback(primaryPath, fallbackScriptId){
-      // Use relative paths so it works on custom domain AND GitHub Pages subpath
-      const tryPaths = [primaryPath.replace(/^\\//,''), primaryPath]; // 'data/...' then '/data/...'
+      const tryPaths = [primaryPath.replace(/^\//,''), primaryPath];
       for(const p of tryPaths){
         try{
           const r = await fetch(p, {cache:'no-store'});
@@ -402,24 +346,23 @@
       return null;
     }
 
-    /* --- TICKER --- */
+    /* --- Ticker --- */
     (async ()=>{
-      const items = await fetchOrFallback('data/ticker.json','fallback-ticker');
       const track = document.getElementById('tickerTrack');
-      if(Array.isArray(items) && track){
-        track.innerHTML = items.map(it => {
-          const trend = it.trend || 'warn';
-          const suffix = it.suffix ? ' ' + it.suffix : '';
-          return `
-            <li>
-              <span class="trend-dot ${trend}" aria-hidden="true"></span>
-              <span class="label"><strong>${it.label}</strong> <span class="trend-value ${trend}">${it.value}</span>${suffix}</span>
-            </li>`;
-        }).join('');
+      const data = await fetchOrFallback('data/ticker.json','fallback-ticker');
+      if(!Array.isArray(data?.items) && Array.isArray(data)){ // legacy shape
+        track.innerHTML = data.map(it => `<li><span class="trend-dot ${it.trend||'warn'}"></span><span class="label"><strong>${it.label}</strong> <span class="trend-value ${it.trend||'warn'}">${it.value}</span>${it.suffix?(' '+it.suffix):''}</span></li>`).join('');
+        return;
       }
+      const items = data?.items || [];
+      track.innerHTML = items.map(it => {
+        const trend = it.d === 'up' ? 'good' : it.d === 'down' ? 'bad' : 'warn';
+        const v = (it.val ?? '—') + (it.unit||'');
+        return `<li><span class="trend-dot ${trend}"></span><span class="label"><strong>${it.label}</strong> <span class="trend-value ${trend}">${v}</span>${it.last?'' : ''}</span></li>`;
+      }).join('');
     })();
 
-    /* --- MINI SPOTLIGHT (sidebar) --- */
+    /* --- Mini Spotlight --- */
     const wrap = document.getElementById('miniSpotlight');
     const list = document.getElementById('miniList');
     const featuredEl = document.getElementById('miniFeatured');
@@ -461,29 +404,70 @@
     function rowHTML(p, featured=false){
       const stat = shortStat(p.last_game) || shortStat(p.season) || '';
       const initials = (p.name||'').split(/\\s+/).map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'UK';
-      return `
-        <div class="row">
-          <img src="${p.headshot||''}" alt="${p.name} headshot"
-               onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div style=&quot;width:48px;height:48px;border-radius:8px;display:grid;place-items:center;background:#0033a0;color:#fff;font:800 14px/1 system-ui&quot;>${initials}</div>')">
-          <div>
-            <div class="who">${p.name} <span class="tiny">• ${p.pos||''}</span></div>
-            <div class="stat">${stat} <a href="${p.espn||'#'}" target="_blank" rel="noopener" class="tiny">ESPN ↗</a></div>
-          </div>
-        </div>`;
+      return `<div class="row">
+        <img src="${p.headshot||''}" alt="${p.name} headshot"
+             onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div style=&quot;width:48px;height:48px;border-radius:8px;display:grid;place-items:center;background:#0033a0;color:#fff;font:800 14px/1 system-ui&quot;>${initials}</div>')">
+        <div>
+          <div class="who">${p.name} <span class="tiny">• ${p.pos||''}</span></div>
+          <div class="stat">${stat} <a href="${p.espn||'#'}" target="_blank" rel="noopener" class="tiny">ESPN ↗</a></div>
+        </div>
+      </div>`;
     }
     function shortStat(s){
       if(!s) return '';
-      const keys = ['cmp_att','yds','td','int','rush_yds','rush_td','rec','rec_yds','rec_td'];
-      const parts = [];
-      for(const k of keys){
-        if(s[k]!=null && s[k]!=='' && parts.length<3){
-          parts.push(({cmp_att:'CMP/ATT',yds:'YDS',td:'TD',int:'INT',rush_yds:'RUSH',rush_td:'R-TD',rec:'REC',rec_yds:'REC-YDS',rec_td:'REC-TD'})[k] + ' ' + s[k]);
-        }
-      }
-      return parts.join(' • ');
+      const keys = ['cmp_att','yds','td','int','rush_yds','rush_td','rec','rec_yds','rec_td','tkl','tfl','sck','pbu','def_td'];
+      const labels = {cmp_att:'CMP/ATT',yds:'YDS',td:'TD',int:'INT',rush_yds:'RUSH',rush_td:'R-TD',rec:'REC',rec_yds:'REC-YDS',rec_td:'REC-TD',tkl:'TKL',tfl:'TFL',sck:'SACK',pbu:'PBU',def_td:'DEF-TD'};
+      const out = [];
+      for(const k of keys){ if(s[k] != null && s[k] !== '' && out.length < 3) out.push(labels[k] + ' ' + s[k]); }
+      return out.join(' • ');
     }
 
     loadMini();
+
+    /* --- Carousel (12-player rotation from 4 feeds) --- */
+    const cTrack = document.getElementById('carouselTrack');
+    const cDots  = document.getElementById('carouselDots');
+    const navs = document.querySelectorAll('#spotCarousel button.nav');
+    let cIndex = 0, cData = [] , timer = null;
+
+    async function loadCarousel(){
+      const [ol,dl,os,ds] = await Promise.all([
+        fetchOrFallback('data/spotlight_offense_last.json','fallback-spotlight_offense_last'),
+        fetchOrFallback('data/spotlight_defense_last.json','fallback-spotlight_defense_last'),
+        fetchOrFallback('data/spotlight_offense_season.json','fallback-spotlight_offense_season'),
+        fetchOrFallback('data/spotlight_defense_season.json','fallback-spotlight_defense_season')
+      ]);
+      const pool = [...(ol||[]),...(dl||[]),...(os||[]),...(ds||[])];
+      const seen = new Set();
+      cData = pool.filter(p=>{ if(seen.has(p.name)) return false; seen.add(p.name); return true; }).slice(0,12);
+      cTrack.innerHTML = cData.map(cardHTML).join('');
+      cDots.innerHTML = cData.map((_,i)=>`<span class="${i===0?'active':''}"></span>`).join('');
+      cIndex = 0; updateCarousel();
+      startAuto();
+    }
+    function cardHTML(p){
+      const stat = shortStat(p.last_game) || shortStat(p.season) || '';
+      const initials = (p.name||'').split(/\\s+/).map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'UK';
+      return `<div class="card">
+        <img src="${p.headshot||''}" alt="${p.name}" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div style=&quot;width:56px;height:56px;border-radius:10px;display:grid;place-items:center;background:#0033a0;color:#fff;font:800 16px/1 system-ui&quot;>${initials}</div>')">
+        <div>
+          <div class="name">${p.name}</div>
+          <div class="meta">${p.pos||''} • <a class="tiny" target="_blank" rel="noopener" href="${p.espn||'#'}">ESPN ↗</a></div>
+          <div class="stats">${stat}</div>
+        </div>
+      </div>`;
+    }
+    function updateCarousel(){
+      const w = cTrack.querySelector('.card')?.offsetWidth || 0;
+      cTrack.style.transform = `translateX(-${cIndex*w}px)`;
+      Array.from(cDots.children).forEach((d,i)=>d.classList.toggle('active',i===cIndex));
+    }
+    function next(n=1){ cIndex = (cIndex + n + cData.length) % cData.length; updateCarousel(); }
+    function startAuto(){ stopAuto(); timer = setInterval(()=>next(1), 7000); }
+    function stopAuto(){ if(timer){ clearInterval(timer); timer=null;} }
+    navs.forEach(b=>b.addEventListener('click',()=>{ stopAuto(); next(Number(b.dataset.dir)); startAuto(); }));
+
+    loadCarousel();
   })();
 
   // footer year
