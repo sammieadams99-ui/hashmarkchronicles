@@ -2,5 +2,21 @@
   "year": "2025",
   "team": "Kentucky",
   "lastWeek": 8,
-  "items": []
+  "items": [
+    {
+      "label": "Yards/Play (UK)",
+      "value": 5.7,
+      "context": "offense"
+    },
+    {
+      "label": "EPA/Play last 3",
+      "value": "+0.08",
+      "context": "offense"
+    },
+    {
+      "label": "Havoc Allowed",
+      "value": "42%",
+      "context": "defense"
+    }
+  ]
 }
