@@ -1,6 +1,12 @@
 {
-  "Zach Calzada":  { "id": 4426847, "slug": "zach-calzada",  "pos": "QB", "aliases": [] },
-  "Daveren Rayner":{ "id": 4436670, "slug": "daveren-rayner","pos": "LB", "aliases": [] },
-  "Landyn Watson": { "id": 4431668, "slug": "landyn-watson", "pos": "LB", "aliases": [] },
-  "Jay Maclin":    { "id": 4435360, "slug": "jay-maclin",    "pos": "WR", "aliases": [] }
+  "zach-calzada": { "espnId": 4426847 },
+  "daveren-rayner": { "espnId": 4436670 },
+  "landyn-watson": { "espnId": 4431688 },
+  "cam-miller":    { "espnId": 5141555 },
+  "jay-maclin":    { "espnId": 4696437 },
+  "alex-raynor":   { "espnId": 4241355 },
+  "jordan-lovett": { "espnId": 4685310 },
+  "kristian-story":{ "espnId": 4428995 },
+  "josaih-hayes":  { "espnId": 4430666 },
+  "josh-braun":    { "espnId": 4430667 }
 }
