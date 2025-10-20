@@ -1,0 +1,29 @@
+name: Update Spotlight Feeds
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install deps
+        run: npm i
+      - name: Build spotlight JSON
+        env:
+          CFBD_KEY: ${{ secrets.CFBD_KEY }}
+          YEAR: "2025"
+        run: npm run build:spotlight
+      - name: Commit & push
+        run: |
+          git config user.name "spotlight-bot"
+          git config user.email "actions@github.com"
+          git add data/spotlight_*.json
+          git commit -m "Update spotlight feeds" || echo "No changes"
+          git push
