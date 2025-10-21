@@ -173,6 +173,20 @@
 .grade-chip .trend.up   { color: var(--good); }
 .grade-chip .trend.flat { color: #64748b; }
 .grade-chip .trend.down { color: var(--bad); }
+    /* === Grade pill (reverted “clean chip” look) === */
+.mini-spotlight .row{ justify-content: space-between }
+.grade-pill{
+  margin-left:auto; display:inline-flex; align-items:baseline; gap:6px;
+  padding:4px 10px; border-radius:999px; border:1px solid #e5e7eb;
+  font:800 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background:#fff;
+}
+.grade-pill small{font:700 11px/1 system-ui; opacity:.75}
+.grade-A{ color:#065f46; background:#ecfdf5; border-color:#a7f3d0 }
+.grade-B{ color:#1e40af; background:#eff6ff; border-color:#c7d2fe }
+.grade-C{ color:#92400e; background:#fffbeb; border-color:#fde68a }
+.grade-D{ color:#7f1d1d; background:#fef2f2; border-color:#fecaca }
+.grade-F{ color:#7f1d1d; background:#fef2f2; border-color:#fecaca }
   </style>
 </head>
 <body>
