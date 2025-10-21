@@ -1,1 +1,29 @@
-[]
+[
+  {
+    "name": "Cutter Boley",
+    "pos": "QB",
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5141378.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/5141378",
+    "statline": "CMP/ATT 21/31 • YDS 284 • TD 3",
+    "grade_pct": 94,
+    "grade_letter": "A"
+  },
+  {
+    "name": "Seth McGowan",
+    "pos": "RB",
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4686468.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4686468",
+    "statline": "RUSH 118 • TD 2 • REC 3",
+    "grade_pct": 88,
+    "grade_letter": "B+"
+  },
+  {
+    "name": "Kendrick Law",
+    "pos": "WR",
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4685441.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4685441",
+    "statline": "REC 7 • YDS 112 • TD 1",
+    "grade_pct": 86,
+    "grade_letter": "B"
+  }
+]

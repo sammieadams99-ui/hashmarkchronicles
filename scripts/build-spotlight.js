@@ -4,7 +4,13 @@ import fetch from 'node-fetch';
 
 const YEAR = process.env.YEAR || String(new Date().getFullYear());
 const TEAM = 'Kentucky';
-const CFBD_KEY = process.env.CFBD_KEY || '';
+const CFBD_KEY = process.env.CFBD_KEY;
+
+if (!CFBD_KEY) {
+  console.error('[spotlight] Missing CFBD_KEY env var — aborting.');
+  process.exit(1);
+}
+
 const HDRS = { Authorization: `Bearer ${CFBD_KEY}` };
 
 const OUT = {
@@ -22,8 +28,12 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 async function get(url) {
   // retry light for transient CFBD hiccups
   for (let i=0;i<2;i++){
-    const r = await fetch(url, { headers: HDRS });
-    if (r.ok) return r.json();
+    try {
+      const r = await fetch(url, { headers: HDRS });
+      if (r.ok) return r.json();
+    } catch (err) {
+      if (i === 0) console.warn('[spotlight] fetch failed', url, err?.message||err);
+    }
     await sleep(300);
   }
   return null;
@@ -97,13 +107,35 @@ function statLineDef(p) {
   return line.join(' · ') || '—';
 }
 
+function resolveMeta(map, key) {
+  const raw = map?.[key];
+  if (raw == null) return null;
+  if (typeof raw === 'string' || typeof raw === 'number') {
+    const id = String(raw).trim();
+    return id ? { espnId: id } : null;
+  }
+  if (typeof raw === 'object') {
+    const id = raw.espnId ?? raw.espnid ?? raw.id ?? raw.ID ?? raw.playerId ?? raw.player_id;
+    if (!id && typeof raw === 'string') {
+      const str = String(raw).trim();
+      return str ? { espnId: str } : null;
+    }
+    return id ? { espnId: id } : null;
+  }
+  return null;
+}
+
 function decorate(p, map) {
   const slug = slugify(p.name);
-  const meta = map[slug] || {};
-  const headshot = meta.espnId
+  const meta =
+    resolveMeta(map, slug) ||
+    resolveMeta(map, slug.toLowerCase()) ||
+    resolveMeta(map, p.name) ||
+    resolveMeta(map, p.name?.toLowerCase?.());
+  const headshot = meta?.espnId
     ? `https://a.espncdn.com/i/headshots/college-football/players/full/${meta.espnId}.png`
     : ""; // front-end will draw SVG fallback if blank
-  const espn = meta.espnId
+  const espn = meta?.espnId
     ? `https://www.espn.com/college-football/player/_/id/${meta.espnId}`
     : `https://www.espn.com/search/results?q=${encodeURIComponent(p.name + ' Kentucky football')}`;
   return { ...p, slug, headshot, espn };
@@ -111,6 +143,19 @@ function decorate(p, map) {
 
 function topK(list, scorer, k=3){
   return [...list].sort((a,b)=>scorer(b)-scorer(a)).slice(0,k);
+}
+
+function formatRow(base, statline, score, span){
+  return {
+    name: base.name,
+    pos: base.pos,
+    slug: base.slug,
+    headshot: base.headshot,
+    espn: base.espn,
+    statline,
+    score: Number.isFinite(score) ? Number(score) : null,
+    span
+  };
 }
 
 async function ensureDir(){
@@ -128,7 +173,11 @@ async function buildTicker() {
   // last played week
   const games = await get(`https://api.collegefootballdata.com/games?year=${YEAR}&team=${encodeURIComponent(TEAM)}&seasonType=regular`);
   const played = (games||[]).filter(g => g.home_points != null && g.away_points != null);
-  const lastWeek = played.length ? Math.max(...played.map(g => g.week || g.week_number || 0)) : null;
+  if (!played.length) {
+    console.log('[spotlight] No completed games yet — skipping update.');
+    process.exit(0);
+  }
+  const lastWeek = Math.max(...played.map(g => g.week || g.week_number || 0));
   base.lastWeek = lastWeek ?? null;
 
   // season advanced (success rate, havoc)
@@ -201,25 +250,29 @@ async function buildSpotlight() {
   const offenseLast = topK(gamePlayers.filter(p => /QB|RB|WR|TE|ATH/i.test(p.pos)), scoreOff, 3)
     .map(p => {
       const base = decorate(p, map);
-      return { name: base.name, pos: base.pos, slug: base.slug, headshot: base.headshot, espn: base.espn, last_game: statLineOff(p), season: {} };
+      const statline = statLineOff(p);
+      return formatRow(base, statline, scoreOff(p), 'last');
     });
 
   const defenseLast = topK(gamePlayers.filter(p => !/QB|RB|WR|TE/i.test(p.pos)), scoreDef, 3)
     .map(p => {
       const base = decorate(p, map);
-      return { name: base.name, pos: base.pos, slug: base.slug, headshot: base.headshot, espn: base.espn, last_game: statLineDef(p), season: {} };
+      const statline = statLineDef(p);
+      return formatRow(base, statline, scoreDef(p), 'last');
     });
 
   const offenseSeason = topK(seasonPlayers.filter(p => /QB|RB|WR|TE|ATH/i.test(p.pos)), scoreOff, 3)
     .map(p => {
       const base = decorate(p, map);
-      return { name: base.name, pos: base.pos, slug: base.slug, headshot: base.headshot, espn: base.espn, last_game: {}, season: statLineOff(p) };
+      const statline = statLineOff(p);
+      return formatRow(base, statline, scoreOff(p), 'season');
     });
 
   const defenseSeason = topK(seasonPlayers.filter(p => !/QB|RB|WR|TE/i.test(p.pos)), scoreDef, 3)
     .map(p => {
       const base = decorate(p, map);
-      return { name: base.name, pos: base.pos, slug: base.slug, headshot: base.headshot, espn: base.espn, last_game: {}, season: statLineDef(p) };
+      const statline = statLineDef(p);
+      return formatRow(base, statline, scoreDef(p), 'season');
     });
 
   // featured = best of the 6 (prefer last-game offense, then defense, else season offense)
@@ -230,15 +283,15 @@ async function buildSpotlight() {
     slug: '—',
     headshot: '',
     espn: `https://www.espn.com/search/results?q=${encodeURIComponent('Kentucky football')}`,
-    last_game: {},
-    season: {}
+    statline: '—',
+    span: 'last'
   };
 
   return { lastWeek, offenseLast, defenseLast, offenseSeason, defenseSeason, featured };
 }
 
 // ---- Run all ----
-(async () => {
+async function main() {
   await ensureDir();
 
   const sp = await buildSpotlight();
@@ -252,4 +305,9 @@ async function buildSpotlight() {
   await writeJSON(OUT.ticker, ticker);
 
   console.log('Spotlight + ticker written for', TEAM, YEAR, 'Last week:', sp.lastWeek ?? 'n/a');
-})();
+}
+
+main().catch(err => {
+  console.error('[spotlight] Non-fatal build error:', err);
+  process.exit(0);
+});
