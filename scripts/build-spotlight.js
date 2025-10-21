@@ -570,86 +570,146 @@ async function buildSpotlight(latestGame = null) {
     }
   }
 
+  const offenseSeason = rankPlayers(
+    seasonPlayers.filter(p => /QB|RB|WR|TE|ATH/i.test(p.pos)),
+    scoreOff,
+    statLineOff,
+    offenseDetails,
+    map,
+    { side: 'offense', span: 'season' }
+  );
+
+  const defenseSeason = rankPlayers(
+    seasonPlayers.filter(p => !/QB|RB|WR|TE/i.test(p.pos)),
+    scoreDef,
+    statLineDef,
+    defenseDetails,
+    map,
+    { side: 'defense', span: 'season' }
+  );
+
   let offenseLast = [];
   let defenseLast = [];
 
   {
     const players = Array.isArray(box?.players) ? box.players : (Array.isArray(box) ? box : []);
-    const num = v => Number(String(v||'').replace(/[^0-9.-]/g,''))||0;
-    const mk  = (name,pos,head,espn,line) => ({ name, pos, headshot: head||'', espn: espn||'#', statline: line||'' });
 
-    function badgeFor(ath){
-      const id = ath?.id || ath?.athlete?.id;
+    // ---- label-driven helpers ----
+    const num = v => Number(String(v||'').replace(/[^0-9.-]/g,'')) || 0;
+    const mk  = (name,pos,head,espn,line) => ({ name, pos, headshot: head||'', espn: espn||'#', statline: line || '—' });
+
+    function tagOf(e){
+      const id   = e?.athlete?.id || e?.id;
       const head = id ? `https://a.espncdn.com/i/headshots/college-football/players/full/${id}.png` : '';
-      const name = ath?.athlete?.displayName || ath?.displayName || 'Unknown';
-      const pos  = ath?.athlete?.position?.abbreviation || '';
+      const name = e?.athlete?.displayName || e?.displayName || 'Unknown';
+      const pos  = e?.athlete?.position?.abbreviation || '';
       const espn = id ? `https://www.espn.com/college-football/player/_/id/${id}` : '#';
       return { id, head, name, pos, espn };
     }
-
-    // Normalize each entry to {label,value} array if provided
     function flatStats(e){
       return Array.isArray(e?.stats) ? e.stats.map(s => ({
-        label: String(s?.label||s?.name||'').toUpperCase(),
-        value: s?.value ?? ''
+        label: String(s?.label || s?.name || '').toUpperCase(),
+        value: String(s?.value ?? '')
       })) : [];
     }
 
-    function bestOffenseRows(players){
-      const passers = [], rushers = [], receivers = [];
-      for (const e of players){
-        const cat = String(e?.statCategory||e?.category||'').toLowerCase();
-        const st  = flatStats(e);
-        const tag = badgeFor(e);
-        if (!tag.name) continue;
-        if (cat.includes('pass') || /qb/i.test(tag.pos)) {
-          const y = st.find(s=>/YDS|PASS/.test(s.label)); const td = st.find(s=>/TD|TOUCH/.test(s.label));
-          passers.push({ tag, yds:num(y?.value), line: st.slice(0,3).map(s=>`${s.label.replace('_','-')} ${s.value}`).join(' • ') });
-        }
-        if (cat.includes('rush') || /rb/i.test(tag.pos)) {
-          const y = st.find(s=>/YDS|RUSH/.test(s.label)); const td = st.find(s=>/TD|TOUCH/.test(s.label));
-          rushers.push({ tag, yds:num(y?.value), line: st.slice(0,3).map(s=>`${s.label.replace('_','-')} ${s.value}`).join(' • ') });
-        }
-        if (cat.includes('rec') || /(wr|te)/i.test(tag.pos)) {
-          const y = st.find(s=>/YDS|REC/.test(s.label)); const td = st.find(s=>/TD|TOUCH/.test(s.label));
-          receivers.push({ tag, yds:num(y?.value), line: st.slice(0,3).map(s=>`${s.label.replace('_','-')} ${s.value}`).join(' • ') });
-        }
-      }
-      passers.sort((a,b)=>b.yds-a.yds);
-      rushers.sort((a,b)=>b.yds-a.yds);
-      receivers.sort((a,b)=>b.yds-a.yds);
-      const P = passers[0], R = rushers[0], W = receivers[0];
-      return [P,R,W].filter(Boolean).map(x => mk(x.tag.name, x.tag.pos, x.tag.head, x.tag.espn, x.line));
+    // Minimal line: take up to three stats, or synthesize something
+    function lineOf(st){
+      const s = st.slice(0,3).map(x => `${x.label.replace('_','-')} ${x.value}`).filter(Boolean).join(' • ');
+      return s || '—';
     }
 
-    function bestDefenseRows(players){
+    // DEBUG: show first entry labels once
+    if (players?.length){
+      const st0 = flatStats(players[0]).map(s => s.label);
+      console.log("[spotlight] sample labels:", st0.slice(0,15));
+    }
+
+    // Offense “last”: top by yards-like stat per role
+    function topBy(labelsRequired, yardsLike=/YDS/){
+      const picks = [];
+      for (const e of players){
+        const st = flatStats(e);
+        const labels = st.map(s => s.label);
+        // require that each text in labelsRequired is present
+        const ok = labelsRequired.every(req => labels.some(l => l.includes(req)));
+        if (!ok) continue;
+        const y = st.find(s => yardsLike.test(s.label));
+        const tag = tagOf(e);
+        picks.push({ tag, yds: num(y?.value), line: lineOf(st) });
+      }
+      picks.sort((a,b)=> b.yds - a.yds);
+      const b = picks[0];
+      return b ? mk(b.tag.name, b.tag.pos, b.tag.head, b.tag.espn, b.line) : null;
+    }
+
+    const passRow = topBy(["CMP-ATT"]) || topBy(["CMP/ATT"]) || topBy(["C-A"]) || topBy(["PASS"]);
+    const rushRow = topBy(["RUSH"]);
+    const recvRow = topBy(["REC","YDS"]) || topBy(["REC"]);  // allow REC-only if YDS label missing
+    let offenseLastRows = [passRow, rushRow, recvRow].filter(Boolean).slice(0,3);
+
+    // Defense “last”: score by tackles + havoc
+    function bestDefense(){
       const rows = [];
       for (const e of players){
-        const cat = String(e?.statCategory||e?.category||'').toLowerCase();
-        if (!cat.includes('def')) continue;
-        const st  = flatStats(e);
-        const tag = badgeFor(e);
-        const TKL = num((st.find(s=>/TOT|TOTAL/.test(s.label))||{}).value);
-        const TFL = num((st.find(s=>/TFL/.test(s.label))||{}).value);
-        const SCK = num((st.find(s=>/SCK|SACK/.test(s.label))||{}).value);
-        const INT = num((st.find(s=>/INT|INTERCEPT/.test(s.label))||{}).value);
+        const st = flatStats(e);
+        const get = (...names)=>{ const hit = st.find(s => names.some(n => s.label.includes(n))); return num(hit?.value); };
+        const TKL = get("TOT","TOTAL","TKL");
+        const TFL = get("TFL","LOSS");
+        const SCK = get("SCK","SACK");
+        const INT = get("INT","INTERCEPT");
+        if (!(TKL||TFL||SCK||INT)) continue;
+        const tag = tagOf(e);
+        const parts = [];
+        if (TKL) parts.push(`TKL ${TKL}`);
+        if (TFL) parts.push(`TFL ${TFL}`);
+        if (SCK) parts.push(`SACKS ${SCK}`);
+        if (INT) parts.push(`INT ${INT}`);
         const score = TKL*2 + TFL*6 + SCK*8 + INT*10;
-        const line = [ TKL?`TKL ${TKL}`:'', TFL?`TFL ${TFL}`:'', SCK?`SACKS ${SCK}`:'', INT?`INT ${INT}`:'' ].filter(Boolean).slice(0,3).join(' • ');
-        rows.push({ tag, score, line });
+        rows.push({ score, card: mk(tag.name, tag.pos, tag.head, tag.espn, parts.slice(0,3).join(' • ') || lineOf(st)) });
       }
-      rows.sort((a,b)=>b.score-a.score);
-      return rows.slice(0,3).map(x => mk(x.tag.name, x.tag.pos, x.tag.head, x.tag.espn, x.line));
+      rows.sort((a,b)=> b.score - a.score);
+      return rows.slice(0,3).map(x => x.card);
+    }
+    let defenseLastRows = bestDefense();
+
+    // ---- fallback: if last rows are short, fill from season leaders ----
+    // (Assumes you already computed offenseSeason[] / defenseSeason[] before writing files)
+    function fillFromSeason(lastRows, seasonRows){
+      const out = lastRows.slice();
+      for (const row of (seasonRows || [])){
+        if (out.length >= 3) break;
+        if (!out.find(x => x.name === row.name)) out.push(row);
+      }
+      return out.slice(0,3);
     }
 
-    // Build last rows
-    const offenseRows = bestOffenseRows(players);
-    const defenseRows = bestDefenseRows(players);
-    await fs.writeFile('data/spotlight_offense_last.json', JSON.stringify(offenseRows, null, 2));
-    await fs.writeFile('data/spotlight_defense_last.json', JSON.stringify(defenseRows, null, 2));
-    console.log(`✅ wrote offense_last (${offenseRows.length}) and defense_last (${defenseRows.length})`);
+    // If you have season arrays named offenseSeason / defenseSeason, use them.
+    // Otherwise leave these lines and they’ll no-op safely.
+    try {
+      offenseLastRows = fillFromSeason(offenseLastRows, offenseSeason);
+      defenseLastRows = fillFromSeason(defenseLastRows, defenseSeason);
+    } catch(_) { /* season arrays may not exist yet; safe to ignore */ }
 
-    if (offenseRows.length) offenseLast = offenseRows;
-    if (defenseRows.length) defenseLast = defenseRows;
+    // Guarantee non-empty statlines
+    offenseLastRows = offenseLastRows.map(r => ({ ...r, statline: r.statline || '—' }));
+    defenseLastRows = defenseLastRows.map(r => ({ ...r, statline: r.statline || '—' }));
+
+    await fs.writeFile('data/spotlight_offense_last.json', JSON.stringify(offenseLastRows, null, 2));
+    await fs.writeFile('data/spotlight_defense_last.json', JSON.stringify(defenseLastRows, null, 2));
+    console.log(`✅ wrote offense_last (${offenseLastRows.length}) and defense_last (${defenseLastRows.length})`);
+
+    // Prefer data-backed featured
+    try {
+      const featuredCard = offenseLastRows[0] || defenseLastRows[0] || (offenseSeason?.[0]) || (defenseSeason?.[0]) || null;
+      if (featuredCard) {
+        await fs.writeFile('data/spotlight_featured.json', JSON.stringify(featuredCard, null, 2));
+        console.log("✅ wrote data/spotlight_featured.json");
+      }
+    } catch(_) {}
+
+    offenseLast = offenseLastRows;
+    defenseLast = defenseLastRows;
   }
 
   if (!offenseLast.length) {
@@ -674,40 +734,22 @@ async function buildSpotlight(latestGame = null) {
     );
   }
 
+  offenseLast = offenseLast.map(r => ({ ...r, statline: r.statline || '—' }));
+  defenseLast = defenseLast.map(r => ({ ...r, statline: r.statline || '—' }));
+
   await fs.writeFile('data/spotlight_offense_last.json', JSON.stringify(offenseLast,null,2));
   await fs.writeFile('data/spotlight_defense_last.json', JSON.stringify(defenseLast,null,2));
   console.log(`✅ wrote offense_last (${offenseLast.length}) and defense_last (${defenseLast.length})`);
 
-  const offenseSeason = rankPlayers(
-    seasonPlayers.filter(p => /QB|RB|WR|TE|ATH/i.test(p.pos)),
-    scoreOff,
-    statLineOff,
-    offenseDetails,
-    map,
-    { side: 'offense', span: 'season' }
-  );
-
-  const defenseSeason = rankPlayers(
-    seasonPlayers.filter(p => !/QB|RB|WR|TE/i.test(p.pos)),
-    scoreDef,
-    statLineDef,
-    defenseDetails,
-    map,
-    { side: 'defense', span: 'season' }
-  );
-
-  const candidates = [offenseLast[0], defenseLast[0], offenseSeason[0]].filter(Boolean);
-  const featured = candidates.length
-    ? [...candidates].sort((a,b)=>(b.grade?.pct||0)-(a.grade?.pct||0))[0]
-    : {
-        name: '—',
-        pos: '',
-        headshot: '',
-        espn: `https://www.espn.com/search/results?q=${encodeURIComponent('Kentucky football')}`,
-        statline: '—',
-        grade: letterFromPct(72),
-        source: 'cfbd'
-      };
+  const featured = offenseLast[0] || defenseLast[0] || offenseSeason[0] || defenseSeason[0] || {
+    name: '—',
+    pos: '',
+    headshot: '',
+    espn: `https://www.espn.com/search/results?q=${encodeURIComponent('Kentucky football')}`,
+    statline: '—',
+    grade: letterFromPct(72),
+    source: 'cfbd'
+  };
 
   return { lastWeek, offenseLast, defenseLast, offenseSeason, defenseSeason, featured };
 }
