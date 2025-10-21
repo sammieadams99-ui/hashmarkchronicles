@@ -358,6 +358,13 @@
     /* ---------------- CONFIG ---------------- */
     const TEAM_ID = new URLSearchParams(location.search).get('team') || '96'; // UK default
     const POLL_MS = 30_000;
+    const DATA_BASE = new URL('.', window.location.href);
+    const DATA_CACHE_BUST = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    const dataURL = (file) => {
+      const url = new URL(`data/${file}`, DATA_BASE);
+      url.searchParams.set('v', DATA_CACHE_BUST);
+      return url.toString();
+    };
 
     /* ---------------- UTILS ---------------- */
     const log=(...a)=>console.log('[HC]',...a);
