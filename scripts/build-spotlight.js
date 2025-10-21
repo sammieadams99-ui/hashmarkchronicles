@@ -135,6 +135,21 @@ async function getForcedLatestGame() {
         const players = Array.isArray(box.players) ? box.players : (Array.isArray(box) ? box : []);
         console.log(`[spotlight] ✅ Retrieved player data for game ${gid} (${players.length} entries)`);
         console.log('[spotlight] ✅ Parsed', players.length, 'entries');
+        // --- CFBD diagnostic: check structure ---
+        try {
+          if (Array.isArray(box?.players) && box.players.length) {
+            const sample = box.players[0];
+            console.log('[diagnostic] sample player keys:', Object.keys(sample));
+            if (sample?.stats && Array.isArray(sample.stats)) {
+              console.log('[diagnostic] stats[0] keys:', Object.keys(sample.stats[0]));
+              console.log('[diagnostic] stats[0] value:', sample.stats[0]);
+            } else {
+              console.log('[diagnostic] sample has no stats array');
+            }
+          }
+        } catch (err) {
+          console.warn('[diagnostic] failed to inspect player sample:', err);
+        }
         pick = {
           ...pick,
           sum: {
