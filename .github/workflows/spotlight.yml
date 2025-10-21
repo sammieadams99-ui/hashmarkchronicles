@@ -24,7 +24,7 @@ jobs:
           CFBD_KEY: ${{ secrets.CFBD_KEY }}
           TEAM: Kentucky
           YEAR: 2025
-        run: node scripts/build_spotlight.js || true
+        run: FORCE_BUILD=true node scripts/build_spotlight.js || true
 
       - name: Commit data (if any)
         run: |

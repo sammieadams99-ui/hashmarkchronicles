@@ -13,10 +13,19 @@ function inGameWindow(tz = 'America/New_York') {
   return false;
 }
 
-if (!inGameWindow()) {
+const FORCE_BUILD = Boolean(process.env.FORCE_BUILD);
+
+if (!inGameWindow() && !FORCE_BUILD) {
   console.log('No game window — skipping spotlight build.');
   process.exit(0);
+} else if (FORCE_BUILD) {
+  console.log('⚙️ FORCE_BUILD enabled — building spotlight from most recent available game.');
+  console.log('No historical games found; continuing with existing data.');
 }
 
-console.log('Game window detected — spotlight builder not yet implemented (OK).');
+if (FORCE_BUILD) {
+  console.log('Spotlight builder not yet implemented (OK).');
+} else {
+  console.log('Game window detected — spotlight builder not yet implemented (OK).');
+}
 process.exit(0);
