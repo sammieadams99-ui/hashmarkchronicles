@@ -1,1 +1,29 @@
-[]
+[
+  {
+    "name": "Alex Afari Jr.",
+    "pos": "DB",
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4819224.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4819224",
+    "statline": "TKL 8 • INT 1 • PBU 2",
+    "grade_pct": 91,
+    "grade_letter": "A-"
+  },
+  {
+    "name": "Daveren Rayner",
+    "pos": "LB",
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4430670.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4430670",
+    "statline": "TKL 10 • TFL 2",
+    "grade_pct": 84,
+    "grade_letter": "B"
+  },
+  {
+    "name": "Jordan Lovett",
+    "pos": "S",
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4683458.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4683458",
+    "statline": "TKL 6 • FF 1",
+    "grade_pct": 80,
+    "grade_letter": "B-"
+  }
+]

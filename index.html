@@ -358,6 +358,13 @@
     /* ---------------- CONFIG ---------------- */
     const TEAM_ID = new URLSearchParams(location.search).get('team') || '96'; // UK default
     const POLL_MS = 30_000;
+    const DATA_BASE = new URL('.', window.location.href);
+    const DATA_CACHE_BUST = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    const dataURL = (file) => {
+      const url = new URL(`data/${file}`, DATA_BASE);
+      url.searchParams.set('v', DATA_CACHE_BUST);
+      return url.toString();
+    };
 
     /* ---------------- UTILS ---------------- */
     const log=(...a)=>console.log('[HC]',...a);
@@ -708,6 +715,21 @@
 
     function rowHTML(p){
       const initials=(p.name||'').split(/\s+/).map(s=>s[0]).slice(0,2).join('').toUpperCase()||'UK';
+      const gradeObj = (()=>{
+        if(p.grade && p.grade.letter && p.grade.pct!=null && p.grade.band){
+          return p.grade;
+        }
+        if(p.grade_letter && p.grade_pct!=null){
+          const pct=Math.round(Number(p.grade_pct));
+          const letter=String(p.grade_letter).toUpperCase();
+          const band=(letter||'F').charAt(0).toLowerCase();
+          return { letter, pct, band };
+        }
+        if(p.gradePct!=null){
+          return letterFromPct(Number(p.gradePct));
+        }
+        return null;
+      })();
       return `
         <div class="row">
           <img src="${p.headshot||p.head||''}" alt="${p.name} headshot"
@@ -716,7 +738,7 @@
             <div class="who">${p.name} <span class="tiny">• ${p.pos||''}</span></div>
             <div class="stat">${p.statline||''} <a href="${p.espn||p.link||'#'}" target="_blank" rel="noopener" class="tiny">ESPN ↗</a></div>
           </div>
-          ${p.grade ? gradeBadgeHTML(p.grade) : ''}
+          ${gradeObj ? gradeBadgeHTML(gradeObj) : ''}
         </div>`;
     }
     function renderList(arr){ list.innerHTML = (arr&&arr.length)?arr.slice(0,3).map(rowHTML).join(''):'<div class="tiny">No data available.</div>'; }
@@ -729,6 +751,182 @@
       offense_season:[],
       defense_season:[]
     };
+
+    async function tryLoadBuiltData(){
+      const grab = async (file)=>{
+        try{
+          const r = await fetch(dataURL(file), { cache:'no-store' });
+          if(!r.ok) return null;
+          return await r.json();
+        }catch(_){ return null; }
+      };
+      try{
+        const [offLast, defLast, offSeason, defSeason, feat] = await Promise.all([
+          grab('spotlight_offense_last.json'),
+          grab('spotlight_defense_last.json'),
+          grab('spotlight_offense_season.json'),
+          grab('spotlight_defense_season.json'),
+          grab('spotlight_featured.json')
+        ]);
+
+        if(Array.isArray(offLast) && offLast.length){
+          const norm = offLast.map(e=>normalizeEntry(e,'last')).filter(Boolean);
+          if(norm.length){
+            LIVE.offense_last = norm;
+            if(span==='last' && side==='offense') loadMini();
+          }
+        }
+        if(Array.isArray(defLast) && defLast.length){
+          const norm = defLast.map(e=>normalizeEntry(e,'last')).filter(Boolean);
+          if(norm.length){
+            LIVE.defense_last = norm;
+            if(span==='last' && side==='defense') loadMini();
+          }
+        }
+        if(Array.isArray(offSeason) && offSeason.length){
+          const norm = offSeason.map(e=>normalizeEntry(e,'season')).filter(Boolean);
+          if(norm.length){
+            LIVE.offense_season = norm;
+            if(span==='season' && side==='offense') loadMini();
+          }
+        }
+        if(Array.isArray(defSeason) && defSeason.length){
+          const norm = defSeason.map(e=>normalizeEntry(e,'season')).filter(Boolean);
+          if(norm.length){
+            LIVE.defense_season = norm;
+            if(span==='season' && side==='defense') loadMini();
+          }
+        }
+        if(feat && typeof feat === 'object' && feat.name){
+          const normalized = normalizeEntry(feat,'last') || feat;
+          if(featuredEl){
+            featuredEl.innerHTML = rowHTML(normalized);
+            featuredEl.style.display = 'flex';
+          }
+        }
+      }catch(err){
+        console.warn('[HC] built data load failed', err);
+      }
+    }
+
+    const LABEL_MAP={
+      'cmp_att':'CMP-ATT','cmpatt':'CMP-ATT','cmp':'CMP','att':'ATT','cmp_pct':'CMP%',
+      'yds':'YDS','yards':'YDS','passingyards':'PY','passing_yards':'PY','passingtds':'PTD','passing_tds':'PTD',
+      'rushingyards':'RY','rushing_yards':'RY','rushingtds':'RTD','rushing_tds':'RTD','receivingyards':'RecY','receiving_yards':'RecY',
+      'receivingtds':'RecTD','receiving_tds':'RecTD','rec':'REC','rush':'RUSH','car':'CAR','td':'TD','int':'INT','ints':'INT',
+      'tackles':'TKL','tkl':'TKL','tfl':'TFL','sacks':'SCK','sck':'SCK','pbu':'PBU','passesdefended':'PD','forcedfumbles':'FF','ff':'FF',
+      'avg':'AVG'
+    };
+    const IGNORE_LABELS=new Set(['opp','opponent','team','name','week','game']);
+
+    function prettifyLabel(key){
+      if(!key) return '';
+      const lower=String(key).toLowerCase();
+      if(LABEL_MAP[lower]) return LABEL_MAP[lower];
+      return String(key).toUpperCase().replace(/[_\s]+/g,' ');
+    }
+
+    function formatStatPair(label, value){
+      if(value==null||value==='') return null;
+      if(IGNORE_LABELS.has(String(label).toLowerCase())) return null;
+      const friendly=prettifyLabel(label);
+      if(!friendly) return null;
+      const raw=String(value).trim();
+      if(!raw) return null;
+      if(friendly==='CMP-ATT') return `${friendly} ${raw}`;
+      const numeric=Number(raw.replace(/,/g,''));
+      if(Number.isFinite(numeric) && /^-?\d*(\.\d+)?$/.test(raw.replace(/,/g,''))){
+        const digits=(Math.abs(numeric)<10 && !Number.isInteger(numeric))?1:0;
+        const display=numeric.toLocaleString(undefined,{maximumFractionDigits:digits});
+        return `${display} ${friendly}`;
+      }
+      if(/^\s*-?\d/.test(raw)) return `${raw} ${friendly}`;
+      return `${friendly} ${raw}`;
+    }
+
+    function statlineFromEntry(entry, spanHint='last'){
+      if(!entry) return '';
+      if(entry.statline) return entry.statline;
+      const key = spanHint==='season' ? 'season' : 'last_game';
+      const raw = entry[key] ?? entry.stats ?? entry.line ?? null;
+      if(typeof raw === 'string') return raw;
+      const parts=[];
+      if(raw && typeof raw === 'object' && !Array.isArray(raw)){
+        for(const [label,val] of Object.entries(raw)){
+          const part=formatStatPair(label,val);
+          if(part) parts.push(part);
+          if(parts.length>=3) break;
+        }
+      }
+      if(Array.isArray(raw)){
+        for(const chunk of raw){
+          if(typeof chunk === 'string' && chunk.trim()){
+            parts.push(chunk.trim());
+          }else if(chunk && typeof chunk === 'object'){
+            const part=formatStatPair(chunk.label||chunk.name, chunk.value??chunk.stat);
+            if(part) parts.push(part);
+          }
+          if(parts.length>=3) break;
+        }
+      }
+      if(!parts.length && entry.summary) parts.push(String(entry.summary));
+      return parts.join(' • ');
+    }
+
+    function estimateInlineGrade(p){
+      // Gentle heuristic so fallbacks don't all look the same
+      if(!p) return null;
+      const src=p.last_game||p.season||{};
+      const y=num(src.yds||src.rec_yds||0), td=num(src.td||src.rec_td||0), ints=num(src.int||0);
+      const rec=num(src.rec||0), rush=num(src.rush||0);
+      const base = 55 + y*0.05 + td*6 + rec*0.6 + rush*0.4 - ints*8;
+      return letterFromPct(clamp(40,95,base));
+    }
+
+    function normalizeEntry(entry, spanHint='last'){
+      if(!entry) return null;
+      const name=entry.name||entry.player||'';
+      if(!name) return null;
+      const pos=entry.pos||entry.position||entry.position_group||'';
+      const headshot=entry.headshot||entry.head||'';
+      const espn=entry.espn||entry.url||entry.link||'#';
+      const statline=statlineFromEntry(entry, spanHint)||'—';
+      let grade=null;
+      if(entry.grade && entry.grade.letter && entry.grade.band){
+        grade=entry.grade;
+      }else if(Number.isFinite(entry.gradePct)){
+        grade=letterFromPct(entry.gradePct);
+      }else if(Number.isFinite(entry.grade_pct)){
+        grade=letterFromPct(entry.grade_pct);
+      }
+      return { name, pos, headshot, espn, statline, grade };
+    }
+
+    function seedFallbackState(){
+      const matrix = [
+        ['offense_last', 'fallback-spotlight_offense_last', 'last'],
+        ['defense_last', 'fallback-spotlight_defense_last', 'last'],
+        ['offense_season', 'fallback-spotlight_offense_season', 'season'],
+        ['defense_season', 'fallback-spotlight_defense_season', 'season']
+      ];
+      let seeded=false;
+      for(const [key, scriptId, span] of matrix){
+        const inline = readJSON(scriptId);
+        if(!Array.isArray(inline) || !inline.length) continue;
+        const rows = inline.map(p=>{
+          const row = normalizeEntry(p, span);
+          if(!row) return null;
+          if((!row.grade || !row.grade.letter) && p) row.grade = estimateInlineGrade(p);
+          if((!row.statline || row.statline==='—') && p) row.statline = statlineFromEntry(p, span) || row.statline;
+          return row;
+        }).filter(Boolean);
+        if(rows.length){
+          LIVE[key] = rows;
+          seeded=true;
+        }
+      }
+      return seeded;
+    }
 
     wrap?.querySelectorAll('.chip').forEach(btn=>{
       btn.addEventListener('click',()=>{
@@ -744,49 +942,98 @@
     wrap?.querySelector(`.chip[data-span="${span}"]`)?.classList.add('active');
 
     /* ---------------- TICKER (inline) ---------------- */
-    (function(){
-      const items=readJSON('fallback-ticker');
+    function renderTicker(payload){
       const track=document.getElementById('tickerTrack');
-      if(Array.isArray(items)&&track){
-        track.innerHTML=items.map(it=>{
-          const trend=it.trend||'warn'; const suffix=it.suffix?(' '+it.suffix):'';
-          return `<li><span class="trend-dot ${trend}" aria-hidden="true"></span><span class="label"><strong>${it.label}</strong> <span class="trend-value ${trend}">${it.value}</span>${suffix}</span></li>`;
-        }).join('');
-      }
+      if(!track) return;
+      const items=Array.isArray(payload?.items)?payload.items:(Array.isArray(payload)?payload:[]);
+      if(!items.length) return;
+      track.innerHTML=items.map(it=>{
+        const trend=it.trend||'warn'; const suffix=it.suffix?(' '+it.suffix):'';
+        return `<li><span class="trend-dot ${trend}" aria-hidden="true"></span><span class="label"><strong>${it.label}</strong> <span class="trend-value ${trend}">${it.value}</span>${suffix}</span></li>`;
+      }).join('');
+    }
+    (function(){
+      const fallback=readJSON('fallback-ticker');
+      if(fallback) renderTicker(fallback);
     })();
 
     /* ---------------- Draw inline immediately ---------------- */
     (function drawInlineFirst(){
+      seedFallbackState();
       const feat=readJSON('fallback-spotlight_featured');
-      if(feat&&feat.name&&featuredEl){
-        const stat=Object.entries(feat.last_game||feat.season||{}).slice(0,3).map(([k,v])=>`${k.toUpperCase().replace('_','-')} ${v}`).join(' • ');
-        featuredEl.innerHTML=rowHTML({name:feat.name,pos:feat.pos,headshot:feat.headshot,espn:feat.espn,statline:stat});
+      const normalized=normalizeEntry(feat, feat?.season && !feat?.last_game ? 'season' : 'last')
+        || LIVE.offense_last?.[0]
+        || LIVE.defense_last?.[0]
+        || null;
+      if(normalized&&featuredEl){
+        if(!normalized.grade && feat) normalized.grade=estimateInlineGrade(feat);
+        featuredEl.innerHTML=rowHTML(normalized);
         featuredEl.style.display='flex';
       }
       loadMini(); // uses inline until LIVE lands
     })();
 
-    function estimateInlineGrade(p){
-      // Gentle heuristic so fallbacks don't all look the same
-      const src=p.last_game||p.season||{};
-      const y=num(src.yds||src.rec_yds||0), td=num(src.td||src.rec_td||0), ints=num(src.int||0);
-      const rec=num(src.rec||0), rush=num(src.rush||0);
-      const base = 55 + y*0.05 + td*6 + rec*0.6 + rush*0.4 - ints*8;
-      return letterFromPct(clamp(40,95,base));
-    }
-
     function loadMini(){
       const key = `${side}_${span}`;
       const arr = LIVE[key];
-      if(arr && arr.length){ renderList(arr); return; }
-      // Inline fallback list (estimate grade)
+      if(Array.isArray(arr)&&arr.length){ renderList(arr); return; }
       const inline = readJSON(`fallback-spotlight_${side}_${span}`) || [];
       const adapt = inline.map(p=>{
-        const stat=Object.entries((p.last_game||p.season||{})).slice(0,3).map(([k,v])=>`${k.toUpperCase().replace('_','-')} ${v}`).join(' • ');
-        const g=estimateInlineGrade(p);
-        return { name:p.name, pos:p.pos, headshot:p.headshot, espn:p.espn, statline:stat, grade:g };
-      });
+        const row=normalizeEntry(p, span);
+        if(!row) return null;
+        if((!row.grade||!row.grade.letter) && p) row.grade=estimateInlineGrade(p);
+        if(!row.statline || row.statline==='—') row.statline=statlineFromEntry(p, span)||row.statline;
+        return row;
+      }).filter(Boolean);
       renderList(adapt);
+    }
+
+    async function fetchLocal(file){
+      try{
+        const res=await fetch(dataURL(file),{cache:'no-store'});
+        if(!res.ok) throw new Error(res.status);
+        return await res.json();
+      }catch(err){
+        log('static fetch failed', file, err?.message||err);
+        return null;
+      }
+    }
+
+    async function hydrateFromStatic(){
+      const [tickerData, featuredData, oLast, dLast, oSeason, dSeason] = await Promise.all([
+        fetchLocal('ticker.json'),
+        fetchLocal('spotlight_featured.json'),
+        fetchLocal('spotlight_offense_last.json'),
+        fetchLocal('spotlight_defense_last.json'),
+        fetchLocal('spotlight_offense_season.json'),
+        fetchLocal('spotlight_defense_season.json')
+      ]);
+      if(tickerData) renderTicker(tickerData);
+      const updated=[];
+      const assign=(key, rows, spanHint)=>{
+        if(Array.isArray(rows) && rows.length){
+          const norm=rows.map(r=>normalizeEntry(r, spanHint)).filter(Boolean);
+          if(norm.length){
+            LIVE[key]=norm;
+            updated.push(key);
+          }
+        }
+      };
+      assign('offense_last', oLast, 'last');
+      assign('defense_last', dLast, 'last');
+      assign('offense_season', oSeason, 'season');
+      assign('defense_season', dSeason, 'season');
+      if(updated.includes(`${side}_${span}`)) loadMini();
+      if(featuredData){
+        const normalized=normalizeEntry(featuredData, featuredData?.span || (featuredData?.season && !featuredData?.last_game ? 'season' : 'last'));
+        if(normalized){
+          if(!normalized.grade) normalized.grade=estimateInlineGrade(featuredData);
+          if(featuredEl){
+            featuredEl.innerHTML=rowHTML(normalized);
+            featuredEl.style.display='flex';
+          }
+        }
+      }
     }
 
     /* ---------------- ESPN boot: rank + grades ---------------- */
@@ -894,6 +1141,8 @@
     }
 
     // first draw + poll
+    await hydrateFromStatic();
+    await tryLoadBuiltData();
     await bootLive();
     setInterval(bootLive, POLL_MS);
 
