@@ -31,10 +31,12 @@ function normalizePlayers(arr){
     const id  = r.athlete_id ?? r.athleteId ?? r.player_id ?? r.playerId ?? null;
     const nm  = r.name ?? r.player ?? r.athlete?.displayName ?? "Unknown";
     const pos = r.position ?? r.pos ?? r.athlete?.position?.abbreviation ?? "";
+    const team = r.team ?? r.team_name ?? r.athlete?.team ?? '';
     const key = id ? `id:${id}` : `np:${nm}|${pos}`;
 
     const rec = byKey.get(key) || {
-      athlete: { id: id, displayName: nm, position: { abbreviation: pos } },
+      athlete: { id: id, displayName: nm, position: { abbreviation: pos }, team },
+      team,
       // synthesize a stats array we can consume downstream
       stats: []
     };
@@ -44,6 +46,10 @@ function normalizePlayers(arr){
     const value = String(r.value ?? r.statValue ?? r.displayValue ?? r.amount ?? r.yards ?? r.yds ?? "");
     if (label || value) rec.stats.push({ label, value });
 
+    if (team) {
+      rec.athlete.team = team;
+      rec.team = team;
+    }
     byKey.set(key, rec);
   }
   return Array.from(byKey.values());
@@ -645,8 +651,15 @@ async function buildSpotlight(latestGame = null) {
   let defenseLast = [];
 
   {
+    const TEAM_NAME = (process.env.TEAM || TEAM).toLowerCase();
+    const logTeam = process.env.TEAM || TEAM;
     const players = Array.isArray(box?.players) ? box.players : (Array.isArray(box) ? box : []);
-    const normPlayers = normalizePlayers(players);
+    const normPlayersAll = normalizePlayers(players);
+    const normPlayers = normPlayersAll.filter(p => {
+      const tm = (p?.athlete?.team || p?.team || '').toLowerCase();
+      return tm.includes(TEAM_NAME);
+    });
+    console.log(`[spotlight] ${logTeam}-filtered players: ${normPlayers.length}/${normPlayersAll.length}`);
 
     const num = v => Number(String(v ?? '').replace(/[^0-9.-]/g,'')) || 0;
     const mk  = (name,pos,head,espn,line) => ({ name, pos, headshot: head||'', espn: espn||'#', statline: (line && line.trim()) ? line : '—' });
@@ -731,7 +744,7 @@ async function buildSpotlight(latestGame = null) {
     let defenseLastRows = bestDefense();
 
     function fillFromSeason(lastRows, seasonRows){
-      const out = lastRows.slice();
+      const out = (lastRows || []).slice();
       for (const row of (seasonRows || [])){
         if (out.length >= 3) break;
         if (!out.find(x => x.name === row.name)) out.push(row);

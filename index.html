@@ -599,12 +599,16 @@
         }
       })();
 
-      // ---- Draw inline spotlight immediately ----
-      (function drawInlineFirst(){
+      function drawInlineFirst(){
+        if ((Array.isArray(LIVE?.offense_last) && LIVE.offense_last.length) ||
+            (Array.isArray(LIVE?.defense_last) && LIVE.defense_last.length)) {
+          if (typeof loadMini === 'function') loadMini();
+          return;
+        }
         const feat=normalizeSpotlightEntry(readInlineJSON('fallback-spotlight_featured'));
         if(feat&&featuredEl){ featuredEl.innerHTML=rowHTML(feat); featuredEl.style.display='flex'; }
-        loadMini(); // will use inline arrays until LIVE arrives
-      })();
+        if (typeof loadMini === 'function') loadMini();
+      }
 
       async function fetchSpotlightFile(path) {
         try {
@@ -714,6 +718,7 @@
       }
 
       await hydrateFromData();
+      drawInlineFirst();
       await bootLive();
       setInterval(bootLive, POLL_MS);
 
