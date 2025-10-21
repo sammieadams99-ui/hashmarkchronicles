@@ -32,9 +32,22 @@ async function getForcedLatestGame() {
     return r.json();
   }
 
+  function isFiniteNum(x) {
+    return Number.isFinite(typeof x === 'string' ? Number(x) : x);
+  }
+
+  function seemsCompleted(g) {
+    if (g.completed === true) return true;
+    const st = (g.status || g.game_status || '').toString().toLowerCase();
+    if (st.includes('final') || st.includes('complete')) return true;
+    if (isFiniteNum(g.home_points) && isFiniteNum(g.away_points)) return true;
+    if (isFiniteNum(g.homePoints) && isFiniteNum(g.awayPoints)) return true;
+    return false;
+  }
+
   function latestCompleted(list) {
     const rows = Array.isArray(list) ? list.slice() : [];
-    const done = rows.filter(g => g.home_points != null && g.away_points != null);
+    const done = rows.filter(seemsCompleted);
     done.sort((a, b) => new Date(b.start_date || b.startDate) - new Date(a.start_date || a.startDate));
     return done[0] || null;
   }
@@ -53,14 +66,17 @@ async function getForcedLatestGame() {
     console.log('CFBD /games fetch error:', e?.message || e);
   }
 
+  let latestGame = null;
+
   if (latest) {
     const gid = latest.id || latest.game_id;
-    console.log(`Using game ${gid} — ${latest.home_team} vs ${latest.away_team} on ${latest.start_date || latest.startDate}`);
-    return latest;
+    console.log(`Using game ${gid} — ${latest.home_team || latest.homeTeam} vs ${latest.away_team || latest.awayTeam} on ${latest.start_date || latest.startDate}`);
+    latestGame = [latest];
+  } else {
+    console.log('No completed games found by robust check; continuing with existing data.');
   }
 
-  console.log('No completed games found for this year/team; continuing with existing data.');
-  return null;
+  return latestGame ? latestGame[0] : null;
 }
 
 const OUT = {
