@@ -19,6 +19,21 @@ jobs:
       - run: npm init -y || true
       - run: npm pkg set type=module
 
+      - name: Guard against frequent CFBD calls
+        run: |
+          NOW=$(date +%s)
+          LAST=0
+          if [ -f .cfbd_last_call ]; then
+            LAST=$(cat .cfbd_last_call)
+          fi
+          DIFF=$((NOW - LAST))
+          # 21600 seconds = 6 hours
+          if [ $DIFF -lt 21600 ]; then
+            echo "⏸️ CFBD guard: last run was $DIFF seconds ago (<6h). Skipping API calls."
+            exit 0
+          fi
+          echo $NOW > .cfbd_last_call
+
       - name: Run spotlight builder
         env:
           CFBD_KEY: ${{ secrets.CFBD_KEY }}
