@@ -1,1 +1,29 @@
-[]
+[
+  {
+    "name": "DJ Waller Jr.",
+    "pos": "CB",
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5092262.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/5092262",
+    "statline": "TKL 56 • INT 4 • PBU 9",
+    "grade_pct": 90,
+    "grade_letter": "A-"
+  },
+  {
+    "name": "Daveren Rayner",
+    "pos": "LB",
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4430670.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4430670",
+    "statline": "TKL 98 • TFL 11 • SACKS 4",
+    "grade_pct": 86,
+    "grade_letter": "B"
+  },
+  {
+    "name": "Alex Afari Jr.",
+    "pos": "DB",
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4819224.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4819224",
+    "statline": "TKL 74 • INT 3 • FF 2",
+    "grade_pct": 83,
+    "grade_letter": "B"
+  }
+]

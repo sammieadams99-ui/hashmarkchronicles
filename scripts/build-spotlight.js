@@ -26,6 +26,7 @@ async function get(url) {
       const r = await fetch(url, { headers: HDRS });
       if (r.ok) return r.json();
     } catch (err) {
+      if (i === 0) console.warn('[spotlight] fetch failed', url, err?.message||err);
       if (i === 1) console.warn('CFBD request failed:', url, err.message || err);
     }
     await sleep(300);
@@ -181,13 +182,35 @@ function statLineDef(p) {
   return line.join(' · ') || '—';
 }
 
+function resolveMeta(map, key) {
+  const raw = map?.[key];
+  if (raw == null) return null;
+  if (typeof raw === 'string' || typeof raw === 'number') {
+    const id = String(raw).trim();
+    return id ? { espnId: id } : null;
+  }
+  if (typeof raw === 'object') {
+    const id = raw.espnId ?? raw.espnid ?? raw.id ?? raw.ID ?? raw.playerId ?? raw.player_id;
+    if (!id && typeof raw === 'string') {
+      const str = String(raw).trim();
+      return str ? { espnId: str } : null;
+    }
+    return id ? { espnId: id } : null;
+  }
+  return null;
+}
+
 function decorate(p, map) {
   const slug = slugify(p.name);
-  const meta = map[slug] || {};
-  const headshot = meta.espnId
+  const meta =
+    resolveMeta(map, slug) ||
+    resolveMeta(map, slug.toLowerCase()) ||
+    resolveMeta(map, p.name) ||
+    resolveMeta(map, p.name?.toLowerCase?.());
+  const headshot = meta?.espnId
     ? `https://a.espncdn.com/i/headshots/college-football/players/full/${meta.espnId}.png`
     : ""; // front-end will draw SVG fallback if blank
-  const espn = meta.espnId
+  const espn = meta?.espnId
     ? `https://www.espn.com/college-football/player/_/id/${meta.espnId}`
     : `https://www.espn.com/search/results?q=${encodeURIComponent(p.name + ' Kentucky football')}`;
   return { ...p, slug, headshot, espn };
@@ -195,6 +218,19 @@ function decorate(p, map) {
 
 function topK(list, scorer, k=3){
   return [...list].sort((a,b)=>scorer(b)-scorer(a)).slice(0,k);
+}
+
+function formatRow(base, statline, score, span){
+  return {
+    name: base.name,
+    pos: base.pos,
+    slug: base.slug,
+    headshot: base.headshot,
+    espn: base.espn,
+    statline,
+    score: Number.isFinite(score) ? Number(score) : null,
+    span
+  };
 }
 
 async function ensureDir(){
@@ -282,6 +318,45 @@ async function buildSpotlight() {
     : [];
   const gamePlayers = foldPlayers(gameRows);
 
+  const offenseLast = topK(gamePlayers.filter(p => /QB|RB|WR|TE|ATH/i.test(p.pos)), scoreOff, 3)
+    .map(p => {
+      const base = decorate(p, map);
+      const statline = statLineOff(p);
+      return formatRow(base, statline, scoreOff(p), 'last');
+    });
+
+  const defenseLast = topK(gamePlayers.filter(p => !/QB|RB|WR|TE/i.test(p.pos)), scoreDef, 3)
+    .map(p => {
+      const base = decorate(p, map);
+      const statline = statLineDef(p);
+      return formatRow(base, statline, scoreDef(p), 'last');
+    });
+
+  const offenseSeason = topK(seasonPlayers.filter(p => /QB|RB|WR|TE|ATH/i.test(p.pos)), scoreOff, 3)
+    .map(p => {
+      const base = decorate(p, map);
+      const statline = statLineOff(p);
+      return formatRow(base, statline, scoreOff(p), 'season');
+    });
+
+  const defenseSeason = topK(seasonPlayers.filter(p => !/QB|RB|WR|TE/i.test(p.pos)), scoreDef, 3)
+    .map(p => {
+      const base = decorate(p, map);
+      const statline = statLineDef(p);
+      return formatRow(base, statline, scoreDef(p), 'season');
+    });
+
+  // featured = best of the 6 (prefer last-game offense, then defense, else season offense)
+  const candidates = [...offenseLast, ...defenseLast, ...offenseSeason];
+  const featured = candidates.length ? candidates[0] : {
+    name: '—',
+    pos: '',
+    slug: '—',
+    headshot: '',
+    espn: `https://www.espn.com/search/results?q=${encodeURIComponent('Kentucky football')}`,
+    statline: '—',
+    span: 'last'
+  };
   const offenseLast = rankPlayers(
     gamePlayers.filter(p => /QB|RB|WR|TE|ATH/i.test(p.pos)),
     scoreOff,
