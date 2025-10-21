@@ -37,11 +37,16 @@ async function getForcedLatestGame() {
   }
 
   function seemsCompleted(g) {
-    if (g.completed === true) return true;
-    const st = (g.status || g.game_status || '').toString().toLowerCase();
-    if (st.includes('final') || st.includes('complete')) return true;
-    if (isFiniteNum(g.home_points) && isFiniteNum(g.away_points)) return true;
-    if (isFiniteNum(g.homePoints) && isFiniteNum(g.awayPoints)) return true;
+    if (g?.completed === true) return true;
+
+    const stRaw = g?.status?.type || g?.status?.name || g?.status || g?.game_status || '';
+    const st = String(stRaw).toLowerCase();
+    if (st.includes('final') || st.includes('complete') || st.includes('post')) return true;
+
+    const hp = g?.home_points ?? g?.homePoints ?? g?.home_points_total;
+    const ap = g?.away_points ?? g?.awayPoints ?? g?.away_points_total;
+    if (isFiniteNum(hp) && isFiniteNum(ap)) return true;
+
     return false;
   }
 
@@ -56,6 +61,20 @@ async function getForcedLatestGame() {
   try {
     const reg = await fetchGames('regular');
     console.log(`CFBD regular games found: ${Array.isArray(reg) ? reg.length : 0}`);
+    if (Array.isArray(reg) && reg.length) {
+      const g0 = reg[reg.length - 1];
+      console.log('[CFBD sample] keys:', Object.keys(g0 || {}).slice(0, 20).join(', '));
+      console.log('[CFBD sample] fields:', {
+        id: g0?.id || g0?.game_id,
+        home_team: g0?.home_team || g0?.homeTeam,
+        away_team: g0?.away_team || g0?.awayTeam,
+        start: g0?.start_date || g0?.startDate,
+        status: g0?.status || g0?.game_status || g0?.status?.type || g0?.status?.name,
+        completed: g0?.completed,
+        home_points: g0?.home_points ?? g0?.homePoints ?? g0?.home_points_total,
+        away_points: g0?.away_points ?? g0?.awayPoints ?? g0?.away_points_total
+      });
+    }
     latest = latestCompleted(reg);
     if (!latest) {
       const post = await fetchGames('postseason');
@@ -469,10 +488,12 @@ async function main() {
   const latestGame = await getForcedLatestGame();
 
   const sp = await buildSpotlight(latestGame);
-  await writeJSON(OUT.oLast, sp.offenseLast);
-  console.log(`✅ wrote ${OUT.oLast.replace(/^\.\//, '')} (${sp.offenseLast.length})`);
-  await writeJSON(OUT.dLast, sp.defenseLast);
-  console.log(`✅ wrote ${OUT.dLast.replace(/^\.\//, '')} (${sp.defenseLast.length})`);
+  const oArr = sp.offenseLast;
+  const dArr = sp.defenseLast;
+  await writeJSON(OUT.oLast, oArr);
+  console.log(`✅ wrote data/spotlight_offense_last.json (${oArr.length})`);
+  await writeJSON(OUT.dLast, dArr);
+  console.log(`✅ wrote data/spotlight_defense_last.json (${dArr.length})`);
   await writeJSON(OUT.oSeason, sp.offenseSeason);
   console.log(`✅ wrote ${OUT.oSeason.replace(/^\.\//, '')} (${sp.offenseSeason.length})`);
   await writeJSON(OUT.dSeason, sp.defenseSeason);
