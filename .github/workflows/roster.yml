@@ -1,0 +1,49 @@
+name: Build CFBD Roster
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 12 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: roster-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm init -y || true
+      - run: npm pkg set type=module
+
+      - name: Test CFBD key
+        env:
+          CFBD_KEY: ${{ secrets.CFBD_KEY }}
+        run: |
+          curl -sf -H "Authorization: Bearer $CFBD_KEY" "https://api.collegefootballdata.com/roster?team=Kentucky&year=2025" | head || (echo "Key test failed"; exit 1)
+
+      - name: Build roster JSON
+        env:
+          CFBD_KEY: ${{ secrets.CFBD_KEY }}
+          TEAM: Kentucky
+          YEAR: 2025
+        run: node scripts/build_roster.js
+
+      - name: Commit data
+        run: |
+          git config user.name "data-bot"
+          git config user.email "data-bot@users.noreply.github.com"
+          git add data/team/*.json
+          git commit -m "Update roster data" || echo "No changes"
+          git push
