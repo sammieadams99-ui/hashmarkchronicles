@@ -938,13 +938,13 @@
     }
 
     wrap?.querySelectorAll('.chip').forEach(btn=>{
-      btn.addEventListener('click',()=>{
+      btn.addEventListener('click', async ()=>{
         if(btn.dataset.side) side=btn.dataset.side;
         if(btn.dataset.span) span=btn.dataset.span;
         wrap.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
         wrap.querySelectorAll(`.chip[data-side="${side}"]`).forEach(c=>c.classList.add('active'));
         wrap.querySelectorAll(`.chip[data-span="${span}"]`).forEach(c=>c.classList.add('active'));
-        loadMini();
+        await loadMini();
       });
     });
     wrap?.querySelector(`.chip[data-side="${side}"]`)?.classList.add('active');
@@ -1208,18 +1208,18 @@
       const feature = (oArr[0]||dArr[0]);
       if(feature && featuredEl){ featuredEl.innerHTML=rowHTML(feature); featuredEl.style.display='flex'; }
 
-      if(span==='last') loadMini();
+      if(span==='last') await loadMini();
 
       const leaderData = await getTeamLeaders(TEAM_ID);
       if(leaderData){
         const seasonPack = seasonLeadersFromESPN(leaderData);
         if(seasonPack.offense.length){
           LIVE.offense_season = seasonPack.offense;
-          if(span==='season' && side==='offense') loadMini();
+          if(span==='season' && side==='offense') await loadMini();
         }
         if(seasonPack.defense.length){
           LIVE.defense_season = seasonPack.defense;
-          if(span==='season' && side==='defense') loadMini();
+          if(span==='season' && side==='defense') await loadMini();
         }
         if(!feature && seasonPack.featured && featuredEl){
           featuredEl.innerHTML=rowHTML(seasonPack.featured);
