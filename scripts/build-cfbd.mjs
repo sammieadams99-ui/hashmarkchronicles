@@ -10,13 +10,14 @@ const YEAR = parseInt(process.env.YEAR || "2025", 10);
 const TEAM = process.env.TEAM || "Kentucky";
 const TEAM_ID = String(process.env.TEAM_ID || "96");
 const DATA_DIR = resolve(process.cwd(), "data");
+const CFBD_KEY = process.env.CFBD_KEY || process.env.CFBD_API_KEY;
 
-if (!process.env.CFBD_KEY) {
+if (!CFBD_KEY) {
   throw new Error("CFBD_KEY env var is required");
 }
 
 const H = {
-  Authorization: `Bearer ${process.env.CFBD_KEY}`,
+  Authorization: `Bearer ${CFBD_KEY}`,
   "Content-Type": "application/json",
 };
 
@@ -136,19 +137,52 @@ function rankPercentile(items, key) {
 }
 
 async function latestGameId() {
-  const games = await j(
-    `${BASE_REST}/games?year=${YEAR}&team=${encodeURIComponent(TEAM)}&seasonType=both`
-  );
-  const done = games
-    .filter((g) => g.home_points != null || g.away_points != null)
-    .sort(
-      (a, b) =>
-        new Date(a.start_date || a.startDate || a.date) -
-        new Date(b.start_date || b.startDate || b.date)
+  async function fetchGames(seasonType) {
+    const url = `${BASE_REST}/games?year=${YEAR}&team=${encodeURIComponent(
+      TEAM
+    )}&seasonType=${seasonType}`;
+    const r = await fetch(url, { headers: H });
+    if (!r.ok) throw new Error(`CFBD /games ${seasonType} ${r.status}`);
+    return r.json();
+  }
+
+  function pickLatestCompleted(list) {
+    const rows = Array.isArray(list) ? list.slice() : [];
+    const withScores = rows.filter(
+      (g) => g.home_points != null && g.away_points != null
     );
-  const last = done.at(-1);
-  if (!last) throw new Error("No completed game found");
-  return { gameId: last.id ?? last.game_id ?? last.gameId, meta: last };
+    withScores.sort(
+      (a, b) =>
+        new Date(b.start_date || b.startDate || b.date) -
+        new Date(a.start_date || a.startDate || a.date)
+    );
+    return withScores[0] || null;
+  }
+
+  let latest = null;
+  try {
+    const reg = (await fetchGames("regular")) || [];
+    console.log(`[cfbd] regular games found: ${reg.length || 0}`);
+    latest = pickLatestCompleted(reg);
+    if (!latest) {
+      const post = (await fetchGames("postseason")) || [];
+      console.log(`[cfbd] postseason games found: ${post.length || 0}`);
+      latest = pickLatestCompleted(post);
+    }
+  } catch (e) {
+    console.log("[cfbd] games fetch failed:", e?.message || e);
+  }
+
+  if (latest) {
+    const gameId = latest.id ?? latest.game_id ?? latest.gameId;
+    const start = latest.start_date || latest.startDate || latest.date || "";
+    console.log(
+      `[cfbd] Using game ${gameId} — ${latest.home_team} vs ${latest.away_team} on ${start}`
+    );
+    return { gameId, meta: latest };
+  }
+
+  throw new Error("No completed game found");
 }
 
 function normalizePlayer(row, teamName) {
