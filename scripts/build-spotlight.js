@@ -1,10 +1,10 @@
 // scripts/build-spotlight.js
 import fs from 'fs/promises';
-import fetch from 'node-fetch';
 
 const YEAR = process.env.YEAR || String(new Date().getFullYear());
 const TEAM = 'Kentucky';
 const CFBD_KEY = process.env.CFBD_KEY || process.env.CFBD_API_KEY;
+console.log('✅ Using built-in Node fetch() — no external dependency needed.');
 const FORCE_BUILD = Boolean(process.env.FORCE_BUILD);
 
 if (!CFBD_KEY) {
