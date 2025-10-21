@@ -1,0 +1,37 @@
+name: Pull CFBD -> /data JSON
+
+on:
+  schedule:
+    - cron: '*/60 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps (none required)
+        run: npm -v
+
+      - name: Build spotlight JSON from CFBD
+        env:
+          CFBD_KEY: ${{ secrets.CFBD_KEY || secrets.CFBD_API_KEY }}
+          CFBD_API_KEY: ${{ secrets.CFBD_KEY || secrets.CFBD_API_KEY }}
+          TEAM: Kentucky
+          TEAM_ID: "96"
+          YEAR: "2025"
+        run: node scripts/build-cfbd.mjs
+
+      - name: Commit /data updates
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: "data/*.json"
+          message: "chore(data): CFBD refresh"
