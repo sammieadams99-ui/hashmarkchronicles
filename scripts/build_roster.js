@@ -1,6 +1,9 @@
-// Build full roster into data/team/roster.json (+ meta), joining optional season stats.
-// Env: CFBD_KEY (secret), TEAM, YEAR (optional).
-// Usage: TEAM="Kentucky" YEAR=2025 node scripts/build_roster.js
+// scripts/build_roster.js
+// Build full roster JSON (plus optional joined season stats) into data/team/roster.json
+// Env: CFBD_KEY (secret), TEAM, YEAR (optional)
+//
+// Usage (in Actions):
+//   TEAM="Kentucky" YEAR=2025 node scripts/build_roster.js
 
 import fs from 'fs/promises';
 
@@ -12,8 +15,8 @@ if (!KEY) { console.error('Missing CFBD_KEY'); process.exit(1); }
 
 function defaultSeasonYear(d = new Date()) {
   const y = d.getUTCFullYear();
-  const m = d.getUTCMonth();
-  return m >= 6 ? y : y - 1;
+  const m = d.getUTCMonth(); // 0..11
+  return m >= 6 ? y : y - 1; // season starts Jul/Aug
 }
 
 async function cfbd(path, params = {}) {
@@ -27,6 +30,7 @@ const head = id => id ? `https://a.espncdn.com/i/headshots/college-football/play
 const init = (f,l) => `${(f?.[0]||'').toUpperCase()}${(l?.[0]||'').toUpperCase()}` || '??';
 
 async function main() {
+  // 1) Full roster (may be large)
   let roster = await cfbd('/roster', { team: TEAM, year: YEAR });
   if (!Array.isArray(roster) || roster.length === 0) {
     console.warn(`No roster for ${TEAM} ${YEAR}; trying ${YEAR - 1}`);
@@ -34,6 +38,7 @@ async function main() {
     if (Array.isArray(fb) && fb.length) { roster = fb; YEAR = YEAR - 1; }
   }
 
+  // 2) Optional season stats (only players who recorded stats)
   let stats = [];
   try { stats = await cfbd('/player/season', { team: TEAM, year: YEAR }); } catch {}
 
@@ -43,7 +48,8 @@ async function main() {
   }));
 
   const merged = roster.map(p => {
-    const k = p.athleteId ? `id:${p.athleteId}` : `name:${(p.firstName+' '+p.lastName).toLowerCase()}|${p.position||''}`;
+    const k = p.athleteId ? `id:${p.athleteId}` :
+      `name:${(p.firstName+' '+p.lastName).toLowerCase()}|${p.position||''}`;
     const s = idx.get(k);
     return {
       athleteId: p.athleteId ?? null,
@@ -60,9 +66,7 @@ async function main() {
 
   await fs.mkdir('data/team', { recursive: true });
   await fs.writeFile('data/team/roster.json', JSON.stringify(merged, null, 2));
-  await fs.writeFile('data/team/roster_meta.json',
-    JSON.stringify({ team: TEAM, year: YEAR, generated_at: new Date().toISOString(), count: merged.length }, null, 2)
-  );
-  console.log(`✅ wrote data/team/roster.json with ${merged.length} players for ${TEAM} ${YEAR}`);
+  await fs.writeFile('data/team/roster_meta.json', JSON.stringify({ team: TEAM, year: YEAR, generated_at: new Date().toISOString(), count: merged.length }, null, 2));
+  console.log(`✅ Wrote data/team/roster.json with ${merged.length} players for ${TEAM} ${YEAR}`);
 }
-main().catch(e => { console.error('Non-fatal roster build:', e.message || e); process.exit(0); });
+main().catch(e => { console.error(e); process.exit(1); });
