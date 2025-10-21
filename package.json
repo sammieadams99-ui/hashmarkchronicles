@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "build:spotlight": "node scripts/build-spotlight.js",
-    "build": "echo 'static site, built by GitHub Pages'"
+    "build": "echo 'static site, built by GitHub Pages'",
+    "secret": "node scripts/generate-cfbd-secret.js"
   },
   "dependencies": {
     "node-fetch": "^3.3.2"
