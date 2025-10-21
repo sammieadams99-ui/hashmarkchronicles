@@ -8,11 +8,11 @@ import { resolve } from 'node:path';
 
 const TEAM = process.env.TEAM || 'Kentucky';
 const YEAR = Number.parseInt(process.env.YEAR || '2025', 10);
-const KEY = process.env.CFBD_KEY || process.env.CFBD_API_KEY;
+const KEY = process.env.CFBD_KEY;
 const DATA_DIR = resolve(process.cwd(), 'data', 'team');
 
 if (!KEY) {
-  throw new Error('CFBD_KEY (or CFBD_API_KEY) env var is required');
+  throw new Error('CFBD_KEY env var is required');
 }
 if (!Number.isFinite(YEAR)) {
   throw new Error('YEAR must be a number (e.g. 2025)');

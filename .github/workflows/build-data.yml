@@ -5,12 +5,11 @@ on:
     - cron: '0 12 * * *'
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -20,8 +19,7 @@ jobs:
 
       - name: Build roster JSON from CFBD
         env:
-          CFBD_KEY: ${{ secrets.CFBD_KEY || secrets.CFBD_API_KEY }}
-          CFBD_API_KEY: ${{ secrets.CFBD_KEY || secrets.CFBD_API_KEY }}
+          CFBD_API_KEY: ${{ secrets.CFBD_KEY }}
           TEAM: Kentucky
           YEAR: '2025'
         run: node scripts/build_cfbd.js
