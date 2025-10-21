@@ -1,4 +1,7 @@
-const ROSTER_PATH = './data/team/roster.json';
+const ROSTER_PATHS = [
+  './data/team/roster_plus.json',
+  './data/team/roster.json'
+];
 const SPOTLIGHT_SOURCES = [
   { id: 'featured', label: 'Featured', path: './data/spotlight_featured.json' },
   { id: 'off_last', label: 'Off last', path: './data/spotlight_offense_last.json' },
@@ -15,6 +18,29 @@ const TAG_PRIORITY = new Map([
   ['Def season', 2]
 ]);
 
+const FILTERS = [
+  {
+    id: 'off',
+    label: 'Off',
+    predicate: (card) => card.tags.some((tag) => /off/i.test(tag)) || card.tags.includes('Featured')
+  },
+  {
+    id: 'def',
+    label: 'Def',
+    predicate: (card) => card.tags.some((tag) => /def/i.test(tag)) || card.tags.includes('Featured')
+  },
+  {
+    id: 'season',
+    label: 'Season',
+    predicate: (card) => card.tags.some((tag) => /season/i.test(tag)) || card.tags.includes('Featured')
+  },
+  {
+    id: 'last',
+    label: 'Last',
+    predicate: (card) => card.tags.some((tag) => /last/i.test(tag)) || card.tags.includes('Featured')
+  }
+];
+
 function onReady(fn) {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', fn, { once: true });
@@ -28,7 +54,7 @@ function fetchList(path, errors) {
   return fetch(bust, { cache: 'no-store' })
     .then(async (res) => {
       if (!res.ok) {
-        errors.push(`HTTP ${res.status} ${path}`);
+        if (Array.isArray(errors)) errors.push(`HTTP ${res.status} ${path}`);
         return [];
       }
       try {
@@ -37,20 +63,28 @@ function fetchList(path, errors) {
         if (data && Array.isArray(data.rows)) return data.rows;
         if (data && typeof data === 'object') return [data];
       } catch (err) {
-        errors.push(`parse ${path}`);
+        if (Array.isArray(errors)) errors.push(`parse ${path}`);
       }
       return [];
     })
     .catch((err) => {
-      errors.push(`${err?.message || 'fetch failed'} ${path}`);
+      if (Array.isArray(errors)) errors.push(`${err?.message || 'fetch failed'} ${path}`);
       return [];
     });
 }
 
-function primaryId(entry) {
-  const id = entry?.athleteId ?? entry?.athlete_id ?? entry?.athlete?.id ?? entry?.playerId ?? entry?.player_id ?? entry?.id;
-  const raw = id == null ? '' : String(id).trim();
-  return raw ? `id:${raw}` : '';
+async function loadRoster(errors) {
+  for (let i = 0; i < ROSTER_PATHS.length; i += 1) {
+    const path = ROSTER_PATHS[i];
+    const rows = await fetchList(path, i === ROSTER_PATHS.length - 1 ? errors : null);
+    if (Array.isArray(rows) && rows.length) {
+      return rows;
+    }
+    if (i === ROSTER_PATHS.length - 1) {
+      return rows;
+    }
+  }
+  return [];
 }
 
 function fullName(entry) {
@@ -188,13 +222,21 @@ function statlineFrom(entry) {
   return '';
 }
 
-function keyFor(entry) {
-  const idKey = primaryId(entry);
-  if (idKey) return idKey;
+function keyFrom(entry) {
+  if (!entry || typeof entry !== 'object') return '';
+  const idFields = ['athleteId', 'athlete_id', 'id', 'playerId'];
+  for (const field of idFields) {
+    if (field in entry && entry[field] != null) {
+      const raw = String(entry[field]).trim();
+      if (raw) return `id:${raw}`;
+    }
+  }
   const name = fullName(entry);
   if (!name) return '';
-  const pos = positionFrom(entry) || 'UNK';
-  return `name:${name.toLowerCase()}${pos ? `:${pos}` : ':UNK'}`;
+  const normalizedName = name.toLowerCase().replace(/\s+/g, ' ').trim();
+  if (!normalizedName) return '';
+  const pos = (positionFrom(entry) || 'UNK').toUpperCase();
+  return `${normalizedName}|${pos}`;
 }
 
 function initials(name) {
@@ -207,11 +249,12 @@ function initials(name) {
     .toUpperCase();
 }
 
-function applyDebug(debugEl, rosterStats, spotlightStats, rendered, errors) {
+function applyDebug(debugEl, rosterStats, spotlightStats, rendered, errors, filterLabel) {
   if (!debugEl) return;
   const label = debugEl.querySelector('.label') || debugEl;
   const dot = debugEl.querySelector('.dot');
-  const base = `spotlight: roster=${rosterStats.keyed}/${rosterStats.total} keys=${spotlightStats.unique}/${spotlightStats.total} rendered=${rendered}`;
+  const suffix = filterLabel ? ` [filter=${filterLabel}]` : '';
+  const base = `spotlight: roster=${rosterStats.keyed}/${rosterStats.total} keys=${spotlightStats.unique}/${spotlightStats.total} rendered=${rendered}${suffix}`;
   if (errors.length) {
     label.textContent = `${base} ⚠️ ${errors[0]}`;
     if (dot) dot.style.background = '#dc2626';
@@ -325,12 +368,12 @@ onReady(async () => {
   const debugEl = document.getElementById('hc-spotlight-debug');
   const errors = [];
 
-  const rosterRows = await fetchList(ROSTER_PATH, errors);
+  const rosterRows = await loadRoster(errors);
   const rosterStats = { total: Array.isArray(rosterRows) ? rosterRows.length : 0, keyed: 0 };
   const rosterMap = new Map();
   if (Array.isArray(rosterRows)) {
     for (const row of rosterRows) {
-      const key = keyFor(row);
+      const key = keyFrom(row);
       if (!key) continue;
       rosterStats.keyed += 1;
       if (!rosterMap.has(key)) {
@@ -352,7 +395,7 @@ onReady(async () => {
     if (!Array.isArray(rows)) continue;
     spotlightTotal += rows.length;
     rows.forEach((entry) => {
-      const key = keyFor(entry);
+      const key = keyFrom(entry);
       if (!key) return;
       const rosterMatch = rosterMap.get(key);
       const existing = cards.get(key) || {
@@ -423,14 +466,71 @@ onReady(async () => {
     return a.name.localeCompare(b.name);
   });
 
-  const limited = finalized.slice(0, 24);
-  renderCards(mount, limited);
-
   const spotlightStats = { unique: finalized.length, total: spotlightTotal };
-  const renderedCount = limited.length;
   const mergedRosterStats = {
     total: rosterStats.total,
     keyed: rosterStats.keyed
   };
-  applyDebug(debugEl, mergedRosterStats, spotlightStats, renderedCount, errors);
+
+  const cardContainer = mount.parentElement;
+  let toggles = null;
+  if (cardContainer) {
+    toggles = cardContainer.querySelector('[data-spotlight-toggles]');
+    if (!toggles) {
+      toggles = document.createElement('div');
+      toggles.className = 'toggles';
+      toggles.dataset.spotlightToggles = 'true';
+      cardContainer.insertBefore(toggles, mount);
+    } else {
+      toggles.innerHTML = '';
+    }
+  }
+
+  const buttons = new Map();
+  const preferredFilter = FILTERS.find((filter) => filter.id === 'last') ? 'last' : FILTERS[0]?.id || '';
+  const state = {
+    filter: preferredFilter
+  };
+
+  function updateButtons(activeId) {
+    buttons.forEach((btn, id) => {
+      const isActive = id === activeId;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+  }
+
+  function applyFilter(filterId) {
+    const active = FILTERS.find((filter) => filter.id === filterId) || FILTERS[0];
+    state.filter = active ? active.id : '';
+    updateButtons(state.filter);
+    if (!active) {
+      renderCards(mount, finalized.slice(0, 24));
+      applyDebug(debugEl, mergedRosterStats, spotlightStats, Math.min(finalized.length, 24), errors, '');
+      return;
+    }
+    const filtered = finalized.filter((card) => active.predicate(card));
+    const limited = filtered.slice(0, 24);
+    renderCards(mount, limited);
+    applyDebug(debugEl, mergedRosterStats, spotlightStats, limited.length, errors, active.label);
+  }
+
+  if (toggles) {
+    FILTERS.forEach((filter) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chip';
+      btn.textContent = filter.label;
+      btn.dataset.filter = filter.id;
+      btn.setAttribute('aria-pressed', 'false');
+      btn.addEventListener('click', () => {
+        if (state.filter === filter.id) return;
+        applyFilter(filter.id);
+      });
+      toggles.appendChild(btn);
+      buttons.set(filter.id, btn);
+    });
+  }
+
+  applyFilter(state.filter);
 });
