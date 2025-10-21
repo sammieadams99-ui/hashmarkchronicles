@@ -276,7 +276,7 @@
       <div class="kicker">The Pulse</div>
       <h2 style="margin-top:6px">Live highlights & Kentucky feeds</h2>
       <p style="margin-bottom:12px">Embedded timelines for quick scrolling. Swap handles or add more as needed.</p>
-      <div class="feeds">
+      <div class="feeds" id="tw-feeds">
         <div><a class="twitter-timeline" data-height="500" data-theme="light" data-chrome="noheader nofooter noborders transparent" href="https://twitter.com/UKFootball">Tweets by UKFootball</a></div>
         <div><a class="twitter-timeline" data-height="500" data-theme="light" data-chrome="noheader nofooter noborders transparent" href="https://twitter.com/UKAthletics">Tweets by UKAthletics</a></div>
         <div><a class="twitter-timeline" data-height="500" data-theme="light" data-chrome="noheader nofooter noborders transparent" href="https://twitter.com/KySportsRadio">Tweets by KySportsRadio</a></div>
@@ -302,9 +302,6 @@
       </div>
     </div>
   </footer>
-
-  <!-- X/Twitter embeds -->
-  <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
   <!-- ======== INLINE FALLBACK DATA (used only if ESPN fails) ======== -->
   <script type="application/json" id="fallback-ticker">
@@ -473,20 +470,20 @@
     /* ---------------- ESPN FETCHERS ---------------- */
     async function getTeamEnv(teamId){
       try{ return await j(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/${teamId}`); }
-      catch(_){ return null; }
+      catch (e) { return null; }
     }
     async function getSummary(eventId){
       return await j(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=${eventId}`);
     }
     async function getTeamLeaders(teamId){
       try{ return await j(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/${teamId}/leaders`); }
-      catch(_){ return null; }
+      catch (e) { return null; }
     }
     async function chooseEvent(env){
       const next=env?.team?.nextEvent?.[0]; const prev=env?.team?.previousEvent?.[0];
       async function pack(e){ const sum=await getSummary(e.id); const comp=sum?.header?.competitions?.[0]; const state=comp?.status?.type?.state; return {id:e.id,sum,comp,state}; }
-      if(next?.id){ try{const p=await pack(next); if(p.state==='post'||p.state==='in') return p;}catch(_){ } }
-      if(prev?.id){ try{return await pack(prev);}catch(_){ } }
+      if(next?.id){ try{const p=await pack(next); if(p.state==='post'||p.state==='in') return p;}catch (e) { } }
+      if(prev?.id){ try{return await pack(prev);}catch (e) { } }
       return null;
     }
 
@@ -1237,6 +1234,34 @@
     await loadCFBDSpotlight();
     await bootLive();
     setInterval(bootLive, POLL_MS);
+
+    (function lazyTwitter(){
+      const el = document.getElementById('tw-feeds');
+      if(!el) return;
+      let loaded = false;
+      const load = () => {
+        if(loaded) return;
+        loaded = true;
+        const s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://platform.twitter.com/widgets.js';
+        s.charset = 'utf-8';
+        document.body.appendChild(s);
+      };
+      if('IntersectionObserver' in window){
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if(entry.isIntersecting){
+              load();
+              io.disconnect();
+            }
+          });
+        }, { rootMargin: '200px' });
+        io.observe(el);
+      } else {
+        setTimeout(load, 2000);
+      }
+    })();
 
     // footer year
     const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
