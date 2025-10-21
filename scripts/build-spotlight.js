@@ -89,16 +89,21 @@ async function getForcedLatestGame() {
 
   if (latest) {
     const gid = latest.id || latest.game_id;
+    const WEEK = latest.week || latest.week_number || latest.weekNum || null;
     console.log(`Using game ${gid} — ${latest.home_team || latest.homeTeam} vs ${latest.away_team || latest.awayTeam} on ${latest.start_date || latest.startDate}`);
     let pick = { ...latest };
     try {
       const key = CFBD_KEY || process.env.CFBD_KEY || process.env.CFBD_API_KEY;
-      const url = `https://api.collegefootballdata.com/games/players?gameId=${gid}&year=${YEAR}`;
+      const url = WEEK
+        ? `https://api.collegefootballdata.com/games/players?year=${YEAR}&week=${WEEK}&gameId=${gid}`
+        : `https://api.collegefootballdata.com/games/players?year=${YEAR}&gameId=${gid}`;
+      console.log('GET', url);
+      console.log('[CFBD] Using year', YEAR, 'week', WEEK, 'gameId', gid);
       const r = await fetch(url, {
         headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' }
       });
       const ct = (r.headers.get('content-type') || '').toLowerCase();
-      console.log('GET', url, '→', r.status, ct);
+      console.log('→', r.status, ct);
       if (r.status === 400) console.log('[warn] CFBD 400:', await r.clone().text().catch(() => '(no body)'));
 
       let box = null;
