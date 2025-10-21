@@ -576,42 +576,80 @@ async function buildSpotlight(latestGame = null) {
   {
     const players = Array.isArray(box?.players) ? box.players : (Array.isArray(box) ? box : []);
     const num = v => Number(String(v||'').replace(/[^0-9.-]/g,''))||0;
-    const mk = (name,pos,head,espn,line) => ({ name, pos, headshot: head||'', espn: espn||'#', statline: line||'' });
+    const mk  = (name,pos,head,espn,line) => ({ name, pos, headshot: head||'', espn: espn||'#', statline: line||'' });
 
-    const passers = players.filter(p => /pass/i.test(p?.statCategory || p?.category || '') || /qb/i.test(p?.athlete?.position?.abbreviation||''));
-    const rushers = players.filter(p => /rush/i.test(p?.statCategory || p?.category || '') || /rb/i.test(p?.athlete?.position?.abbreviation||''));
-    const receivers = players.filter(p => /rec/i.test(p?.statCategory || p?.category || '') || /wr|te/i.test(p?.athlete?.position?.abbreviation||''));
-
-    function topRow(list, keyRx) {
-      if (!list.length) return null;
-      const rows = list.map(e => {
-        const id = e?.athlete?.id || e?.id;
-        const head = id ? `https://a.espncdn.com/i/headshots/college-football/players/full/${id}.png` : '';
-        const name = e?.athlete?.displayName || e?.displayName || 'Unknown';
-        const pos = e?.athlete?.position?.abbreviation || '';
-        const stats = Array.isArray(e?.stats) ? e.stats : [];
-        const yds = stats.reduce((acc,s)=>acc+(keyRx.test(String(s?.label||'').toUpperCase())?num(s.value):0),0);
-        const line = stats.map(s=>`${String(s?.label||'').toUpperCase().replace('_','-')} ${s?.value||''}`).filter(Boolean).slice(0,3).join(' • ');
-        return { name,pos,id,head,espn:`https://www.espn.com/college-football/player/_/id/${id}`,line,yds };
-      }).sort((a,b)=>b.yds-a.yds);
-      const b=rows[0]; return b?mk(b.name,b.pos,b.head,b.espn,b.line):null;
+    function badgeFor(ath){
+      const id = ath?.id || ath?.athlete?.id;
+      const head = id ? `https://a.espncdn.com/i/headshots/college-football/players/full/${id}.png` : '';
+      const name = ath?.athlete?.displayName || ath?.displayName || 'Unknown';
+      const pos  = ath?.athlete?.position?.abbreviation || '';
+      const espn = id ? `https://www.espn.com/college-football/player/_/id/${id}` : '#';
+      return { id, head, name, pos, espn };
     }
 
-    const offenseBox = [ topRow(passers,/YDS|PASS/), topRow(rushers,/YDS|RUSH/), topRow(receivers,/YDS|REC|RECEIVE/) ].filter(Boolean);
+    // Normalize each entry to {label,value} array if provided
+    function flatStats(e){
+      return Array.isArray(e?.stats) ? e.stats.map(s => ({
+        label: String(s?.label||s?.name||'').toUpperCase(),
+        value: s?.value ?? ''
+      })) : [];
+    }
 
-    const defenders = players.filter(p => /def/i.test(p?.statCategory || p?.category || '') || /lb|db|dl|de|nt|cb|s|fs|ss/i.test(p?.athlete?.position?.abbreviation||''));
-    const defenseBox = defenders.slice(0,3).map(e=>{
-      const id = e?.athlete?.id || e?.id;
-      const head = id?`https://a.espncdn.com/i/headshots/college-football/players/full/${id}.png`:'';
-      const name = e?.athlete?.displayName || e?.displayName || 'Unknown';
-      const pos = e?.athlete?.position?.abbreviation || '';
-      const stats = Array.isArray(e?.stats)?e.stats:[];
-      const line = stats.map(s=>`${String(s?.label||'').toUpperCase().replace('_','-')} ${s?.value||''}`).filter(Boolean).slice(0,3).join(' • ');
-      return mk(name,pos,head,`https://www.espn.com/college-football/player/_/id/${id}`,line);
-    });
+    function bestOffenseRows(players){
+      const passers = [], rushers = [], receivers = [];
+      for (const e of players){
+        const cat = String(e?.statCategory||e?.category||'').toLowerCase();
+        const st  = flatStats(e);
+        const tag = badgeFor(e);
+        if (!tag.name) continue;
+        if (cat.includes('pass') || /qb/i.test(tag.pos)) {
+          const y = st.find(s=>/YDS|PASS/.test(s.label)); const td = st.find(s=>/TD|TOUCH/.test(s.label));
+          passers.push({ tag, yds:num(y?.value), line: st.slice(0,3).map(s=>`${s.label.replace('_','-')} ${s.value}`).join(' • ') });
+        }
+        if (cat.includes('rush') || /rb/i.test(tag.pos)) {
+          const y = st.find(s=>/YDS|RUSH/.test(s.label)); const td = st.find(s=>/TD|TOUCH/.test(s.label));
+          rushers.push({ tag, yds:num(y?.value), line: st.slice(0,3).map(s=>`${s.label.replace('_','-')} ${s.value}`).join(' • ') });
+        }
+        if (cat.includes('rec') || /(wr|te)/i.test(tag.pos)) {
+          const y = st.find(s=>/YDS|REC/.test(s.label)); const td = st.find(s=>/TD|TOUCH/.test(s.label));
+          receivers.push({ tag, yds:num(y?.value), line: st.slice(0,3).map(s=>`${s.label.replace('_','-')} ${s.value}`).join(' • ') });
+        }
+      }
+      passers.sort((a,b)=>b.yds-a.yds);
+      rushers.sort((a,b)=>b.yds-a.yds);
+      receivers.sort((a,b)=>b.yds-a.yds);
+      const P = passers[0], R = rushers[0], W = receivers[0];
+      return [P,R,W].filter(Boolean).map(x => mk(x.tag.name, x.tag.pos, x.tag.head, x.tag.espn, x.line));
+    }
 
-    if (offenseBox.length) offenseLast = offenseBox;
-    if (defenseBox.length) defenseLast = defenseBox;
+    function bestDefenseRows(players){
+      const rows = [];
+      for (const e of players){
+        const cat = String(e?.statCategory||e?.category||'').toLowerCase();
+        if (!cat.includes('def')) continue;
+        const st  = flatStats(e);
+        const tag = badgeFor(e);
+        const TKL = num((st.find(s=>/TOT|TOTAL/.test(s.label))||{}).value);
+        const TFL = num((st.find(s=>/TFL/.test(s.label))||{}).value);
+        const SCK = num((st.find(s=>/SCK|SACK/.test(s.label))||{}).value);
+        const INT = num((st.find(s=>/INT|INTERCEPT/.test(s.label))||{}).value);
+        const score = TKL*2 + TFL*6 + SCK*8 + INT*10;
+        const line = [ TKL?`TKL ${TKL}`:'', TFL?`TFL ${TFL}`:'', SCK?`SACKS ${SCK}`:'', INT?`INT ${INT}`:'' ].filter(Boolean).slice(0,3).join(' • ');
+        rows.push({ tag, score, line });
+      }
+      rows.sort((a,b)=>b.score-a.score);
+      return rows.slice(0,3).map(x => mk(x.tag.name, x.tag.pos, x.tag.head, x.tag.espn, x.line));
+    }
+
+    // Build last rows
+    const offenseRows = bestOffenseRows(players);
+    const defenseRows = bestDefenseRows(players);
+    await fs.writeFile('data/spotlight_offense_last.json', JSON.stringify(offenseRows, null, 2));
+    await fs.writeFile('data/spotlight_defense_last.json', JSON.stringify(defenseRows, null, 2));
+    console.log(`✅ wrote offense_last (${offenseRows.length}) and defense_last (${defenseRows.length})`);
+
+    if (offenseRows.length) offenseLast = offenseRows;
+    if (defenseRows.length) defenseLast = defenseRows;
   }
 
   if (!offenseLast.length) {
