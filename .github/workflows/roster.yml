@@ -1,8 +1,8 @@
-name: Update Spotlight Feeds
+name: Build CFBD roster data
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/30 * * * *"  # every 30 minutes
+    - cron: "0 12 * * *"  # daily 12:00 UTC
 
 permissions:
   contents: write
@@ -12,6 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -19,17 +22,17 @@ jobs:
       - run: npm init -y || true
       - run: npm pkg set type=module
 
-      - name: Run spotlight builder
+      - name: Run roster builder
         env:
           CFBD_KEY: ${{ secrets.CFBD_KEY }}
           TEAM: Kentucky
           YEAR: 2025
-        run: node scripts/build_spotlight.js || true
+        run: node scripts/build_roster.js
 
       - name: Commit /data updates
         run: |
           git config user.name  "data-bot"
           git config user.email "data-bot@users.noreply.github.com"
-          git add data/live/*.json data/spotlight/*.json 2>/dev/null || true
-          git commit -m "Update spotlight feeds" || echo "No changes"
-          git push || true
+          git add data/team/*.json
+          git commit -m "Update roster data" || echo "No changes"
+          git push

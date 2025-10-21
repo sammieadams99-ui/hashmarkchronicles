@@ -248,7 +248,11 @@ async function buildTicker() {
   // last played week
   const games = await get(`https://api.collegefootballdata.com/games?year=${YEAR}&team=${encodeURIComponent(TEAM)}&seasonType=regular`);
   const played = (games||[]).filter(g => g.home_points != null && g.away_points != null);
-  const lastWeek = played.length ? Math.max(...played.map(g => g.week || g.week_number || 0)) : null;
+  if (!played.length) {
+    console.log('[spotlight] No completed games yet — skipping update.');
+    process.exit(0);
+  }
+  const lastWeek = Math.max(...played.map(g => g.week || g.week_number || 0));
   base.lastWeek = lastWeek ?? null;
 
   // season advanced (success rate, havoc)
