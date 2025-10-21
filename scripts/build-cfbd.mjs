@@ -10,14 +10,13 @@ const YEAR = parseInt(process.env.YEAR || "2025", 10);
 const TEAM = process.env.TEAM || "Kentucky";
 const TEAM_ID = String(process.env.TEAM_ID || "96");
 const DATA_DIR = resolve(process.cwd(), "data");
-const CFBD_KEY = process.env.CFBD_KEY || process.env.CFBD_API_KEY;
 
-if (!CFBD_KEY) {
-  throw new Error("CFBD_KEY (or CFBD_API_KEY) env var is required");
+if (!process.env.CFBD_KEY) {
+  throw new Error("CFBD_KEY env var is required");
 }
 
 const H = {
-  Authorization: `Bearer ${CFBD_KEY}`,
+  Authorization: `Bearer ${process.env.CFBD_KEY}`,
   "Content-Type": "application/json",
 };
 
@@ -148,7 +147,7 @@ async function latestGameId() {
         new Date(b.start_date || b.startDate || b.date)
     );
   const last = done.at(-1);
-  if (!last) return null;
+  if (!last) throw new Error("No completed game found");
   return { gameId: last.id ?? last.game_id ?? last.gameId, meta: last };
 }
 
@@ -418,13 +417,7 @@ function adaptForFrontEnd(rows, espnMap) {
 async function run() {
   const espnMap = await readESPNMap();
 
-  const latest = await latestGameId();
-  if (!latest) {
-    console.log("[cfbd] no completed game found — skipping spotlight refresh");
-    return;
-  }
-
-  const { gameId } = latest;
+  const { gameId } = await latestGameId();
   const flatLast = await playerGameRows(gameId);
   const offLast = pickTopOffense(flatLast);
   const defLast = pickTopDefense(flatLast);

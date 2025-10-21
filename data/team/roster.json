@@ -6,6 +6,10 @@
     "lastName": "Boley",
     "position": "QB",
     "jersey": 12,
+    "height": 78,
+    "weight": 225,
+    "year": "FR",
+    "hometown": "Lexington, KY",
     "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5141378.png",
     "initials": "CB",
     "stats": {
@@ -21,6 +25,10 @@
     "lastName": "McGowan",
     "position": "RB",
     "jersey": 1,
+    "height": 72,
+    "weight": 211,
+    "year": "JR",
+    "hometown": "Oklahoma City, OK",
     "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4686468.png",
     "initials": "SM",
     "stats": {
@@ -36,6 +44,10 @@
     "lastName": "Law",
     "position": "WR",
     "jersey": 2,
+    "height": 72,
+    "weight": 201,
+    "year": "JR",
+    "hometown": "Shreveport, LA",
     "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4685441.png",
     "initials": "KL",
     "stats": {
