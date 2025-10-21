@@ -5,6 +5,7 @@ import fetch from 'node-fetch';
 const YEAR = process.env.YEAR || String(new Date().getFullYear());
 const TEAM = 'Kentucky';
 const CFBD_KEY = process.env.CFBD_KEY;
+const FORCE_BUILD = Boolean(process.env.FORCE_BUILD);
 
 if (!CFBD_KEY) {
   console.error('[spotlight] Missing CFBD_KEY env var — aborting.');
@@ -12,6 +13,52 @@ if (!CFBD_KEY) {
 }
 
 const HDRS = { Authorization: `Bearer ${CFBD_KEY}` };
+
+// Helper for FORCE_BUILD: fetch latest completed game directly from CFBD /games
+async function getForcedLatestGame() {
+  if (!FORCE_BUILD) return null;
+
+  console.log('⚙️ FORCE_BUILD enabled — building from most recent available game.');
+
+  async function fetchGames(seasonType) {
+    const url = `https://api.collegefootballdata.com/games?year=${YEAR}&team=${encodeURIComponent(TEAM)}&seasonType=${seasonType}`;
+    console.log('GET', url);
+    const r = await fetch(url, { headers: HDRS });
+    console.log('→', r.status, seasonType);
+    if (!r.ok) throw new Error(`CFBD /games ${seasonType} ${r.status}`);
+    const rows = await r.json();
+    console.log(`CFBD ${seasonType} games found: ${Array.isArray(rows) ? rows.length : 0}`);
+    return rows;
+  }
+
+  function latestCompleted(list) {
+    const rows = Array.isArray(list) ? list.slice() : [];
+    const done = rows.filter(g => g.home_points != null && g.away_points != null);
+    done.sort((a, b) => new Date(b.start_date || b.startDate) - new Date(a.start_date || a.startDate));
+    return done[0] || null;
+  }
+
+  let latest = null;
+  try {
+    const reg = await fetchGames('regular');
+    latest = latestCompleted(reg);
+    if (!latest) {
+      const post = await fetchGames('postseason');
+      latest = latestCompleted(post);
+    }
+  } catch (e) {
+    console.log('CFBD /games fetch error:', e?.message || e);
+  }
+
+  if (latest) {
+    const gid = latest.id || latest.game_id;
+    console.log(`Using game ${gid} — ${latest.home_team} vs ${latest.away_team} on ${latest.start_date || latest.startDate}`);
+    return latest;
+  }
+
+  console.log('No completed games found for this year/team; continuing with existing data.');
+  return null;
+}
 
 const OUT = {
   oLast: './data/spotlight_offense_last.json',
@@ -226,19 +273,6 @@ function topK(list, scorer, k=3){
   return [...list].sort((a,b)=>scorer(b)-scorer(a)).slice(0,k);
 }
 
-function formatRow(base, statline, score, span){
-  return {
-    name: base.name,
-    pos: base.pos,
-    slug: base.slug,
-    headshot: base.headshot,
-    espn: base.espn,
-    statline,
-    score: Number.isFinite(score) ? Number(score) : null,
-    span
-  };
-}
-
 async function ensureDir(){
   try { await fs.mkdir('./data', { recursive: true }); } catch {}
 }
@@ -248,17 +282,26 @@ async function writeJSON(path, data){
 }
 
 // ---- Build Ticker ----
-async function buildTicker() {
+async function buildTicker(latestGame = null) {
   const base = { year: YEAR, team: TEAM, lastWeek: null, items: [] };
 
   // last played week
   const games = await get(`https://api.collegefootballdata.com/games?year=${YEAR}&team=${encodeURIComponent(TEAM)}&seasonType=regular`);
   const played = (games||[]).filter(g => g.home_points != null && g.away_points != null);
-  if (!played.length) {
+  let lastWeek = played.length ? Math.max(...played.map(g => g.week || g.week_number || 0)) : null;
+
+  if (latestGame) {
+    const forcedWeek = latestGame.week ?? latestGame.week_number ?? latestGame.weekNumber ?? null;
+    if (forcedWeek != null) {
+      lastWeek = forcedWeek;
+    }
+  }
+
+  if (lastWeek == null) {
     console.log('[spotlight] No completed games yet — skipping update.');
     process.exit(0);
   }
-  const lastWeek = Math.max(...played.map(g => g.week || g.week_number || 0));
+
   base.lastWeek = lastWeek ?? null;
 
   // season advanced (success rate, havoc)
@@ -308,11 +351,29 @@ async function buildTicker() {
 }
 
 // ---- Build Spotlight (last + season) ----
-async function buildSpotlight() {
+async function buildSpotlight(latestGame = null) {
   // last week (if none, keep arrays empty)
   const games = await get(`https://api.collegefootballdata.com/games?year=${YEAR}&team=${encodeURIComponent(TEAM)}&seasonType=regular`);
   const played = (games||[]).filter(g => g.home_points != null && g.away_points != null);
-  const lastWeek = played.length ? Math.max(...played.map(g => g.week || g.week_number || 0)) : null;
+  let lastWeek = played.length ? Math.max(...played.map(g => g.week || g.week_number || g.weekNumber || 0)) : null;
+  let lastSeasonType = 'regular';
+
+  if (lastWeek != null) {
+    const match = played.find(g => (g.week || g.week_number || g.weekNumber || null) === lastWeek);
+    const st = match?.season_type || match?.seasonType;
+    if (st) lastSeasonType = String(st).toLowerCase();
+  }
+
+  if (latestGame) {
+    const forcedWeek = latestGame.week ?? latestGame.week_number ?? latestGame.weekNumber ?? null;
+    if (forcedWeek != null) {
+      lastWeek = forcedWeek;
+    }
+    const forcedSeasonType = latestGame.season_type || latestGame.seasonType;
+    if (forcedSeasonType) {
+      lastSeasonType = String(forcedSeasonType).toLowerCase();
+    }
+  }
 
   // load ESPN id mapping
   let map = {};
@@ -323,50 +384,13 @@ async function buildSpotlight() {
   const seasonPlayers = foldPlayers(seasonRows);
 
   // last-game stats
-  const gameRows = lastWeek
-    ? (await get(`https://api.collegefootballdata.com/stats/player/game?year=${YEAR}&team=${encodeURIComponent(TEAM)}&week=${lastWeek}`) || [])
-    : [];
+  let gameRows = [];
+  if (lastWeek != null) {
+    const seasonTypeParam = lastSeasonType && lastSeasonType !== 'regular' ? `&seasonType=${lastSeasonType}` : '';
+    gameRows = await get(`https://api.collegefootballdata.com/stats/player/game?year=${YEAR}&team=${encodeURIComponent(TEAM)}&week=${lastWeek}${seasonTypeParam}`) || [];
+  }
   const gamePlayers = foldPlayers(gameRows);
 
-  const offenseLast = topK(gamePlayers.filter(p => /QB|RB|WR|TE|ATH/i.test(p.pos)), scoreOff, 3)
-    .map(p => {
-      const base = decorate(p, map);
-      const statline = statLineOff(p);
-      return formatRow(base, statline, scoreOff(p), 'last');
-    });
-
-  const defenseLast = topK(gamePlayers.filter(p => !/QB|RB|WR|TE/i.test(p.pos)), scoreDef, 3)
-    .map(p => {
-      const base = decorate(p, map);
-      const statline = statLineDef(p);
-      return formatRow(base, statline, scoreDef(p), 'last');
-    });
-
-  const offenseSeason = topK(seasonPlayers.filter(p => /QB|RB|WR|TE|ATH/i.test(p.pos)), scoreOff, 3)
-    .map(p => {
-      const base = decorate(p, map);
-      const statline = statLineOff(p);
-      return formatRow(base, statline, scoreOff(p), 'season');
-    });
-
-  const defenseSeason = topK(seasonPlayers.filter(p => !/QB|RB|WR|TE/i.test(p.pos)), scoreDef, 3)
-    .map(p => {
-      const base = decorate(p, map);
-      const statline = statLineDef(p);
-      return formatRow(base, statline, scoreDef(p), 'season');
-    });
-
-  // featured = best of the 6 (prefer last-game offense, then defense, else season offense)
-  const candidates = [...offenseLast, ...defenseLast, ...offenseSeason];
-  const featured = candidates.length ? candidates[0] : {
-    name: '—',
-    pos: '',
-    slug: '—',
-    headshot: '',
-    espn: `https://www.espn.com/search/results?q=${encodeURIComponent('Kentucky football')}`,
-    statline: '—',
-    span: 'last'
-  };
   const offenseLast = rankPlayers(
     gamePlayers.filter(p => /QB|RB|WR|TE|ATH/i.test(p.pos)),
     scoreOff,
@@ -423,15 +447,23 @@ async function buildSpotlight() {
 async function main() {
   await ensureDir();
 
-  const sp = await buildSpotlight();
-  await writeJSON(OUT.oLast, sp.offenseLast);
-  await writeJSON(OUT.dLast, sp.defenseLast);
-  await writeJSON(OUT.oSeason, sp.offenseSeason);
-  await writeJSON(OUT.dSeason, sp.defenseSeason);
-  await writeJSON(OUT.featured, sp.featured);
+  const latestGame = await getForcedLatestGame();
 
-  const ticker = await buildTicker();
+  const sp = await buildSpotlight(latestGame);
+  await writeJSON(OUT.oLast, sp.offenseLast);
+  console.log(`✅ wrote ${OUT.oLast.replace(/^\.\//, '')} (${sp.offenseLast.length})`);
+  await writeJSON(OUT.dLast, sp.defenseLast);
+  console.log(`✅ wrote ${OUT.dLast.replace(/^\.\//, '')} (${sp.defenseLast.length})`);
+  await writeJSON(OUT.oSeason, sp.offenseSeason);
+  console.log(`✅ wrote ${OUT.oSeason.replace(/^\.\//, '')} (${sp.offenseSeason.length})`);
+  await writeJSON(OUT.dSeason, sp.defenseSeason);
+  console.log(`✅ wrote ${OUT.dSeason.replace(/^\.\//, '')} (${sp.defenseSeason.length})`);
+  await writeJSON(OUT.featured, sp.featured);
+  console.log(`✅ wrote ${OUT.featured.replace(/^\.\//, '')}`);
+
+  const ticker = await buildTicker(latestGame);
   await writeJSON(OUT.ticker, ticker);
+  console.log(`✅ wrote ${OUT.ticker.replace(/^\.\//, '')} (${Array.isArray(ticker.items) ? ticker.items.length : 0})`);
 
   console.log('Spotlight + ticker written for', TEAM, YEAR, 'Last week:', sp.lastWeek ?? 'n/a');
 }
