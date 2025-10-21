@@ -1,0 +1,47 @@
+[
+  {
+    "athleteId": "5141378",
+    "name": "Cutter Boley",
+    "firstName": "Cutter",
+    "lastName": "Boley",
+    "position": "QB",
+    "jersey": 12,
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5141378.png",
+    "initials": "CB",
+    "stats": {
+      "passingYards": 885,
+      "passingTouchdowns": 4,
+      "interceptions": 4
+    }
+  },
+  {
+    "athleteId": "4686468",
+    "name": "Seth McGowan",
+    "firstName": "Seth",
+    "lastName": "McGowan",
+    "position": "RB",
+    "jersey": 1,
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4686468.png",
+    "initials": "SM",
+    "stats": {
+      "rushingYards": 476,
+      "rushingTouchdowns": 7,
+      "receptions": 15
+    }
+  },
+  {
+    "athleteId": "4685441",
+    "name": "Kendrick Law",
+    "firstName": "Kendrick",
+    "lastName": "Law",
+    "position": "WR",
+    "jersey": 2,
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4685441.png",
+    "initials": "KL",
+    "stats": {
+      "receivingYards": 358,
+      "receivingTouchdowns": 3,
+      "receptions": 28
+    }
+  }
+]
