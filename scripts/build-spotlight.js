@@ -4,7 +4,7 @@ import fetch from 'node-fetch';
 
 const YEAR = process.env.YEAR || String(new Date().getFullYear());
 const TEAM = 'Kentucky';
-const CFBD_KEY = process.env.CFBD_KEY;
+const CFBD_KEY = process.env.CFBD_KEY || process.env.CFBD_API_KEY;
 const FORCE_BUILD = Boolean(process.env.FORCE_BUILD);
 
 if (!CFBD_KEY) {
@@ -12,7 +12,7 @@ if (!CFBD_KEY) {
   process.exit(1);
 }
 
-const HDRS = { Authorization: `Bearer ${CFBD_KEY}` };
+const HEADERS = { Authorization: `Bearer ${CFBD_KEY}` };
 
 // Helper for FORCE_BUILD: fetch latest completed game directly from CFBD /games
 async function getForcedLatestGame() {
@@ -20,15 +20,16 @@ async function getForcedLatestGame() {
 
   console.log('⚙️ FORCE_BUILD enabled — building from most recent available game.');
 
+  if (!CFBD_KEY) throw new Error('Missing CFBD_KEY');
+  const headers = { Authorization: `Bearer ${CFBD_KEY}` };
+
   async function fetchGames(seasonType) {
     const url = `https://api.collegefootballdata.com/games?year=${YEAR}&team=${encodeURIComponent(TEAM)}&seasonType=${seasonType}`;
     console.log('GET', url);
-    const r = await fetch(url, { headers: HDRS });
+    const r = await fetch(url, { headers });
     console.log('→', r.status, seasonType);
     if (!r.ok) throw new Error(`CFBD /games ${seasonType} ${r.status}`);
-    const rows = await r.json();
-    console.log(`CFBD ${seasonType} games found: ${Array.isArray(rows) ? rows.length : 0}`);
-    return rows;
+    return r.json();
   }
 
   function latestCompleted(list) {
@@ -41,9 +42,11 @@ async function getForcedLatestGame() {
   let latest = null;
   try {
     const reg = await fetchGames('regular');
+    console.log(`CFBD regular games found: ${Array.isArray(reg) ? reg.length : 0}`);
     latest = latestCompleted(reg);
     if (!latest) {
       const post = await fetchGames('postseason');
+      console.log(`CFBD postseason games found: ${Array.isArray(post) ? post.length : 0}`);
       latest = latestCompleted(post);
     }
   } catch (e) {
@@ -76,7 +79,7 @@ async function get(url) {
   // retry light for transient CFBD hiccups
   for (let i=0;i<2;i++){
     try {
-      const r = await fetch(url, { headers: HDRS });
+      const r = await fetch(url, { headers: HEADERS });
       if (r.ok) return r.json();
     } catch (err) {
       if (i === 0) console.warn('[spotlight] fetch failed', url, err?.message||err);
