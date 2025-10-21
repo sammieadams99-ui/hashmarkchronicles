@@ -525,7 +525,7 @@
 
       // ---- STATE ----
       let side='offense', span='last';
-      let LIVE={ offense_last:[], defense_last:[] };
+      let LIVE={ offense_last:[], defense_last:[], offense_season:[], defense_season:[] };
 
       wrap?.querySelectorAll('.chip').forEach(btn=>{
         btn.addEventListener('click',()=>{
@@ -560,17 +560,6 @@
         loadMini(); // will use inline arrays until LIVE arrives
       })();
 
-      function loadMini(){
-        if(span==='last'){
-          const arr = side==='offense' ? LIVE.offense_last : LIVE.defense_last;
-          if(arr && arr.length){ renderList(arr); return; }
-        }
-        // Use inline arrays for anything else (or until LIVE present)
-        const inline = readInlineJSON(`fallback-spotlight_${side}_${span}`) || [];
-        const adapt = inline.map(p=>({ name:p.name, pos:p.pos, headshot:p.headshot, espn:p.espn, statline:Object.entries((p.last_game||p.season||{})).slice(0,3).map(([k,v])=>`${k.toUpperCase().replace('_','-')} ${v}`).join(' • ') }));
-        renderList(adapt);
-      }
-
       async function fetchSpotlightFile(path) {
         try {
           const r = await fetch(path + '?ts=' + Date.now(), { cache: 'no-store' });
@@ -596,6 +585,8 @@
         const dLast   = await fetchSpotlightFile('/data/spotlight_defense_last.json');
         const oSeason = await fetchSpotlightFile('/data/spotlight_offense_season.json');
         const dSeason = await fetchSpotlightFile('/data/spotlight_defense_season.json');
+        LIVE.offense_season = oSeason;
+        LIVE.defense_season = dSeason;
         LIVE.offense_last  = oLast.length ? oLast : oSeason;
         LIVE.defense_last  = dLast.length ? dLast : dSeason;
         const f = (LIVE.offense_last[0] || LIVE.defense_last[0]);
@@ -603,6 +594,26 @@
           featuredEl.innerHTML = rowHTML(f);
           featuredEl.style.display = 'flex';
         }
+      }
+
+      function loadMini(){
+        const key = `${side}_${span}`;
+        let arr = LIVE[key];
+
+        // If "Last" is empty, display Season rows instead
+        if(span==='last' && (!Array.isArray(arr) || !arr.length)){
+          arr = LIVE[`${side}_season`] || [];
+        }
+
+        if(Array.isArray(arr) && arr.length){
+          renderList(arr);
+          return;
+        }
+
+        // Use inline arrays for anything else (or until LIVE present)
+        const inline = readInlineJSON(`fallback-spotlight_${side}_${span}`) || [];
+        const adapt = inline.map(p=>({ name:p.name, pos:p.pos, headshot:p.headshot, espn:p.espn, statline:Object.entries((p.last_game||p.season||{})).slice(0,3).map(([k,v])=>`${k.toUpperCase().replace('_','-')} ${v}`).join(' • ') }));
+        renderList(adapt);
       }
 
       // ---- ESPN live boot ----
