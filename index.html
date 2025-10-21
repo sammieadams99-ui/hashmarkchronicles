@@ -923,6 +923,7 @@
 
     /* ---------------- Draw inline immediately ---------------- */
     (function drawInlineFirst(){
+      seedFallbackState();
       const feat=readJSON('fallback-spotlight_featured');
       const normalized=normalizeEntry(feat, feat?.season && !feat?.last_game ? 'season' : 'last');
       if(normalized&&featuredEl){
@@ -932,15 +933,6 @@
       }
       loadMini(); // uses inline until LIVE lands
     })();
-
-    function estimateInlineGrade(p){
-      // Gentle heuristic so fallbacks don't all look the same
-      const src=p.last_game||p.season||{};
-      const y=num(src.yds||src.rec_yds||0), td=num(src.td||src.rec_td||0), ints=num(src.int||0);
-      const rec=num(src.rec||0), rush=num(src.rush||0);
-      const base = 55 + y*0.05 + td*6 + rec*0.6 + rush*0.4 - ints*8;
-      return letterFromPct(clamp(40,95,base));
-    }
 
     function loadMini(){
       const key = `${side}_${span}`;
