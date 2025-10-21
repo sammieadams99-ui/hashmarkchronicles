@@ -93,12 +93,13 @@ async function getForcedLatestGame() {
     let pick = { ...latest };
     try {
       const key = CFBD_KEY || process.env.CFBD_KEY || process.env.CFBD_API_KEY;
-      const url = `https://api.collegefootballdata.com/games/players?gameId=${gid}`;
+      const url = `https://api.collegefootballdata.com/games/players?gameId=${gid}&year=${YEAR}`;
       const r = await fetch(url, {
         headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' }
       });
       const ct = (r.headers.get('content-type') || '').toLowerCase();
       console.log('GET', url, '→', r.status, ct);
+      if (r.status === 400) console.log('[warn] CFBD 400:', await r.clone().text().catch(() => '(no body)'));
 
       let box = null;
       if (r.ok && ct.includes('application/json')) {
