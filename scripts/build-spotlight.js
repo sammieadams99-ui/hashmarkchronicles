@@ -29,7 +29,19 @@ async function getForcedLatestGame() {
     const r = await fetch(url, { headers });
     console.log('→', r.status, seasonType);
     if (!r.ok) throw new Error(`CFBD /games ${seasonType} ${r.status}`);
-    return r.json();
+    const ct = (r.headers.get('content-type') || '').toLowerCase();
+    if (!ct.includes('json')) {
+      console.warn('[warn] non-JSON response:', r.status, ct);
+      return null;
+    }
+    let data;
+    try {
+      data = await r.json();
+    } catch (err) {
+      console.warn('[warn] JSON parse failed:', err?.message || err);
+      return null;
+    }
+    return data;
   }
 
   function isFiniteNum(x) {
@@ -107,11 +119,14 @@ async function getForcedLatestGame() {
       if (r.status === 400) console.log('[warn] CFBD 400:', await r.clone().text().catch(() => '(no body)'));
 
       let box = null;
-      if (r.ok && ct.includes('application/json')) {
-        box = await r.json();
+      if (!ct.includes('json')) {
+        console.warn('[warn] non-JSON response:', r.status, ct);
       } else {
-        const body = await r.text().catch(() => '(no body)');
-        console.log('[warn] CFBD non-JSON:', r.status, body.slice(0, 160));
+        try {
+          box = await r.json();
+        } catch (err) {
+          console.warn('[warn] JSON parse failed:', err?.message || err);
+        }
       }
 
       if (!box) {
@@ -119,6 +134,7 @@ async function getForcedLatestGame() {
       } else {
         const players = Array.isArray(box.players) ? box.players : (Array.isArray(box) ? box : []);
         console.log(`[spotlight] ✅ Retrieved player data for game ${gid} (${players.length} entries)`);
+        console.log('[spotlight] ✅ Parsed', players.length, 'entries');
         pick = {
           ...pick,
           sum: {
@@ -159,7 +175,19 @@ async function get(url) {
   for (let i=0;i<2;i++){
     try {
       const r = await fetch(url, { headers: HEADERS });
-      if (r.ok) return r.json();
+      if (r.ok) {
+        const ct = (r.headers.get('content-type') || '').toLowerCase();
+        if (!ct.includes('json')) {
+          console.warn('[warn] non-JSON response:', r.status, ct);
+          return null;
+        }
+        try {
+          return await r.json();
+        } catch (err) {
+          console.warn('[warn] JSON parse failed:', err?.message || err);
+          return null;
+        }
+      }
     } catch (err) {
       if (i === 0) console.warn('[spotlight] fetch failed', url, err?.message||err);
       if (i === 1) console.warn('CFBD request failed:', url, err.message || err);
