@@ -69,7 +69,4 @@ async function main() {
   await fs.writeFile('data/team/roster_meta.json', JSON.stringify({ team: TEAM, year: YEAR, generated_at: new Date().toISOString(), count: merged.length }, null, 2));
   console.log(`✅ Wrote data/team/roster.json with ${merged.length} players for ${TEAM} ${YEAR}`);
 }
-main().catch(e => {
-  console.error('Non-fatal roster builder error:', e);
-  process.exit(0);
-});
+main().catch(e => { console.error(e); process.exit(1); });

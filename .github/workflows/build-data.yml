@@ -1,0 +1,31 @@
+name: Build CFBD roster data
+
+on:
+  schedule:
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build roster JSON from CFBD
+        env:
+          CFBD_API_KEY: ${{ secrets.CFBD_KEY }}
+          TEAM: Kentucky
+          YEAR: '2025'
+        run: node scripts/build_cfbd.js
+
+      - name: Commit roster data
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: "data/team/*.json"
+          message: "chore(data): refresh CFBD roster"
