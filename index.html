@@ -372,6 +372,55 @@
     const readJSON=id=>{const t=document.getElementById(id); if(!t) return null; try{return JSON.parse(t.textContent);}catch(_){return null;}};
     const j = async url => { const r=await fetch(url,{cache:'no-store',mode:'cors'}); if(!r.ok) throw new Error(r.status+' '+url); return r.json(); };
 
+    async function fetchRosterJSON(){
+      try{
+        const res = await fetch(dataURL('team/roster.json'), { cache:'no-store' });
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        const payload = await res.json();
+        if(!Array.isArray(payload)) throw new Error('unexpected roster shape');
+        return payload;
+      }catch(err){
+        console.error('❌ roster fetch failed:', err);
+        return null;
+      }
+    }
+
+    (async function debugRosterIfPresent(){
+      const root=document.getElementById('roster');
+      if(!root) return;
+      const roster=await fetchRosterJSON();
+      if(!roster){
+        root.textContent='Failed to load roster.json';
+        return;
+      }
+      if(!Array.isArray(roster) || !roster.length){
+        root.textContent='No players found in data/team/roster.json';
+        return;
+      }
+      root.innerHTML='';
+      roster.forEach(p=>{
+        const card=document.createElement('div');
+        card.style.cssText='display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(15,23,42,.08)';
+        const img=document.createElement('img');
+        img.src=p.headshot||'';
+        img.alt=`${p.name||'Unknown'} headshot`;
+        img.width=48; img.height=48;
+        img.style.borderRadius='50%';
+        img.style.objectFit='cover';
+        img.onerror=()=>{
+          const fallback=document.createElement('div');
+          fallback.textContent=(p.initials||'UK');
+          fallback.style.cssText='width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:#0033a0;color:#fff;font:700 14px/1 system-ui';
+          img.replaceWith(fallback);
+        };
+        const details=document.createElement('div');
+        details.innerHTML=`<strong>${p.name||'Unknown'}</strong> — ${p.position||''} ${p.jersey?`#${p.jersey}`:''}`;
+        card.appendChild(img);
+        card.appendChild(details);
+        root.appendChild(card);
+      });
+    })();
+
     const num = v => { const s=String(v??''); const m=s.replace(/,/g,'').match(/-?\d+(\.\d+)?/); return m?parseFloat(m[0]):0; };
     const share = (part,total) => (total && isFinite(total)) ? (part/total) : 0;
     function normalizeRange(val, low, high){
