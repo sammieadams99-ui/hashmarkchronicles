@@ -610,8 +610,8 @@ async function buildSpotlight(latestGame = null) {
     const players = Array.isArray(box?.players) ? box.players : (Array.isArray(box) ? box : []);
 
     // ---- label-driven helpers ----
-    const num = v => Number(String(v||'').replace(/[^0-9.-]/g,'')) || 0;
-    const mk  = (name,pos,head,espn,line) => ({ name, pos, headshot: head||'', espn: espn||'#', statline: line || '—' });
+    const num = v => Number(String(v ?? '').replace(/[^0-9.-]/g,'')) || 0;
+    const mk  = (name,pos,head,espn,line) => ({ name, pos, headshot: head||'', espn: espn||'#', statline: (line && line.trim()) ? line : '—' });
 
     function tagOf(e){
       const id   = e?.athlete?.id || e?.id;
@@ -621,75 +621,97 @@ async function buildSpotlight(latestGame = null) {
       const espn = id ? `https://www.espn.com/college-football/player/_/id/${id}` : '#';
       return { id, head, name, pos, espn };
     }
+
+    // Pull a normalized [{label, value}] array from any CFBD stat object variant
     function flatStats(e){
-      return Array.isArray(e?.stats) ? e.stats.map(s => ({
-        label: String(s?.label || s?.name || '').toUpperCase(),
-        value: String(s?.value ?? '')
-      })) : [];
+      const arr = Array.isArray(e?.stats) ? e.stats : [];
+      return arr.map(s => {
+        const label = String(
+          s?.label ?? s?.name ?? s?.stat ?? s?.category ?? ''
+        ).toUpperCase();
+        const value = String(
+          s?.value ?? s?.statValue ?? s?.displayValue ?? s?.amount ?? s?.yards ?? s?.yds ?? ''
+        );
+        return { label, value };
+      });
     }
 
-    // Minimal line: take up to three stats, or synthesize something
+    // Synthesize a readable “A B • C D • E F” line from first 3 stats with values
     function lineOf(st){
-      const s = st.slice(0,3).map(x => `${x.label.replace('_','-')} ${x.value}`).filter(Boolean).join(' • ');
-      return s || '—';
+      const parts = [];
+      for (const it of st){
+        if (!it.value) continue;
+        const lab = it.label.replace(/_/g,'-');
+        parts.push(`${lab} ${it.value}`);
+        if (parts.length >= 3) break;
+      }
+      return parts.join(' • ') || '—';
     }
 
-    // DEBUG: show first entry labels once
-    if (players?.length){
-      const st0 = flatStats(players[0]).map(s => s.label);
-      console.log("[spotlight] sample labels:", st0.slice(0,15));
-    }
+    // Log one sample so we can see the keys CFBD is sending
+    try {
+      if (players?.length) {
+        const st0 = flatStats(players[0]);
+        console.log("[spotlight] sample normalized stats:", st0.slice(0,3));
+      }
+    } catch(_) {}
 
-    // Offense “last”: top by yards-like stat per role
-    function topBy(labelsRequired, yardsLike=/YDS/){
+    // Offense — pick by yard-like stat; tolerate multiple labels
+    function topBy(yardsRegexes, requiredHints=[]){
       const picks = [];
       for (const e of players){
         const st = flatStats(e);
-        const labels = st.map(s => s.label);
-        // require that each text in labelsRequired is present
-        const ok = labelsRequired.every(req => labels.some(l => l.includes(req)));
+        const labels = st.map(x => x.label);
+        // check required hints (like REC for receivers)
+        const ok = requiredHints.every(h => labels.some(l => l.includes(h)));
         if (!ok) continue;
-        const y = st.find(s => yardsLike.test(s.label));
+        // pick the “yards-like” stat
+        const y = st.find(s => yardsRegexes.some(rx => rx.test(s.label)));
+        const score = num(y?.value);
         const tag = tagOf(e);
-        picks.push({ tag, yds: num(y?.value), line: lineOf(st) });
+        const line = lineOf(st);
+        picks.push({ tag, score, line });
       }
-      picks.sort((a,b)=> b.yds - a.yds);
+      picks.sort((a,b) => b.score - a.score);
       const b = picks[0];
       return b ? mk(b.tag.name, b.tag.pos, b.tag.head, b.tag.espn, b.line) : null;
     }
 
-    const passRow = topBy(["CMP-ATT"]) || topBy(["CMP/ATT"]) || topBy(["C-A"]) || topBy(["PASS"]);
-    const rushRow = topBy(["RUSH"]);
-    const recvRow = topBy(["REC","YDS"]) || topBy(["REC"]);  // allow REC-only if YDS label missing
+    const passRow = topBy([/PASS.*YDS/, /YDS.*PASS/, /PY/, /CMP.*ATT/]);    // QB
+    const rushRow = topBy([/RUSH.*YDS/, /YDS.*RUSH/, /RY/]);                 // RB
+    const recvRow = topBy([/REC.*YDS/, /YDS.*REC/, /RECEIV/], ['REC']);      // WR/TE
     let offenseLastRows = [passRow, rushRow, recvRow].filter(Boolean).slice(0,3);
 
-    // Defense “last”: score by tackles + havoc
+    // Defense — score by tackles/havoc from any key
     function bestDefense(){
-      const rows = [];
+      const out = [];
       for (const e of players){
         const st = flatStats(e);
-        const get = (...names)=>{ const hit = st.find(s => names.some(n => s.label.includes(n))); return num(hit?.value); };
-        const TKL = get("TOT","TOTAL","TKL");
-        const TFL = get("TFL","LOSS");
-        const SCK = get("SCK","SACK");
-        const INT = get("INT","INTERCEPT");
-        if (!(TKL||TFL||SCK||INT)) continue;
+        const get = (...names) => {
+          const hit = st.find(s => names.some(n => s.label.includes(n)));
+          return num(hit?.value);
+        };
+        const TKL = get('TOT','TOTAL','TKL');
+        const TFL = get('TFL','LOSS');
+        const SCK = get('SCK','SACK');
+        const INT = get('INT','INTERCEPT');
+        if (!(TKL || TFL || SCK || INT)) continue;
         const tag = tagOf(e);
         const parts = [];
         if (TKL) parts.push(`TKL ${TKL}`);
         if (TFL) parts.push(`TFL ${TFL}`);
         if (SCK) parts.push(`SACKS ${SCK}`);
         if (INT) parts.push(`INT ${INT}`);
+        const line = parts.slice(0,3).join(' • ') || lineOf(st);
         const score = TKL*2 + TFL*6 + SCK*8 + INT*10;
-        rows.push({ score, card: mk(tag.name, tag.pos, tag.head, tag.espn, parts.slice(0,3).join(' • ') || lineOf(st)) });
+        out.push({ score, card: mk(tag.name, tag.pos, tag.head, tag.espn, line) });
       }
-      rows.sort((a,b)=> b.score - a.score);
-      return rows.slice(0,3).map(x => x.card);
+      out.sort((a,b)=> b.score - a.score);
+      return out.slice(0,3).map(x => x.card);
     }
     let defenseLastRows = bestDefense();
 
-    // ---- fallback: if last rows are short, fill from season leaders ----
-    // (Assumes you already computed offenseSeason[] / defenseSeason[] before writing files)
+    // (Optional) backfill from season leaders if any list is short
     function fillFromSeason(lastRows, seasonRows){
       const out = lastRows.slice();
       for (const row of (seasonRows || [])){
@@ -698,17 +720,10 @@ async function buildSpotlight(latestGame = null) {
       }
       return out.slice(0,3);
     }
-
-    // If you have season arrays named offenseSeason / defenseSeason, use them.
-    // Otherwise leave these lines and they’ll no-op safely.
     try {
       offenseLastRows = fillFromSeason(offenseLastRows, offenseSeason);
       defenseLastRows = fillFromSeason(defenseLastRows, defenseSeason);
-    } catch(_) { /* season arrays may not exist yet; safe to ignore */ }
-
-    // Guarantee non-empty statlines
-    offenseLastRows = offenseLastRows.map(r => ({ ...r, statline: r.statline || '—' }));
-    defenseLastRows = defenseLastRows.map(r => ({ ...r, statline: r.statline || '—' }));
+    } catch(_) {}
 
     await fs.writeFile('data/spotlight_offense_last.json', JSON.stringify(offenseLastRows, null, 2));
     await fs.writeFile('data/spotlight_defense_last.json', JSON.stringify(defenseLastRows, null, 2));
@@ -716,15 +731,16 @@ async function buildSpotlight(latestGame = null) {
 
     // Prefer data-backed featured
     try {
-      const featuredCard = offenseLastRows[0] || defenseLastRows[0] || (offenseSeason?.[0]) || (defenseSeason?.[0]) || null;
-      if (featuredCard) {
-        await fs.writeFile('data/spotlight_featured.json', JSON.stringify(featuredCard, null, 2));
+      const featured = offenseLastRows[0] || defenseLastRows[0] || (offenseSeason?.[0]) || (defenseSeason?.[0]) || null;
+      if (featured) {
+        await fs.writeFile('data/spotlight_featured.json', JSON.stringify(featured, null, 2));
         console.log("✅ wrote data/spotlight_featured.json");
       }
     } catch(_) {}
 
     offenseLast = offenseLastRows;
     defenseLast = defenseLastRows;
+
   }
 
   if (!offenseLast.length) {
