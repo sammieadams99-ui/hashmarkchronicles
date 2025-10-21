@@ -152,59 +152,72 @@ async function getForcedLatestGame() {
         : `https://api.collegefootballdata.com/games/players?year=${YEAR}&gameId=${gid}`;
       console.log('GET', url);
       console.log('[CFBD] Using year', YEAR, 'week', WEEK, 'gameId', gid);
-      const r = await fetch(url, {
-        headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' }
+      // --- CFBD /games/players parsing fix ---
+      const week = WEEK;
+      const gameId = gid;
+      const KEY = key;
+      const fetchUrl = url;
+      console.log(`[spotlight] Fetching players for team ${TEAM}`);
+      const resp = await fetch(fetchUrl, {
+        headers: { Authorization: `Bearer ${KEY}` }
       });
-      const ct = (r.headers.get('content-type') || '').toLowerCase();
-      console.log('→', r.status, ct);
-      if (r.status === 400) console.log('[warn] CFBD 400:', await r.clone().text().catch(() => '(no body)'));
+      if (!resp.ok) throw new Error(`CFBD /games/players HTTP ${resp.status}`);
+      const data = await resp.json();
 
-      let box = null;
-      if (!ct.includes('json')) {
-        console.warn('[warn] non-JSON response:', r.status, ct);
-      } else {
-        try {
-          box = await r.json();
-        } catch (err) {
-          console.warn('[warn] JSON parse failed:', err?.message || err);
+      let players = [];
+      if (Array.isArray(data?.teams)) {
+        // find our team
+        const teamObj = data.teams.find(t =>
+          (t.school && t.school.toLowerCase().includes(TEAM.toLowerCase())) ||
+          (t.team && t.team.toLowerCase().includes(TEAM.toLowerCase()))
+        );
+        if (teamObj && Array.isArray(teamObj.players)) {
+          players = teamObj.players;
+          console.log(`[spotlight] Found ${players.length} players for ${TEAM}`);
+        } else {
+          console.warn(`[spotlight] No matching team in /games/players for ${TEAM}`);
         }
+      } else if (Array.isArray(data?.players)) {
+        // fallback: flat list (older API)
+        players = data.players;
+        console.log(`[spotlight] Fallback: flat players array (${players.length})`);
+      } else {
+        console.warn('[spotlight] Unexpected /games/players format', data ? Object.keys(data) : data);
       }
 
-      if (!box) {
-        console.log('[spotlight] ⚠️ No player data returned for game', gid);
-      } else {
-        const players = Array.isArray(box.players) ? box.players : (Array.isArray(box) ? box : []);
-
-        // Replace players with normalized structure
-        const normPlayers = normalizePlayers(players);
-        console.log(`[spotlight] ✅ Retrieved player data for game ${gid} (${players.length} entries)`);
-        console.log('[spotlight] ✅ Parsed', normPlayers.length, 'player records');
-        // --- CFBD diagnostic: check structure ---
-        try {
-          if (Array.isArray(normPlayers) && normPlayers.length) {
-            const sample = normPlayers[0];
-            console.log('[diagnostic] sample player keys:', Object.keys(sample));
-            if (sample?.stats && Array.isArray(sample.stats)) {
-              console.log('[diagnostic] stats[0] keys:', Object.keys(sample.stats[0]));
-              console.log('[diagnostic] stats[0] value:', sample.stats[0]);
-            } else {
-              console.log('[diagnostic] sample has no stats array');
-            }
-          }
-        } catch (err) {
-          console.warn('[diagnostic] failed to inspect player sample:', err);
-        }
-        pick = {
-          ...pick,
-          sum: {
-            ...(pick.sum || {}),
-            boxscore: {
-              ...(pick.sum?.boxscore || {}),
-              players: normPlayers
-            }
-          }
-        };
+      // Continue with normal filtering and writing spotlight JSONs
+      if (!players.length) {
+        console.warn(`[spotlight] No players parsed; skipping spotlight build for ${TEAM}`);
       }
+
+      // Replace players with normalized structure
+      const normPlayers = normalizePlayers(players);
+      console.log('[spotlight] ✅ Parsed', normPlayers.length, 'player records');
+      // --- CFBD diagnostic: check structure ---
+      try {
+        if (Array.isArray(normPlayers) && normPlayers.length) {
+          const sample = normPlayers[0];
+          console.log('[diagnostic] sample player keys:', Object.keys(sample));
+          if (sample?.stats && Array.isArray(sample.stats)) {
+            console.log('[diagnostic] stats[0] keys:', Object.keys(sample.stats[0]));
+            console.log('[diagnostic] stats[0] value:', sample.stats[0]);
+          } else {
+            console.log('[diagnostic] sample has no stats array');
+          }
+        }
+      } catch (err) {
+        console.warn('[diagnostic] failed to inspect player sample:', err);
+      }
+      pick = {
+        ...pick,
+        sum: {
+          ...(pick.sum || {}),
+          boxscore: {
+            ...(pick.sum?.boxscore || {}),
+            players: normPlayers
+          }
+        }
+      };
     } catch (err) {
       console.log('[spotlight] ⚠️ Unable to fetch player data:', err?.message || err);
     }
