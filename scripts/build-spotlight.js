@@ -14,6 +14,41 @@ if (!CFBD_KEY) {
 
 const HEADERS = { Authorization: `Bearer ${CFBD_KEY}` };
 
+// ---- detect FLAT vs NESTED payloads ----
+function hasNestedStats(arr){
+  const e = arr && arr[0];
+  return !!(e && Array.isArray(e.stats));
+}
+
+// Build players[] with .stats array even for flat row payloads
+function normalizePlayers(arr){
+  if (!Array.isArray(arr) || !arr.length) return [];
+  if (hasNestedStats(arr)) return arr; // already nested
+
+  // FLAT rows: group by (athlete_id or name+position)
+  const byKey = new Map();
+  for (const r of arr){
+    const id  = r.athlete_id ?? r.athleteId ?? r.player_id ?? r.playerId ?? null;
+    const nm  = r.name ?? r.player ?? r.athlete?.displayName ?? "Unknown";
+    const pos = r.position ?? r.pos ?? r.athlete?.position?.abbreviation ?? "";
+    const key = id ? `id:${id}` : `np:${nm}|${pos}`;
+
+    const rec = byKey.get(key) || {
+      athlete: { id: id, displayName: nm, position: { abbreviation: pos } },
+      // synthesize a stats array we can consume downstream
+      stats: []
+    };
+
+    // Map possible stat fields to label/value
+    const label = String(r.stat ?? r.label ?? r.name ?? r.category ?? "").toUpperCase();
+    const value = String(r.value ?? r.statValue ?? r.displayValue ?? r.amount ?? r.yards ?? r.yds ?? "");
+    if (label || value) rec.stats.push({ label, value });
+
+    byKey.set(key, rec);
+  }
+  return Array.from(byKey.values());
+}
+
 // Helper for FORCE_BUILD: fetch latest completed game directly from CFBD /games
 async function getForcedLatestGame() {
   if (!FORCE_BUILD) return null;
@@ -133,12 +168,15 @@ async function getForcedLatestGame() {
         console.log('[spotlight] ⚠️ No player data returned for game', gid);
       } else {
         const players = Array.isArray(box.players) ? box.players : (Array.isArray(box) ? box : []);
+
+        // Replace players with normalized structure
+        const normPlayers = normalizePlayers(players);
         console.log(`[spotlight] ✅ Retrieved player data for game ${gid} (${players.length} entries)`);
-        console.log('[spotlight] ✅ Parsed', players.length, 'entries');
+        console.log('[spotlight] ✅ Parsed', normPlayers.length, 'player records');
         // --- CFBD diagnostic: check structure ---
         try {
-          if (Array.isArray(box?.players) && box.players.length) {
-            const sample = box.players[0];
+          if (Array.isArray(normPlayers) && normPlayers.length) {
+            const sample = normPlayers[0];
             console.log('[diagnostic] sample player keys:', Object.keys(sample));
             if (sample?.stats && Array.isArray(sample.stats)) {
               console.log('[diagnostic] stats[0] keys:', Object.keys(sample.stats[0]));
@@ -156,7 +194,7 @@ async function getForcedLatestGame() {
             ...(pick.sum || {}),
             boxscore: {
               ...(pick.sum?.boxscore || {}),
-              players
+              players: normPlayers
             }
           }
         };
@@ -608,8 +646,8 @@ async function buildSpotlight(latestGame = null) {
 
   {
     const players = Array.isArray(box?.players) ? box.players : (Array.isArray(box) ? box : []);
+    const normPlayers = normalizePlayers(players);
 
-    // ---- label-driven helpers ----
     const num = v => Number(String(v ?? '').replace(/[^0-9.-]/g,'')) || 0;
     const mk  = (name,pos,head,espn,line) => ({ name, pos, headshot: head||'', espn: espn||'#', statline: (line && line.trim()) ? line : '—' });
 
@@ -622,70 +660,51 @@ async function buildSpotlight(latestGame = null) {
       return { id, head, name, pos, espn };
     }
 
-    // Pull a normalized [{label, value}] array from any CFBD stat object variant
     function flatStats(e){
       const arr = Array.isArray(e?.stats) ? e.stats : [];
       return arr.map(s => {
-        const label = String(
-          s?.label ?? s?.name ?? s?.stat ?? s?.category ?? ''
-        ).toUpperCase();
-        const value = String(
-          s?.value ?? s?.statValue ?? s?.displayValue ?? s?.amount ?? s?.yards ?? s?.yds ?? ''
-        );
+        const label = String(s?.label ?? s?.name ?? s?.stat ?? s?.category ?? '').toUpperCase();
+        const value = String(s?.value ?? s?.statValue ?? s?.displayValue ?? s?.amount ?? s?.yards ?? s?.yds ?? '');
         return { label, value };
       });
     }
 
-    // Synthesize a readable “A B • C D • E F” line from first 3 stats with values
     function lineOf(st){
       const parts = [];
       for (const it of st){
         if (!it.value) continue;
-        const lab = it.label.replace(/_/g,'-');
-        parts.push(`${lab} ${it.value}`);
+        parts.push(`${it.label.replace(/_/g,'-')} ${it.value}`);
         if (parts.length >= 3) break;
       }
       return parts.join(' • ') || '—';
     }
 
-    // Log one sample so we can see the keys CFBD is sending
-    try {
-      if (players?.length) {
-        const st0 = flatStats(players[0]);
-        console.log("[spotlight] sample normalized stats:", st0.slice(0,3));
-      }
-    } catch(_) {}
-
-    // Offense — pick by yard-like stat; tolerate multiple labels
     function topBy(yardsRegexes, requiredHints=[]){
       const picks = [];
-      for (const e of players){
+      for (const e of normPlayers){
         const st = flatStats(e);
         const labels = st.map(x => x.label);
-        // check required hints (like REC for receivers)
         const ok = requiredHints.every(h => labels.some(l => l.includes(h)));
         if (!ok) continue;
-        // pick the “yards-like” stat
         const y = st.find(s => yardsRegexes.some(rx => rx.test(s.label)));
         const score = num(y?.value);
         const tag = tagOf(e);
         const line = lineOf(st);
         picks.push({ tag, score, line });
       }
-      picks.sort((a,b) => b.score - a.score);
+      picks.sort((a,b)=> b.score - a.score);
       const b = picks[0];
       return b ? mk(b.tag.name, b.tag.pos, b.tag.head, b.tag.espn, b.line) : null;
     }
 
-    const passRow = topBy([/PASS.*YDS/, /YDS.*PASS/, /PY/, /CMP.*ATT/]);    // QB
-    const rushRow = topBy([/RUSH.*YDS/, /YDS.*RUSH/, /RY/]);                 // RB
-    const recvRow = topBy([/REC.*YDS/, /YDS.*REC/, /RECEIV/], ['REC']);      // WR/TE
+    const passRow = topBy([/PASS.*YDS/, /YDS.*PASS/, /PY/, /CMP.*ATT/]);     // QB
+    const rushRow = topBy([/RUSH.*YDS/, /YDS.*RUSH/, /RY/]);                  // RB
+    const recvRow = topBy([/REC.*YDS/, /YDS.*REC/, /RECEIV/], ['REC']);       // WR/TE
     let offenseLastRows = [passRow, rushRow, recvRow].filter(Boolean).slice(0,3);
 
-    // Defense — score by tackles/havoc from any key
     function bestDefense(){
       const out = [];
-      for (const e of players){
+      for (const e of normPlayers){
         const st = flatStats(e);
         const get = (...names) => {
           const hit = st.find(s => names.some(n => s.label.includes(n)));
@@ -711,7 +730,6 @@ async function buildSpotlight(latestGame = null) {
     }
     let defenseLastRows = bestDefense();
 
-    // (Optional) backfill from season leaders if any list is short
     function fillFromSeason(lastRows, seasonRows){
       const out = lastRows.slice();
       for (const row of (seasonRows || [])){
@@ -725,11 +743,14 @@ async function buildSpotlight(latestGame = null) {
       defenseLastRows = fillFromSeason(defenseLastRows, defenseSeason);
     } catch(_) {}
 
+    const nonEmpty = r => r && r.name && r.name !== 'Unknown';
+    offenseLastRows = (offenseLastRows || []).filter(nonEmpty).map(r => ({...r, statline: r.statline || '—'}));
+    defenseLastRows = (defenseLastRows || []).filter(nonEmpty).map(r => ({...r, statline: r.statline || '—'}));
+
     await fs.writeFile('data/spotlight_offense_last.json', JSON.stringify(offenseLastRows, null, 2));
     await fs.writeFile('data/spotlight_defense_last.json', JSON.stringify(defenseLastRows, null, 2));
     console.log(`✅ wrote offense_last (${offenseLastRows.length}) and defense_last (${defenseLastRows.length})`);
 
-    // Prefer data-backed featured
     try {
       const featured = offenseLastRows[0] || defenseLastRows[0] || (offenseSeason?.[0]) || (defenseSeason?.[0]) || null;
       if (featured) {
