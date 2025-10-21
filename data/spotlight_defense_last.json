@@ -1,1 +1,50 @@
-[]
+[
+  {
+    "name": "Josh Braun",
+    "pos": "OL",
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4430667.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4430667",
+    "statline": "—",
+    "grade": {
+      "pct": 72,
+      "letter": "C-",
+      "band": "c"
+    },
+    "side": "defense",
+    "span": "season",
+    "source": "cfbd",
+    "score": 0
+  },
+  {
+    "name": "Daveren Rayner",
+    "pos": "LB",
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4430670.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4430670",
+    "statline": "—",
+    "grade": {
+      "pct": 72,
+      "letter": "C-",
+      "band": "c"
+    },
+    "side": "defense",
+    "span": "season",
+    "source": "cfbd",
+    "score": 0
+  },
+  {
+    "name": "Josaih Hayes",
+    "pos": "DL",
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4430666.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4430666",
+    "statline": "—",
+    "grade": {
+      "pct": 72,
+      "letter": "C-",
+      "band": "c"
+    },
+    "side": "defense",
+    "span": "season",
+    "source": "cfbd",
+    "score": 0
+  }
+]

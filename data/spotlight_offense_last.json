@@ -1,1 +1,50 @@
-[]
+[
+  {
+    "name": "Zach Calzada",
+    "pos": "QB",
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4426847.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4426847",
+    "statline": "—",
+    "grade": {
+      "pct": 72,
+      "letter": "C-",
+      "band": "c"
+    },
+    "side": "offense",
+    "span": "season",
+    "source": "cfbd",
+    "score": 0
+  },
+  {
+    "name": "Jay Maclin",
+    "pos": "WR",
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4696437.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4696437",
+    "statline": "—",
+    "grade": {
+      "pct": 72,
+      "letter": "C-",
+      "band": "c"
+    },
+    "side": "offense",
+    "span": "season",
+    "source": "cfbd",
+    "score": 0
+  },
+  {
+    "name": "Troy Stellato",
+    "pos": "WR",
+    "headshot": "",
+    "espn": "https://www.espn.com/search/results?q=Troy%20Stellato%20Kentucky%20football",
+    "statline": "—",
+    "grade": {
+      "pct": 72,
+      "letter": "C-",
+      "band": "c"
+    },
+    "side": "offense",
+    "span": "season",
+    "source": "cfbd",
+    "score": 0
+  }
+]
