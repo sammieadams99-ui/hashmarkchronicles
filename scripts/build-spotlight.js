@@ -4,7 +4,13 @@ import fetch from 'node-fetch';
 
 const YEAR = process.env.YEAR || String(new Date().getFullYear());
 const TEAM = 'Kentucky';
-const CFBD_KEY = process.env.CFBD_KEY || '';
+const CFBD_KEY = process.env.CFBD_KEY;
+
+if (!CFBD_KEY) {
+  console.error('[spotlight] Missing CFBD_KEY env var — aborting.');
+  process.exit(1);
+}
+
 const HDRS = { Authorization: `Bearer ${CFBD_KEY}` };
 
 const OUT = {
@@ -414,7 +420,7 @@ async function buildSpotlight() {
 }
 
 // ---- Run all ----
-(async () => {
+async function main() {
   await ensureDir();
 
   const sp = await buildSpotlight();
@@ -428,4 +434,9 @@ async function buildSpotlight() {
   await writeJSON(OUT.ticker, ticker);
 
   console.log('Spotlight + ticker written for', TEAM, YEAR, 'Last week:', sp.lastWeek ?? 'n/a');
-})();
+}
+
+main().catch(err => {
+  console.error('[spotlight] Non-fatal build error:', err);
+  process.exit(0);
+});
