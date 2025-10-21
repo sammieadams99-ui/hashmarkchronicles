@@ -1,12 +1,16 @@
 name: Update Spotlight Feeds
 
 on:
-  schedule:
-    - cron: "0 */6 * * *"   # every 6 hours
   workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"
 
 permissions:
   contents: write
+
+concurrency:
+  group: spotlight-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -15,21 +19,22 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: 20
 
-      - name: Install deps
-        run: npm i
+      - run: npm init -y || true
+      - run: npm pkg set type=module
 
-      - name: Build spotlight & ticker JSON
+      - name: Build spotlight (skip if no game)
         env:
           CFBD_KEY: ${{ secrets.CFBD_KEY }}
-          YEAR: "2025"
-        run: npm run build:spotlight
+          TEAM: Kentucky
+          YEAR: 2025
+        run: node scripts/build_spotlight.js || true
 
-      - name: Commit & push
+      - name: Commit data (if any)
         run: |
-          git config user.name "spotlight-bot"
-          git config user.email "actions@github.com"
-          git add data/*.json
-          git commit -m "Update spotlight/ticker feeds" || echo "No changes"
-          git push
+          git config user.name "data-bot"
+          git config user.email "data-bot@users.noreply.github.com"
+          git add data/live/*.json data/spotlight/*.json 2>/dev/null || true
+          git commit -m "Update spotlight feeds" || echo "No changes"
+          git push || true
