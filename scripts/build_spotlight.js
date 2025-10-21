@@ -1,148 +1,146 @@
-import fs from 'fs/promises';
-import path from 'path';
-import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const ROOT = path.resolve(__dirname, '..');
-
+const FS = await import('fs/promises');
 const TEAM = process.env.TEAM || 'Kentucky';
-const yearEnv = Number.parseInt(process.env.YEAR || '', 10);
-const YEAR = Number.isFinite(yearEnv) ? yearEnv : new Date().getUTCFullYear();
+let YEAR = Number(process.env.YEAR || new Date().getUTCFullYear());
+if (new Date().getUTCMonth() < 6) YEAR -= 1; // season rolls
 
-const REQUIRED_OUTPUTS = [
-  path.join(ROOT, 'data', 'spotlight_offense_last.json'),
-  path.join(ROOT, 'data', 'spotlight_defense_last.json')
-];
+const KEY = process.env.CFBD_KEY || '';
+const MODE = (process.env.FALLBACK_MODE || '').toLowerCase(); // '', 'espn', 'cfbfastr'
 
-const OPTIONAL_OUTPUTS = [
-  path.join(ROOT, 'data', 'spotlight_featured.json'),
-  path.join(ROOT, 'data', 'spotlight_offense_season.json'),
-  path.join(ROOT, 'data', 'spotlight_defense_season.json'),
-  path.join(ROOT, 'data', 'team', 'roster_plus.json')
-];
+async function cfbd(path, params = {}) {
+  const q = new URLSearchParams(params).toString();
+  const url = `https://api.collegefootballdata.com${path}${q ? `?${q}` : ''}`;
+  const r = await fetch(url, { headers: { Authorization: `Bearer ${KEY}` } });
+  if (!r.ok) throw new Error(`${path} ${r.status}`);
+  const ct = r.headers.get('content-type') || '';
+  if (!ct.includes('application/json')) throw new Error(`${path} non-JSON ${ct}`);
+  return r.json();
+}
+const POS_SIDE = (p) => {
+  const pos = (p.position || p.pos || '').toUpperCase();
+  if (['QB', 'RB', 'WR', 'TE', 'FB', 'HB', 'TB', 'SB', 'OT', 'OG', 'C', 'OL'].includes(pos)) return 'offense';
+  if (['DL', 'DE', 'DT', 'NT', 'LB', 'OLB', 'ILB', 'CB', 'DB', 'S', 'FS', 'SS', 'STAR', 'NICKEL'].includes(pos)) return 'defense';
+  return 'offense';
+};
+const take = (n, a) => (Array.isArray(a) ? a : []).slice(0, n);
+const bySide = (rows, side) => rows.filter((p) => p.side === side);
 
-async function hasJsonContent(file){
-  try {
-    const text = await fs.readFile(file, 'utf8');
-    const trimmed = text.trim();
-    if (!trimmed) return false;
-    try {
-      const json = JSON.parse(trimmed);
-      if (Array.isArray(json)) return json.length > 0;
-      if (json && typeof json === 'object') return Object.keys(json).length > 0;
-    } catch {
-      return trimmed.length > 0;
-    }
-    return true;
-  } catch {
-    return false;
-  }
+async function writeSpotlightFromRows(rowsAll, rowsLast = []) {
+  const offS = bySide(rowsAll, 'offense');
+  const defS = bySide(rowsAll, 'defense');
+  const offL = rowsLast.length ? bySide(rowsLast, 'offense') : offS;
+  const defL = rowsLast.length ? bySide(rowsLast, 'defense') : defS;
+  await FS.mkdir('data', { recursive: true });
+  await FS.writeFile('data/spotlight_offense_season.json', JSON.stringify(take(50, offS), null, 2));
+  await FS.writeFile('data/spotlight_defense_season.json', JSON.stringify(take(50, defS), null, 2));
+  await FS.writeFile('data/spotlight_offense_last.json', JSON.stringify(take(50, offL), null, 2));
+  await FS.writeFile('data/spotlight_defense_last.json', JSON.stringify(take(50, defL), null, 2));
+  await FS.writeFile('data/spotlight_featured.json', JSON.stringify(take(6, rowsAll), null, 2));
 }
 
-async function verifyOutputs(){
-  const checks = await Promise.all(REQUIRED_OUTPUTS.map(hasJsonContent));
-  if (!checks.every(Boolean)) return false;
-  const optionalChecks = await Promise.all(OPTIONAL_OUTPUTS.map(async (file) => ({
-    file,
-    ok: await hasJsonContent(file)
-  })));
-  for (const entry of optionalChecks){
-    if (!entry.ok) {
-      console.log(`[spotlight] optional output missing or empty: ${path.relative(ROOT, entry.file)}`);
-    }
+async function writeRosterPlus(rowsAll, rowsLast = []) {
+  const lastMap = new Map();
+  for (const lp of rowsLast) {
+    const key = lp.athleteId ? `id:${lp.athleteId}` : `name:${(lp.name || '').toLowerCase()}`;
+    lastMap.set(key, lp.lastGame || {});
   }
-  return true;
-}
-
-function runNodeScript(scriptPath){
-  return new Promise((resolve) => {
-    const child = spawn(process.execPath, [scriptPath], {
-      cwd: ROOT,
-      stdio: 'inherit',
-      env: { ...process.env }
-    });
-    child.on('error', (err) => {
-      console.error(`[spotlight] Failed to start ${path.basename(scriptPath)}:`, err?.message || err);
-      resolve(false);
-    });
-    child.on('exit', (code) => {
-      if (code === 0) {
-        resolve(true);
-      } else {
-        console.warn(`[spotlight] ${path.basename(scriptPath)} exited with code ${code}`);
-        resolve(false);
-      }
-    });
+  const roster = rowsAll.map((p) => {
+    const key = p.athleteId ? `id:${p.athleteId}` : `name:${(p.name || '').toLowerCase()}`;
+    return {
+      athleteId: p.athleteId ?? null,
+      name: p.name || '',
+      position: p.position || '',
+      side: p.side || 'offense',
+      stats: {
+        season: p.season || null,
+        lastGame: lastMap.get(key) || null,
+      },
+    };
   });
+  await FS.mkdir('data/team', { recursive: true });
+  await FS.writeFile('data/team/roster_plus.json', JSON.stringify(roster, null, 2));
 }
 
-async function runCfbdPipeline(){
-  console.log('[spotlight] Running CFBD spotlight pipeline');
-  const scriptPath = path.join(__dirname, 'build-spotlight.js');
-  const success = await runNodeScript(scriptPath);
-  if (!success) return false;
-  const ok = await verifyOutputs();
-  if (!ok) console.warn('[spotlight] CFBD pipeline completed but required spotlight files are missing');
-  return ok;
+// MODE overrides to force fallback quickly
+if (MODE === 'espn') {
+  console.log('[spotlight] FORCED ESPN fallback');
+  const { buildSpotlightFromESPN } = await import('./fallback_unofficial.js');
+  await buildSpotlightFromESPN(TEAM);
+  process.exit(0);
+}
+if (MODE === 'cfbfastr') {
+  console.log('[spotlight] FORCED cfbfastR fallback');
+  const { buildSpotlightFromCFBfastR } = await import('./fallback_cfbfastr.js');
+  await buildSpotlightFromCFBfastR(TEAM, YEAR);
+  process.exit(0);
 }
 
-async function runEspnFallback(){
-  try {
-    const mod = await import('./fallback_espn.js');
-    if (typeof mod.buildSpotlightFromESPN !== 'function') {
-      console.warn('[spotlight] ESPN fallback module missing buildSpotlightFromESPN export');
-      return false;
+// CFBD: season-first (stable)
+let seasonPlayers = [];
+let lastPlayers = [];
+try {
+  const season = await cfbd('/player/season', { team: TEAM, year: YEAR });
+  seasonPlayers = season.map((s) => ({
+    athleteId: s.athleteId ?? null,
+    name: s.player || '',
+    position: s.position || '',
+    side: POS_SIDE(s),
+    season: s,
+  }));
+  console.log('[spotlight] CFBD season count:', seasonPlayers.length);
+
+  // last game (one try; fallback allowed)
+  const games = await cfbd('/games', { year: YEAR, team: TEAM, seasonType: 'regular' });
+  const done = (games || []).filter((g) => g.completed).sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
+  if (done[0]) {
+    const gid = done[0].id;
+    const r = await fetch(`https://api.collegefootballdata.com/game/player/statistics?gameId=${gid}`, {
+      headers: { Authorization: `Bearer ${KEY}` },
+    });
+    const ct = r.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      const data = await r.json();
+      const out = [];
+      for (const t of data.teams || []) {
+        const school = (t.school || t.team || '').toLowerCase();
+        if (!school.includes(TEAM.toLowerCase())) continue;
+        const seen = new Map();
+        for (const cat of t.categories || []) {
+          for (const ty of cat.types || []) {
+            for (const a of ty.athletes || []) {
+              const id = a.id ?? a.athleteId ?? null;
+              const key = id ? `id:${id}` : `name:${(a.name || '').toLowerCase()}`;
+              const prev =
+                seen.get(key) || {
+                  athleteId: id,
+                  name: a.name || '',
+                  position: (a.position || a.pos || '').toUpperCase(),
+                  side: POS_SIDE(a),
+                  lastGame: {},
+                };
+              prev.lastGame[ty.name] = a.stats;
+              seen.set(key, prev);
+            }
+          }
+        }
+        out.push(...seen.values());
+      }
+      lastPlayers = out;
     }
-    console.log('[spotlight] Using ESPN fallback');
-    await mod.buildSpotlightFromESPN(TEAM, YEAR);
-    return await verifyOutputs();
-  } catch (err) {
-    if (err && err.code === 'ERR_MODULE_NOT_FOUND') {
-      console.log('[spotlight] ESPN fallback module not found; skipping');
-      return false;
-    }
-    console.error('[spotlight] ESPN fallback failed:', err?.message || err);
-    return false;
   }
-}
-
-async function runCfbfastRFallback(){
+  await writeSpotlightFromRows(seasonPlayers, lastPlayers);
+  await writeRosterPlus(seasonPlayers, lastPlayers);
+  console.log('[spotlight] CFBD wrote spotlight files (season:', seasonPlayers.length, 'last:', lastPlayers.length, ')');
+} catch (e) {
+  console.warn('[spotlight] CFBD failed:', e.message);
+  // ESPN fallback
   try {
-    console.log('[spotlight] Using cfbfastR fallback');
+    const { buildSpotlightFromESPN } = await import('./fallback_unofficial.js');
+    await buildSpotlightFromESPN(TEAM);
+    console.log('[spotlight] Spotlight build succeeded via ESPN fallback');
+  } catch (e2) {
+    console.warn('[spotlight] ESPN fallback failed:', e2.message);
     const { buildSpotlightFromCFBfastR } = await import('./fallback_cfbfastr.js');
     await buildSpotlightFromCFBfastR(TEAM, YEAR);
-    return await verifyOutputs();
-  } catch (err) {
-    console.error('[spotlight] cfbfastR fallback failed:', err?.message || err);
-    return false;
+    console.log('[spotlight] Spotlight build succeeded via cfbfastR fallback');
   }
 }
-
-async function main(){
-  let ok = await runCfbdPipeline();
-  let source = ok ? 'cfbd' : null;
-
-  if (!ok) {
-    ok = await runEspnFallback();
-    if (ok) source = 'espn';
-  }
-
-  if (!ok) {
-    ok = await runCfbfastRFallback();
-    if (ok) source = 'cfbfastR';
-  }
-
-  if (!ok) {
-    console.log('[spotlight] Spotlight fallbacks exhausted — retaining existing cached data');
-    return;
-  }
-
-  console.log(`[spotlight] Spotlight build succeeded via ${source}`);
-}
-
-main().catch(err => {
-  console.error('[spotlight] Unexpected build error:', err?.message || err);
-  process.exit(1);
-});
