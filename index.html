@@ -366,6 +366,18 @@
     const j = async url => { const r=await fetch(url,{cache:'no-store',mode:'cors'}); if(!r.ok) throw new Error(r.status+' '+url); return r.json(); };
 
     const num = v => { const s=String(v??''); const m=s.replace(/,/g,'').match(/-?\d+(\.\d+)?/); return m?parseFloat(m[0]):0; };
+    const share = (part,total) => (total && isFinite(total)) ? (part/total) : 0;
+    function normalizeRange(val, low, high){
+      if(!isFinite(val)) return 0;
+      if(high === low) return 0;
+      const clamped = Math.min(Math.max(val, low), high);
+      return ((clamped - low) / (high - low)) * 100;
+    }
+    const statPart = (label, val) => {
+      const n = Number(val);
+      if(!Number.isFinite(n) || Math.abs(n) < 0.5) return null;
+      return `${Math.round(n).toLocaleString()} ${label}`;
+    };
 
     function clamp(a,b,x){ return Math.max(a,Math.min(b,x)); }
     function minmaxNormalize(values, x){
@@ -410,6 +422,10 @@
     }
     async function getSummary(eventId){
       return await j(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=${eventId}`);
+    }
+    async function getTeamLeaders(teamId){
+      try{ return await j(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/${teamId}/leaders`); }
+      catch(_){ return null; }
     }
     async function chooseEvent(env){
       const next=env?.team?.nextEvent?.[0]; const prev=env?.team?.previousEvent?.[0];
@@ -473,38 +489,56 @@
         const get = (k)=>num(r.stats?.[L.indexOf(k)]);
         out.set(id,{
           id,name,pos,link:`https://www.espn.com/college-football/player/_/id/${id}`, head:headshot(id),
-          tot:get('TOT'), solo:get('SOLO'), tfl:get('TFL')||0, sacks:get('SCK')||get('SACKS')||0, ints:get('INT')||0, pbu:get('PD')||get('PBU')||0
+          tot:get('TOT'), solo:get('SOLO'), tfl:get('TFL')||0, sacks:get('SCK')||get('SACKS')||0, ints:get('INT')||0, pbu:get('PD')||get('PBU')||0, ff:get('FF')||get('FORCED')||0
         });
       });
       return out;
     }
 
     /* ---------------- SCORING MODELS (v2, simple + tunable) ---------------- */
-    function offenseScore(p){
-      // QB component
-      const pass=p.pass||{}, att=Math.max(1,pass.att||0), cmp=pass.cmp||0;
-      const compPct = (cmp/att)*100;
-      const ypa = (pass.yds||0)/att;
-      const qb = (pass.yds||0)*0.30 + ypa*25 + (pass.td||0)*30 - (pass.int||0)*35 + compPct*0.40;
+    function offenseScore(p, totals={}){
+      const pass=p.pass||{}, rush=p.rush||{}, recv=p.recv||{};
+      const totalYards = (totals.passYds||0)+(totals.rushYds||0)+(totals.recvYds||0);
+      const playerYards = (pass.yds||0)+(rush.yds||0)+(recv.yds||0);
+      const yardShare = share(playerYards, totalYards);
+      const yardScore = yardShare * 60;
 
-      // RB component
-      const rush=p.rush||{}, car=Math.max(1,rush.car||0);
-      const ypc=(rush.yds||0)/car;
-      const rb = (rush.yds||0)*0.20 + ypc*15 + (rush.td||0)*20;
+      const totalTds = (totals.passTd||0)+(totals.rushTd||0)+(totals.recvTd||0);
+      const playerTds = (pass.td||0)+(rush.td||0)+(recv.td||0)+(p.totalTd||0);
+      const tdScore = share(playerTds, totalTds) * 25;
 
-      // WR/TE component
-      const recv=p.recv||{}, rec=Math.max(1,recv.rec||0);
-      const ypr=(recv.yds||0)/rec;
-      const wr = (recv.yds||0)*0.20 + ypr*10 + (recv.td||0)*20 + (recv.rec||0)*2;
+      const touches = (pass.att||0)+(rush.car||0)+(recv.rec||0);
+      let eff = 0;
+      if(pass.att>=8){
+        const compPct = (pass.cmp||0)/Math.max(1,pass.att||0)*100;
+        eff += normalizeRange(compPct, 48, 78) * 0.2;
+        eff += normalizeRange((pass.yds||0)/Math.max(1,pass.att||0), 5.5, 11.5) * 0.25;
+      }
+      if(rush.car>=8){
+        eff += normalizeRange((rush.yds||0)/Math.max(1,rush.car||0), 3.8, 7.5) * 0.25;
+      }
+      if(recv.rec>=5){
+        eff += normalizeRange((recv.yds||0)/Math.max(1,recv.rec||0), 9, 21) * 0.25;
+      }
+      if(touches>=15) eff += 6;
 
-      // Nudge by position label (keeps QB/RB/WR comparable)
-      const posBoost = /QB/.test(p.pos)?15 : (/RB/.test(p.pos)?5 : (/WR|TE/.test(p.pos)?5 : 0));
+      const explosive = normalizeRange(playerYards, 40, 260) * 0.18;
+      const turnoverPenalty = (pass.int||0) * 18;
+      const posBoost = /QB/.test(p.pos)?8:(/RB/.test(p.pos)?5:(/WR|TE/.test(p.pos)?4:2));
 
-      return qb + rb + wr + posBoost;
+      const base = yardScore + tdScore + eff + explosive + posBoost;
+      return Math.max(0, base - turnoverPenalty);
     }
 
-    function defenseScore(d){
-      return (d.tot||0)*3 + (d.solo||0)*1 + (d.tfl||0)*10 + (d.sacks||0)*18 + (d.ints||0)*25 + (d.pbu||0)*5;
+    function defenseScore(d, totals={}){
+      const tackleShare = share(d.tot||0, totals.tot||0) * 35;
+      const havoc = (d.tfl||0)+(d.sacks||0)+(d.ints||0)+((d.pbu||0)*0.5)+(d.ff||0);
+      const havocShare = share(havoc, totals.havoc||0) * 45;
+      const splash = (d.sacks||0)*8 + (d.ints||0)*12 + (d.tfl||0)*6 + (d.pbu||0)*3 + (d.ff||0)*6;
+      const volume = normalizeRange(d.tot||0, 3, 12) * 0.2;
+      const posBoost = /LB/.test(d.pos)?6:(/DL|DE|NT/.test(d.pos)?5:(/DB|CB|S|FS|SS/.test(d.pos)?4:3));
+      const base = tackleShare + havocShare + splash + volume + posBoost;
+      return Math.max(0, base);
     }
 
     function bestStatline(p){
@@ -521,12 +555,150 @@
 
     function defStatline(d){
       const parts=[];
-      if(d.tot) parts.push(`TKL ${d.tot}`);
-      if(d.tfl) parts.push(`TFL ${d.tfl}`);
-      if(d.sacks) parts.push(`SACKS ${d.sacks}`);
-      if(d.ints) parts.push(`INT ${d.ints}`);
-      if(d.pbu) parts.push(`PBU ${d.pbu}`);
+      const add=(lbl,val)=>{ const part=statPart(lbl,val); if(part) parts.push(part); };
+      add('TKL', d.tot);
+      add('TFL', d.tfl);
+      add('SCK', d.sacks);
+      add('INT', d.ints);
+      add('PBU', d.pbu);
+      add('FF', d.ff);
       return parts.slice(0,3).join(' • ');
+    }
+
+    function seasonOffenseStatline(p){
+      const parts=[];
+      const add=(lbl,val)=>{ const part=statPart(lbl,val); if(part) parts.push(part); };
+      add('PY', p.pass?.yds);
+      add('PTD', p.pass?.td);
+      add('RY', p.rush?.yds);
+      add('RTD', p.rush?.td);
+      add('RecY', p.recv?.yds);
+      add('RecTD', p.recv?.td);
+      add('REC', p.recv?.rec);
+      if(parts.length<3) add('TD', p.totalTd);
+      if(parts.length<3 && p.extras){
+        for(const extra of p.extras){ if(extra){ parts.push(extra); if(parts.length>=3) break; } }
+      }
+      return parts.slice(0,3).join(' • ');
+    }
+
+    function seasonDefenseStatline(p){
+      const parts=[];
+      const add=(lbl,val)=>{ const part=statPart(lbl,val); if(part) parts.push(part); };
+      add('TKL', p.tot);
+      add('TFL', p.tfl);
+      add('SCK', p.sacks);
+      add('INT', p.ints);
+      add('PBU', p.pbu);
+      add('FF', p.ff);
+      if(parts.length<3 && p.extras){
+        for(const extra of p.extras){ if(extra){ parts.push(extra); if(parts.length>=3) break; } }
+      }
+      return parts.slice(0,3).join(' • ');
+    }
+
+    function seasonLeadersFromESPN(raw){
+      const groups = Array.isArray(raw?.leaders) ? raw.leaders : (Array.isArray(raw?.teamLeaders) ? raw.teamLeaders : []);
+      if(!groups.length) return { offense:[], defense:[], featured:null };
+
+      const offenseMap=new Map();
+      const defenseMap=new Map();
+
+      function claim(map, id, seed){ if(!map.has(id)) map.set(id, seed()); return map.get(id); }
+      function baseFrom(entry){
+        const id=entry?.athlete?.id||entry?.id; if(!id) return null;
+        const name=entry?.athlete?.displayName||entry?.displayName||'Unknown';
+        const pos=entry?.athlete?.position?.abbreviation||entry?.position?.abbreviation||'';
+        return {
+          id,
+          name,
+          pos,
+          link:`https://www.espn.com/college-football/player/_/id/${id}`,
+          head:headshot(id),
+          pass:{}, rush:{}, recv:{},
+          tot:0, solo:0, tfl:0, sacks:0, ints:0, pbu:0, ff:0,
+          totalTd:0,
+          extras:new Set()
+        };
+      }
+
+      groups.forEach(group=>{
+        const label=String(group?.name||group?.displayName||group?.shortDisplayName||'');
+        const lower=label.toLowerCase();
+        const bucket = /tackle|sack|interception|defen|pass break|forced fumble|pbu/.test(lower) ? 'defense' : 'offense';
+        (group?.leaders||[]).forEach(entry=>{
+          const base=baseFrom(entry); if(!base) return;
+          const map=bucket==='defense'?defenseMap:offenseMap;
+          const p=claim(map, base.id, ()=>base);
+          const val=num(entry?.value ?? entry?.statValue ?? entry?.amount ?? entry?.yards ?? entry?.totals ?? 0);
+          const disp=entry?.displayValue || entry?.display || entry?.shortDisplayName || '';
+          if(disp) p.extras.add(disp);
+          if(bucket==='offense'){
+            const nameLower=lower;
+            if(nameLower.includes('pass') && nameLower.includes('yard')) p.pass.yds=Math.max(p.pass.yds||0,val);
+            if(nameLower.includes('pass') && nameLower.includes('touch')) p.pass.td=Math.max(p.pass.td||0,val);
+            if(nameLower.includes('pass') && (nameLower.includes('comp')||nameLower.includes('completion'))) p.pass.cmp=Math.max(p.pass.cmp||0,val);
+            if(nameLower.includes('pass') && nameLower.includes('att')) p.pass.att=Math.max(p.pass.att||0,val);
+            if(nameLower.includes('rush') && nameLower.includes('yard')) p.rush.yds=Math.max(p.rush.yds||0,val);
+            if(nameLower.includes('rush') && nameLower.includes('touch')) p.rush.td=Math.max(p.rush.td||0,val);
+            if(nameLower.includes('rush') && (nameLower.includes('att')||nameLower.includes('carry'))) p.rush.car=Math.max(p.rush.car||0,val);
+            if(nameLower.includes('receiv') && nameLower.includes('yard')) p.recv.yds=Math.max(p.recv.yds||0,val);
+            if(nameLower.includes('receiv') && nameLower.includes('touch')) p.recv.td=Math.max(p.recv.td||0,val);
+            if(nameLower.includes('receiv') && (nameLower.includes('rec')||nameLower.includes('catch'))) p.recv.rec=Math.max(p.recv.rec||0,val);
+            if(nameLower.includes('total') && nameLower.includes('touch')) p.totalTd=Math.max(p.totalTd||0,val);
+          }else{
+            const nameLower=lower;
+            if(nameLower.includes('total') && nameLower.includes('tackle')) p.tot=Math.max(p.tot||0,val);
+            if(nameLower.includes('solo') && nameLower.includes('tackle')) p.solo=Math.max(p.solo||0,val);
+            if(nameLower.includes('sack')) p.sacks=Math.max(p.sacks||0,val);
+            if(nameLower.includes('loss')||nameLower.includes('tfl')) p.tfl=Math.max(p.tfl||0,val);
+            if(nameLower.includes('interception')||/\bint\b/.test(nameLower)) p.ints=Math.max(p.ints||0,val);
+            if((nameLower.includes('pass')&&nameLower.includes('defend'))||nameLower.includes('break up')||nameLower.includes('pbu')) p.pbu=Math.max(p.pbu||0,val);
+            if(nameLower.includes('forced') && nameLower.includes('fumble')) p.ff=Math.max(p.ff||0,val);
+          }
+        });
+      });
+
+      const offenseRaw=[...offenseMap.values()];
+      const defenseRaw=[...defenseMap.values()];
+
+      const offTotals=offenseRaw.reduce((acc,p)=>({
+        passYds:acc.passYds+(p.pass?.yds||0),
+        rushYds:acc.rushYds+(p.rush?.yds||0),
+        recvYds:acc.recvYds+(p.recv?.yds||0),
+        passTd:acc.passTd+(p.pass?.td||0),
+        rushTd:acc.rushTd+(p.rush?.td||0),
+        recvTd:acc.recvTd+(p.recv?.td||0)
+      }),{passYds:0,rushYds:0,recvYds:0,passTd:0,rushTd:0,recvTd:0});
+      const defTotals=defenseRaw.reduce((acc,p)=>({
+        tot:acc.tot+(p.tot||0),
+        havoc:acc.havoc+((p.tfl||0)+(p.sacks||0)+(p.ints||0)+((p.pbu||0)*0.5)+(p.ff||0))
+      }),{tot:0,havoc:0});
+
+      const offScores=offenseRaw.map(p=>offenseScore(p, offTotals));
+      const offPct=offScores.map(s=>minmaxNormalize(offScores,s));
+      const offense=offenseRaw.map((p,i)=>({
+        name:p.name,
+        pos:p.pos,
+        headshot:p.head,
+        espn:p.link,
+        statline:seasonOffenseStatline(p),
+        grade:letterFromPct(offPct[i])
+      })).sort((a,b)=>(b.grade?.pct||0)-(a.grade?.pct||0)).slice(0,3);
+
+      const defScores=defenseRaw.map(p=>defenseScore(p, defTotals));
+      const defPct=defScores.map(s=>minmaxNormalize(defScores,s));
+      const defense=defenseRaw.map((p,i)=>({
+        name:p.name,
+        pos:p.pos,
+        headshot:p.head,
+        espn:p.link,
+        statline:seasonDefenseStatline(p),
+        grade:letterFromPct(defPct[i])
+      })).sort((a,b)=>(b.grade?.pct||0)-(a.grade?.pct||0)).slice(0,3);
+
+      const featured = offense[0] || defense[0] || null;
+      return { offense, defense, featured };
     }
 
     /* ---------------- RENDER ---------------- */
@@ -551,7 +723,12 @@
 
     /* ---------------- STATE + TOGGLES ---------------- */
     let side='offense', span='last';
-    let LIVE={ offense_last:[], defense_last:[] };
+    let LIVE={
+      offense_last:[],
+      defense_last:[],
+      offense_season:[],
+      defense_season:[]
+    };
 
     wrap?.querySelectorAll('.chip').forEach(btn=>{
       btn.addEventListener('click',()=>{
@@ -599,10 +776,9 @@
     }
 
     function loadMini(){
-      if(span==='last'){
-        const arr = side==='offense' ? LIVE.offense_last : LIVE.defense_last;
-        if(arr && arr.length){ renderList(arr); return; }
-      }
+      const key = `${side}_${span}`;
+      const arr = LIVE[key];
+      if(arr && arr.length){ renderList(arr); return; }
       // Inline fallback list (estimate grade)
       const inline = readJSON(`fallback-spotlight_${side}_${span}`) || [];
       const adapt = inline.map(p=>{
@@ -648,7 +824,15 @@
         oArr=[P,R,W].filter(Boolean).map(x=>({...x, statline:x._display}));
       }else{
         // enrich with scores & statlines
-        const scores = oArr.map(offenseScore);
+        const totals=oArr.reduce((acc,p)=>({
+          passYds:acc.passYds+(p.pass?.yds||0),
+          rushYds:acc.rushYds+(p.rush?.yds||0),
+          recvYds:acc.recvYds+(p.recv?.yds||0),
+          passTd:acc.passTd+(p.pass?.td||0),
+          rushTd:acc.rushTd+(p.rush?.td||0),
+          recvTd:acc.recvTd+(p.recv?.td||0)
+        }),{passYds:0,rushYds:0,recvYds:0,passTd:0,rushTd:0,recvTd:0});
+        const scores = oArr.map(p=>offenseScore(p, totals));
         oArr = oArr.map((p,i)=>({ ...p, _score:scores[i], statline:bestStatline(p) }));
         const pct = scores.map(s=>minmaxNormalize(scores,s));
         oArr = oArr.map((p,i)=>({ ...p, grade:letterFromPct(pct[i]) }));
@@ -670,7 +854,11 @@
           dArr=[{name:L.athlete?.displayName||L.displayName,pos:L.athlete?.position?.abbreviation||'', headshot:headshot(L.athlete?.id||L.id), espn:`https://www.espn.com/college-football/player/_/id/${L.athlete?.id||L.id}`, statline:L.displayValue||'', grade:letterFromPct(78)}];
         }
       }else{
-        const scores = dArr.map(defenseScore);
+        const totals=dArr.reduce((acc,p)=>({
+          tot:acc.tot+(p.tot||0),
+          havoc:acc.havoc+((p.tfl||0)+(p.sacks||0)+(p.ints||0)+((p.pbu||0)*0.5)+(p.ff||0))
+        }),{tot:0,havoc:0});
+        const scores = dArr.map(p=>defenseScore(p, totals));
         const pct = scores.map(s=>minmaxNormalize(scores,s));
         dArr = dArr.map((d,i)=>({ ...d, statline:defStatline(d), grade:letterFromPct(pct[i]) }));
         dArr.sort((a,b)=> (b.grade?.pct||0) - (a.grade?.pct||0));
@@ -686,6 +874,23 @@
       if(feature && featuredEl){ featuredEl.innerHTML=rowHTML(feature); featuredEl.style.display='flex'; }
 
       if(span==='last') loadMini();
+
+      const leaderData = await getTeamLeaders(TEAM_ID);
+      if(leaderData){
+        const seasonPack = seasonLeadersFromESPN(leaderData);
+        if(seasonPack.offense.length){
+          LIVE.offense_season = seasonPack.offense;
+          if(span==='season' && side==='offense') loadMini();
+        }
+        if(seasonPack.defense.length){
+          LIVE.defense_season = seasonPack.defense;
+          if(span==='season' && side==='defense') loadMini();
+        }
+        if(!feature && seasonPack.featured && featuredEl){
+          featuredEl.innerHTML=rowHTML(seasonPack.featured);
+          featuredEl.style.display='flex';
+        }
+      }
     }
 
     // first draw + poll
