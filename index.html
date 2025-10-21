@@ -242,7 +242,7 @@
           <button class="chip" data-span="season">Season</button>
         </div>
         <div id="miniList"></div>
-        <div class="tiny">Auto-updating from official stats (falls back if offline).</div>
+        <div class="tiny">Powered by CFBD data with ESPN live updates (falls back if offline).</div>
       </div>
 
       <div class="card pad">
@@ -753,20 +753,20 @@
     };
 
     async function tryLoadBuiltData(){
-      const grab = async (file)=>{
+      async function grab(path){
         try{
-          const r = await fetch(dataURL(file), { cache:'no-store' });
+          const r = await fetch(path, { cache:'no-store' });
           if(!r.ok) return null;
           return await r.json();
         }catch(_){ return null; }
-      };
+      }
       try{
         const [offLast, defLast, offSeason, defSeason, feat] = await Promise.all([
-          grab('spotlight_offense_last.json'),
-          grab('spotlight_defense_last.json'),
-          grab('spotlight_offense_season.json'),
-          grab('spotlight_defense_season.json'),
-          grab('spotlight_featured.json')
+          grab('/data/spotlight_offense_last.json'),
+          grab('/data/spotlight_defense_last.json'),
+          grab('/data/spotlight_offense_season.json'),
+          grab('/data/spotlight_defense_season.json'),
+          grab('/data/spotlight_featured.json')
         ]);
 
         if(Array.isArray(offLast) && offLast.length){
@@ -873,16 +873,6 @@
       return parts.join(' • ');
     }
 
-    function estimateInlineGrade(p){
-      // Gentle heuristic so fallbacks don't all look the same
-      if(!p) return null;
-      const src=p.last_game||p.season||{};
-      const y=num(src.yds||src.rec_yds||0), td=num(src.td||src.rec_td||0), ints=num(src.int||0);
-      const rec=num(src.rec||0), rush=num(src.rush||0);
-      const base = 55 + y*0.05 + td*6 + rec*0.6 + rush*0.4 - ints*8;
-      return letterFromPct(clamp(40,95,base));
-    }
-
     function normalizeEntry(entry, spanHint='last'){
       if(!entry) return null;
       const name=entry.name||entry.player||'';
@@ -900,32 +890,6 @@
         grade=letterFromPct(entry.grade_pct);
       }
       return { name, pos, headshot, espn, statline, grade };
-    }
-
-    function seedFallbackState(){
-      const matrix = [
-        ['offense_last', 'fallback-spotlight_offense_last', 'last'],
-        ['defense_last', 'fallback-spotlight_defense_last', 'last'],
-        ['offense_season', 'fallback-spotlight_offense_season', 'season'],
-        ['defense_season', 'fallback-spotlight_defense_season', 'season']
-      ];
-      let seeded=false;
-      for(const [key, scriptId, span] of matrix){
-        const inline = readJSON(scriptId);
-        if(!Array.isArray(inline) || !inline.length) continue;
-        const rows = inline.map(p=>{
-          const row = normalizeEntry(p, span);
-          if(!row) return null;
-          if((!row.grade || !row.grade.letter) && p) row.grade = estimateInlineGrade(p);
-          if((!row.statline || row.statline==='—') && p) row.statline = statlineFromEntry(p, span) || row.statline;
-          return row;
-        }).filter(Boolean);
-        if(rows.length){
-          LIVE[key] = rows;
-          seeded=true;
-        }
-      }
-      return seeded;
     }
 
     wrap?.querySelectorAll('.chip').forEach(btn=>{
@@ -961,10 +925,7 @@
     (function drawInlineFirst(){
       seedFallbackState();
       const feat=readJSON('fallback-spotlight_featured');
-      const normalized=normalizeEntry(feat, feat?.season && !feat?.last_game ? 'season' : 'last')
-        || LIVE.offense_last?.[0]
-        || LIVE.defense_last?.[0]
-        || null;
+      const normalized=normalizeEntry(feat, feat?.season && !feat?.last_game ? 'season' : 'last');
       if(normalized&&featuredEl){
         if(!normalized.grade && feat) normalized.grade=estimateInlineGrade(feat);
         featuredEl.innerHTML=rowHTML(normalized);
@@ -988,25 +949,41 @@
       renderList(adapt);
     }
 
-    async function fetchLocal(file){
+    const CACHE_BUST=new Date().toISOString().slice(0,10).replace(/-/g,'');
+    async function fetchLocal(path){
       try{
-        const res=await fetch(dataURL(file),{cache:'no-store'});
+        const res=await fetch(`${path}?v=${CACHE_BUST}`,{cache:'no-store'});
         if(!res.ok) throw new Error(res.status);
         return await res.json();
       }catch(err){
-        log('static fetch failed', file, err?.message||err);
+        log('static fetch failed', path, err?.message||err);
+    const CFBD_FILES = {
+      offense_last: './data/spotlight_offense_last.json',
+      defense_last: './data/spotlight_defense_last.json',
+      offense_season: './data/spotlight_offense_season.json',
+      defense_season: './data/spotlight_defense_season.json',
+      featured: './data/spotlight_featured.json'
+    };
+
+    async function fetchCFBD(path){
+      try{
+        const res=await fetch(path,{cache:'no-store'});
+        if(!res.ok) throw new Error(String(res.status));
+        return await res.json();
+      }catch(err){
+        log('CFBD spotlight fetch failed', path, err.message||err);
         return null;
       }
     }
 
     async function hydrateFromStatic(){
       const [tickerData, featuredData, oLast, dLast, oSeason, dSeason] = await Promise.all([
-        fetchLocal('ticker.json'),
-        fetchLocal('spotlight_featured.json'),
-        fetchLocal('spotlight_offense_last.json'),
-        fetchLocal('spotlight_defense_last.json'),
-        fetchLocal('spotlight_offense_season.json'),
-        fetchLocal('spotlight_defense_season.json')
+        fetchLocal('data/ticker.json'),
+        fetchLocal('data/spotlight_featured.json'),
+        fetchLocal('data/spotlight_offense_last.json'),
+        fetchLocal('data/spotlight_defense_last.json'),
+        fetchLocal('data/spotlight_offense_season.json'),
+        fetchLocal('data/spotlight_defense_season.json')
       ]);
       if(tickerData) renderTicker(tickerData);
       const updated=[];
@@ -1034,6 +1011,72 @@
           }
         }
       }
+    function objectStatline(obj){
+      if(!obj) return '';
+      return Object.entries(obj).slice(0,3).map(([k,v])=>`${String(k).toUpperCase().replace('_','-')} ${v}`).join(' • ');
+    }
+
+    function adaptCFBDEntry(entry){
+      if(!entry) return null;
+      const statline = entry.statline
+        || entry.lastSummary
+        || entry.seasonSummary
+        || (typeof entry.last_game === 'string' ? entry.last_game : objectStatline(entry.last_game))
+        || (typeof entry.season === 'string' ? entry.season : objectStatline(entry.season))
+        || '';
+      let grade = (entry.grade && typeof entry.grade === 'object') ? entry.grade : null;
+      if(!grade && (entry.last_game || entry.season)){
+        try{ grade = estimateInlineGrade(entry); }catch(_){ grade=null; }
+      }
+      const out = {
+        name: entry.name,
+        pos: entry.pos || '',
+        headshot: entry.headshot || entry.head || '',
+        espn: entry.espn || entry.link || '#',
+        statline,
+        grade,
+        source: entry.source || 'cfbd'
+      };
+      if(entry.details) out.details = entry.details;
+      if(entry.score != null) out.score = entry.score;
+      return out;
+    }
+
+    async function loadCFBDSpotlight(){
+      const [oLast,dLast,oSeason,dSeason,feat] = await Promise.all([
+        fetchCFBD(CFBD_FILES.offense_last),
+        fetchCFBD(CFBD_FILES.defense_last),
+        fetchCFBD(CFBD_FILES.offense_season),
+        fetchCFBD(CFBD_FILES.defense_season),
+        fetchCFBD(CFBD_FILES.featured)
+      ]);
+
+      let touched=false;
+      if(Array.isArray(oLast) && oLast.length){
+        LIVE.offense_last = oLast.map(adaptCFBDEntry).filter(Boolean);
+        touched = true;
+      }
+      if(Array.isArray(dLast) && dLast.length){
+        LIVE.defense_last = dLast.map(adaptCFBDEntry).filter(Boolean);
+        touched = true;
+      }
+      if(Array.isArray(oSeason) && oSeason.length){
+        LIVE.offense_season = oSeason.map(adaptCFBDEntry).filter(Boolean);
+        touched = true;
+      }
+      if(Array.isArray(dSeason) && dSeason.length){
+        LIVE.defense_season = dSeason.map(adaptCFBDEntry).filter(Boolean);
+        touched = true;
+      }
+      if(feat && feat.name){
+        const adapted = adaptCFBDEntry(feat);
+        if(adapted && featuredEl && adapted.statline && adapted.statline.replace(/[\s•.-]/g,'').length){
+          featuredEl.innerHTML=rowHTML(adapted);
+          featuredEl.style.display='flex';
+        }
+        touched = true;
+      }
+      if(touched) loadMini();
     }
 
     /* ---------------- ESPN boot: rank + grades ---------------- */
@@ -1143,6 +1186,7 @@
     // first draw + poll
     await hydrateFromStatic();
     await tryLoadBuiltData();
+    await loadCFBDSpotlight();
     await bootLive();
     setInterval(bootLive, POLL_MS);
 
