@@ -25,6 +25,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
+  <!-- Chart.js (if you add charts later) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
@@ -32,7 +33,6 @@
       --ky-blue:#0033a0; --ink:#0b0d12; --paper:#ffffff; --muted:#eef1f6; --hc-green:#39ff14;
       --accent:#1b75ff; --shadow:0 6px 24px rgba(0,0,0,.12); --radius:18px;
       --good:#16a34a; --bad:#dc2626; --warn:#d97706;
-      --pillA:#0ea5e9; --pillB:#6366f1; --pillC:#f59e0b; --pillD:#ef4444; --pillF:#111827;
     }
     *{box-sizing:border-box}
     html,body{margin:0;padding:0}
@@ -105,26 +105,38 @@
     .pull-quote{font-size:1.1em;font-style:italic;color:#333;border-left:4px solid #bf5700;padding:.5em 1em;margin:1.5em 0}
     .section-divider{height:2px;background:linear-gradient(to right,#003087,#bf5700);margin:2rem 0}
 
-    /* Player spotlight rows */
-    .mini-spotlight .row{display:flex;gap:10px;align-items:center;padding:8px;border:1px solid var(--muted);border-radius:10px;background:#fff;margin:8px 0}
-    .mini-spotlight .row:hover{background:#f3f6fb}
-    .mini-spotlight img{width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid var(--muted)}
-    .mini-spotlight .who{font:700 14px/1.2 "Franklin Gothic Medium","Arial Narrow",Arial,sans-serif;color:#0b0d12}
-    .mini-spotlight .stat{font:600 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#475569}
-    .mini-spotlight .tiny{font:600 11px/1 system-ui;color:#64748b}
-    .mini-spotlight .toggles{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 8px}
-    .mini-spotlight .chip{border:1px solid var(--muted);border-radius:999px;padding:6px 10px;background:#fff;font:700 12px/1 system-ui;cursor:pointer}
-    .mini-spotlight .chip.active{background:#0033a0;color:#fff;border-color:#0033a0}
+    /* Spotlight */
+    .mini-spotlight .row{
+      display:flex; gap:10px; align-items:center; padding:8px; border:1px solid var(--muted);
+      border-radius:10px; background:#fff; margin:8px 0; justify-content:space-between;
+    }
+    .mini-spotlight .row:hover { background:#f3f6fb; }
+    .mini-spotlight .left{ display:flex; align-items:center; gap:10px; min-width:0; }
+    .mini-spotlight img { width:48px; height:48px; border-radius:8px; object-fit:cover; border:1px solid var(--muted) }
+    .mini-spotlight .who { font:700 14px/1.2 "Franklin Gothic Medium","Arial Narrow",Arial,sans-serif; color:#0b0d12 }
+    .mini-spotlight .stat { font:600 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:#475569 }
+    .mini-spotlight .tiny { font:600 11px/1 system-ui; color:#64748b }
+    .mini-spotlight .toggles { display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 8px }
+    .mini-spotlight .chip {
+      border:1px solid var(--muted); border-radius:999px; padding:6px 10px; background:#fff;
+      font:700 12px/1 system-ui; cursor:pointer;
+    }
+    .mini-spotlight .chip.active { background:#0033a0; color:#fff; border-color:#0033a0 }
 
-    /* Grade pill (compact, at far right) */
-    .gradebox{margin-left:auto;display:flex;align-items:center;gap:6px}
-    .grade-pill{display:inline-flex;align-items:center;justify-content:center;padding:4px 8px;border-radius:999px;font:800 12px/1 system-ui;color:#fff;min-width:34px}
-    .grade-A{background:linear-gradient(90deg,var(--pillA),#06b6d4)}
-    .grade-B{background:linear-gradient(90deg,var(--pillB),#22c55e)}
-    .grade-C{background:linear-gradient(90deg,var(--pillC),#f97316)}
-    .grade-D{background:linear-gradient(90deg,var(--pillD),#b91c1c)}
-    .grade-F{background:linear-gradient(90deg,var(--pillF),#6b7280)}
-    .grade-pct{font:700 11px/1 system-ui;color:#64748b}
+    /* Grade badge (rectangular, loud, right aligned) */
+    .grade-badge{
+      margin-left:auto; display:inline-flex; align-items:center; gap:6px;
+      padding:4px 8px; border-radius:12px; font:800 12px/1 system-ui;
+      border:1px solid #d1d5db; background:#f8fafc; color:#111; min-width:64px; justify-content:center;
+    }
+    .grade-badge .g-letter{ font-size:13px; letter-spacing:.3px }
+    .grade-badge .g-pct{ font-weight:700; opacity:.85 }
+
+    .grade-A{ background:#e8f7ef; border-color:#7ad7a2; color:#0a6a2b }
+    .grade-B{ background:#eaf4ff; border-color:#a7c8ff; color:#0f4fa8 }
+    .grade-C{ background:#fff7e6; border-color:#ffd89a; color:#8a5b00 }
+    .grade-D{ background:#ffece5; border-color:#ffb5a1; color:#8c2f12 }
+    .grade-F{ background:#fde8e8; border-color:#f5a7a7; color:#8a0c0c }
 
     #pulse .feeds{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
     @media (max-width:980px){#pulse .feeds{grid-template-columns:1fr}}
@@ -138,23 +150,6 @@
       nav ul{flex-wrap:wrap}
       .article-body h1{font-size:1.8em}
     }
-    /* --- Spotlight grade badge + trend (add) --- */
-.mini-spotlight .row{ justify-content:space-between; }
-.grade-wrap{ margin-left:auto; display:flex; align-items:center; gap:8px; }
-.grade-badge{
-  min-width:46px; text-align:center; padding:6px 10px; border-radius:12px;
-  font:800 14px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:#fff;
-  box-shadow: 0 1px 0 rgba(0,0,0,.05), 0 6px 18px rgba(0,0,0,.08);
-}
-.grade-badge small{ display:block; font:700 10px/1 system-ui; opacity:.95; margin-top:2px; color:#f1f5f9 }
-.grade-A{ background:#16a34a }  /* A band */
-.grade-B{ background:#0ea5e9 }  /* B band */
-.grade-C{ background:#d97706 }  /* C band */
-.grade-D{ background:#ef4444 }  /* D band */
-.grade-F{ background:#111827 }  /* F band */
-.trend{ font:900 12px/1 system-ui; }
-.trend.up{ color:#16a34a } .trend.down{ color:#ef4444 } .trend.flat{ color:#64748b }
-
   </style>
 </head>
 <body>
@@ -214,16 +209,13 @@
         <div class="kicker">Next Kickoff</div>
         <h2><span id="nextTeamName">Kentucky</span> @ <span id="nextOpponent" style="white-space:nowrap">[Opponent]</span></h2>
         <p id="nextMeta">Date • Time • TV: <b>ESPN</b></p>
-
-        <!-- LIVE banner stats -->
-        <div class="stat-grid" id="bannerStats" style="margin-top:10px">
-          <div class="stat"><b id="statYPP">–</b><span>Yards/Play (UK)</span></div>
-          <div class="stat"><b id="stat3D">–</b><span>3rd Down</span></div>
-          <div class="stat"><b id="statTO">–</b><span>Turnovers</span></div>
-          <div class="stat"><b id="statTOP">–</b><span>Time of Poss</span></div>
+        <div class="stat-grid" style="margin-top:10px">
+          <div class="stat"><b>5.7</b><span>Yards/Play (UK)</span></div>
+          <div class="stat"><b>+0.08</b><span>EPA/Play last 3</span></div>
+          <div class="stat"><b>42%</b><span>Havoc Allowed</span></div>
+          <div class="stat"><b>58%</b><span>Success Rate (PA)</span></div>
         </div>
       </div>
-
       <div class="block">
         <div class="kicker">Hashmarks</div>
         <p style="margin:8px 0 12px">Quick-hit trends we’re tracking.</p>
@@ -281,6 +273,7 @@
     </aside>
   </main>
 
+  <!-- Hardtop anchor (placeholder) -->
   <section id="hardtop" class="wrap" style="max-width:1100px;margin:0 auto 32px;">
     <div class="card pad">
       <div class="kicker">Hardtop</div>
@@ -289,6 +282,7 @@
     </div>
   </section>
 
+  <!-- The Pulse -->
   <section id="pulse" class="wrap" style="max-width:1100px;margin:0 auto 40px;">
     <div class="card pad">
       <div class="kicker">The Pulse</div>
@@ -308,8 +302,8 @@
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
           <div class="hc-logo" aria-hidden="true"><span>HC</span></div>
           <div>
-            <strong style="display:block;font:800 16px/1.2 'Franklin Gothic Medium','Arial Narrow',Arial,sans-serif;color:#e2e8f0">Hashmark Chronicles</strong>
-            <span style="font:600 12px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#94a3b8">Kentucky Athletics Blog</span>
+            <strong style="display:block;font:800 16px/1.2 'Franklin Gothic Medium','Arial Narrow',Arial,sans-serif; color:#e2e8f0">Hashmark Chronicles</strong>
+            <span style="font:600 12px/1.2 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:#94a3b8">Kentucky Athletics Blog</span>
           </div>
         </div>
         <small style="color:#aab4d4">© <span id="year"></span> HC Media. Not affiliated with the University of Kentucky. Opinions are our own.</small>
@@ -321,9 +315,10 @@
     </div>
   </footer>
 
+  <!-- X/Twitter embeds -->
   <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-  <!-- ======== INLINE FALLBACK DATA (only used if ESPN parsing fails) ======== -->
+  <!-- ======== INLINE FALLBACK DATA (used only if ESPN fails) ======== -->
   <script type="application/json" id="fallback-ticker">
   [
     { "label":"Explosive PA rate", "value":"+6.3%", "trend":"good", "suffix":"vs base" },
@@ -336,8 +331,9 @@
 
   <!-- Featured + Spotlight fallbacks -->
   <script type="application/json" id="fallback-spotlight_featured">
-  {"name":"Cutter Boley","pos":"QB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/5141378.png","espn":"https://www.espn.com/college-football/player/_/id/5141378/cutter-boley","last_game":{"opp":"Texas","cmp_att":"31/39","yds":"258","td":"0","int":"1"}}
+  {"name":"Cutter Boley","pos":"QB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/5141378.png","espn":"https://www.espn.com/college-football/player/_/id/5141378/cutter-boley","last_game":{"opp":"Texas","cmp_att":"31/39","yds":"258","td":"0","int":"1"},"season":{"cmp_pct":"64%","yds":"885","td":"4","int":"4"}}
   </script>
+
   <script type="application/json" id="fallback-spotlight_offense_last">
   [
     {"name":"Cutter Boley","pos":"QB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/5141378.png","espn":"https://www.espn.com/college-football/player/_/id/5141378/cutter-boley","last_game":{"opp":"Texas","cmp_att":"31/39","yds":"258","td":"0","int":"1"}},
@@ -345,6 +341,7 @@
     {"name":"Kendrick Law","pos":"WR","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/4685441.png","espn":"https://www.espn.com/college-football/player/_/id/4685441/kendrick-law","last_game":{"opp":"Texas","rec":"3","yds":"25","td":"0"}}
   ]
   </script>
+
   <script type="application/json" id="fallback-spotlight_offense_season">
   [
     {"name":"Seth McGowan","pos":"RB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/4686468.png","espn":"https://www.espn.com/college-football/player/_/id/4686468/seth-mcgowan","season":{"car":"93","yds":"476","td":"7","avg":"5.1"}},
@@ -352,6 +349,7 @@
     {"name":"Ja'Mori Maclin","pos":"WR","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/4430270.png","espn":"https://www.espn.com/college-football/player/_/id/4430270/jamori-maclin","season":{"rec":"8","yds":"135","td":"0","avg":"16.9"}}
   ]
   </script>
+
   <script type="application/json" id="fallback-spotlight_defense_last">
   [
     {"name":"Alex Afari Jr.","pos":"DB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/4819224.png","espn":"https://www.espn.com/college-football/player/_/id/4819224/alex-afari-jr","last_game":{"opp":"Texas","tkl":"7","tfl":"1","pbu":"1"}},
@@ -359,6 +357,7 @@
     {"name":"Jordan Lovett","pos":"DB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/4683458.png","espn":"https://www.espn.com/college-football/player/_/id/4683458/jordan-lovett","last_game":{"opp":"Texas","tkl":"6"}}
   ]
   </script>
+
   <script type="application/json" id="fallback-spotlight_defense_season">
   [
     {"name":"Alex Afari Jr.","pos":"DB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/4819224.png","espn":"https://www.espn.com/college-football/player/_/id/4819224/alex-afari-jr","season":{"tkl":"38","tfl":"4","pbu":"4"}},
@@ -366,378 +365,371 @@
     {"name":"DJ Waller Jr.","pos":"DB","headshot":"https://a.espncdn.com/i/headshots/college-football/players/full/5092262.png","espn":"https://www.espn.com/college-football/player/_/id/5092262/dj-waller-jr","season":{"tkl":"21","int":"1","pbu":"3"}}
   ]
   </script>
+  <!-- ======== END INLINE FALLBACKS ======== -->
 
-  <!-- Optional: manual "Showtime" boosts (big moment credit). Add entries as needed. -->
-  <script type="application/json" id="hc-showtime">
-  [
-    /* Example:
-    { "eventId":"401752747",
-      "players":[
-        { "id":"4685441", "bonus": 8, "note":"OT catch at the pylon (ruled short) shifted momentum" }
-      ]
-    }
-    */
-  ]
-  </script>
-  <!-- ======== END INLINE DATA ======== -->
-
-  <!-- Single inline script: ESPN live + grading + banner stats -->
+  <!-- Single inline script: ESPN live + letter grades -->
   <script>
-/* Hashmark Chronicles — Spotlight v1.7
-   - Builds full "played roster" from ESPN boxscore (last game) and team leaders (season)
-   - Scores by position group, normalizes, outputs letter+/- and % with trend
-   - Leaves your design / markup intact; only enhances the mini-spotlight list */
+  (function start(run){ if(document.readyState!=='loading'){ run(); } else { document.addEventListener('DOMContentLoaded', run); } })(function(){
+    (async function(){
+      const TEAM_ID = new URLSearchParams(location.search).get('team') || '96'; // Kentucky
+      const POLL_MS = 30_000;
 
-(function start(run){document.readyState!=='loading'?run():document.addEventListener('DOMContentLoaded',run)})(function(){
-(async function(){
+      const log = (...a)=>console.log('[HC]',...a);
+      const err = (...a)=>console.error('[HC]',...a);
+      const headshot = id => id ? `https://a.espncdn.com/i/headshots/college-football/players/full/${id}.png` : '';
+      const readInlineJSON = id => { const t=document.getElementById(id); if(!t) return null; try{return JSON.parse(t.textContent);}catch(e){return null;} };
+      async function j(url){ const r=await fetch(url,{mode:'cors',cache:'no-store'}); if(!r.ok) throw new Error(r.status+' '+url); return r.json(); }
 
-  /* ---------- CONFIG ---------- */
-  const TEAM_ID   = new URLSearchParams(location.search).get('team') || '96'; // Kentucky
-  const POLL_MS   = 30000;                       // refresh window
-  const SHOW_N    = 3;                           // top N per view
-  const USE_ENV_LEADERS = true;                  // season leaders source
-  const log=(...a)=>console.log('[HC]',...a), err=(...a)=>console.error('[HC]',...a);
-
-  /* ---------- DOM ---------- */
-  const wrap=document.getElementById('miniSpotlight');
-  const list=document.getElementById('miniList');
-  const featuredEl=document.getElementById('miniFeatured');
-
-  /* ---------- helpers ---------- */
-  const readJSONtag = id => { const t=document.getElementById(id); if(!t) return null; try{ return JSON.parse(t.textContent) }catch(e){return null} };
-  const headshot = id => id ? `https://a.espncdn.com/i/headshots/college-football/players/full/${id}.png` : '';
-  const safeNum = v => { if(v==null) return 0; const s=String(v); const m=s.match(/-?\d+(\.\d+)?/); return m?parseFloat(m[0]):0 };
-  const parseCmpAtt = s => { const m=String(s||'').match(/(\d+)\s*\/\s*(\d+)/); return m?{cmp:+m[1],att:+m[2]}:{cmp:0,att:0}; };
-
-  const letterFrom = pct => {
-    // map 0..100 => letter with +/- granularity
-    const p = Math.max(0, Math.min(100, pct));
-    const bands = [
-      {min:97, g:'A+'},{min:93,g:'A'},{min:90,g:'A-'},
-      {min:87,g:'B+'},{min:83,g:'B'},{min:80,g:'B-'},
-      {min:77,g:'C+'},{min:73,g:'C'},{min:70,g:'C-'},
-      {min:67,g:'D+'},{min:63,g:'D'},{min:60,g:'D-'},
-      {min:-1,g:'F'}
-    ];
-    return bands.find(b=>p>=b.min).g;
-  };
-  const gradeClass = g => g[0]==='A'?'grade-A':g[0]==='B'?'grade-B':g[0]==='C'?'grade-C':g[0]==='D'?'grade-D':'grade-F';
-
-  function rowHTML(p){
-    const initials=(p.name||'').split(/\s+/).map(s=>s[0]).slice(0,2).join('').toUpperCase()||'UK';
-    const stat=p.statline||'';
-    const grade = p.grade || {letter:'', pct:NaN, trend:0};
-    const trendClass = grade.trend>2 ? 'up' : grade.trend<-2 ? 'down' : 'flat';
-    const trendGlyph = grade.trend>2 ? '▲' : grade.trend<-2 ? '▼' : '•';
-    return `
-      <div class="row">
-        <img src="${p.headshot||''}" alt="${p.name} headshot"
-             onerror="this.replaceWith((()=>{const d=document.createElement('div');d.style.cssText='width:48px;height:48px;border-radius:8px;display:grid;place-items:center;background:#0033a0;color:#fff;font:800 14px/1 system-ui';d.textContent='${initials}';return d;})())">
-        <div>
-          <div class="who">${p.name} <span class="tiny">• ${p.pos||''}</span></div>
-          <div class="stat">${stat} <a href="${p.espn||'#'}" target="_blank" rel="noopener" class="tiny">ESPN ↗</a></div>
-        </div>
-        <div class="grade-wrap">
-          ${isFinite(grade.pct) ? `
-            <div class="grade-badge ${gradeClass(grade.letter)}">${grade.letter}<small>${Math.round(grade.pct)}%</small></div>
-            <div class="trend ${trendClass}" title="trend vs season">${trendGlyph}</div>
-          ` : ``}
-        </div>
-      </div>`;
-  }
-  function renderList(arr){ list.innerHTML = (arr&&arr.length) ? arr.slice(0,SHOW_N).map(rowHTML).join('') : '<div class="tiny">No data available.</div>'; }
-
-  function setKickoffUI(teamName, oppName, meta){
-    const t=document.getElementById('nextTeamName');
-    const o=document.getElementById('nextOpponent');
-    const m=document.getElementById('nextMeta');
-    if(t) t.textContent=teamName||'Kentucky';
-    if(o) o.textContent=oppName||'[Opponent]';
-    if(m) m.innerHTML=`Date • Time • TV: <b>${meta.when}</b> • <b>${meta.tv}</b>`;
-  }
-  const fmtKick = (dateStr, networks)=>{
-    const d=new Date(dateStr);
-    const when=isFinite(d)?d.toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'TBA';
-    const tv=(networks&&networks[0])?(networks[0].shortName||networks[0].name||'TV TBA'):'TV TBA';
-    return {when,tv};
-  };
-
-  async function j(url){ const r=await fetch(url,{mode:'cors',cache:'no-store'}); if(!r.ok) throw new Error(r.status+' '+url); return r.json(); }
-  const getEnv     = async id => j(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/${id}`);
-  const getSummary = async eid => j(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=${eid}`);
-
-  async function chooseEvent(env){
-    const next=env?.team?.nextEvent?.[0];
-    const prev=env?.team?.previousEvent?.[0];
-    if(next?.id){
-      try{ const sum=await getSummary(next.id);
-        const st=sum?.header?.competitions?.[0]?.status?.type?.state;
-        if(st==='in'||st==='post') return {id:next.id,sum,state:st};
-        if(prev?.id){ const sump=await getSummary(prev.id); return {id:prev.id,sum:sump,state:sump?.header?.competitions?.[0]?.status?.type?.state,usePrev:true,nextId:next.id}; }
-        return {id:next.id,sum,state:st};
-      }catch(e){ err('choose next failed',e); }
-    }
-    if(prev?.id){ const sump=await getSummary(prev.id); return {id:prev.id,sum:sump,state:sump?.header?.competitions?.[0]?.status?.type?.state,usePrev:true}; }
-    return null;
-  }
-
-  /* ---------- PARSERS & SCORERS ---------- */
-  function teamBlockFromBox(sum, teamId){
-    const blocks=sum?.boxscore?.players||[];
-    return blocks.find(b=>String(b.team?.id)===String(teamId))||blocks[0];
-  }
-  function collectOffensePlayers(teamBlock){
-    if(!teamBlock) return {qb:[], rb:[], wr:[]};
-    const cats={}; for(const c of (teamBlock.statistics||[])) cats[c.type]=c;
-    const pass=cats.passing, rush=cats.rushing, recv=cats.receiving;
-    const of = (cat)=>{ if(!cat) return []; const L=cat.labels||[]; return (cat.athletes||[]).map(a=>({a,L})); };
-    return {
-      qb: (of(pass)).map(({a,L})=>{
-        const id=a.athlete?.id||a.id, name=a.athlete?.displayName||a.displayName;
-        const pos=a.athlete?.position?.abbreviation||'QB';
-        const map = Object.fromEntries((L||[]).map((k,i)=>[k, a.stats?.[i]]));
-        const {cmp,att}=parseCmpAtt(map['CMP-ATT']); const yds=safeNum(map['YDS']); const td=safeNum(map['TD']); const int=safeNum(map['INT']);
-        const ypa=att?yds/att:0, cpc=att?100*cmp/att:0;
-        const statline=`CMP/ATT ${cmp}/${att} • YDS ${yds} • TD ${td}${int?` • INT ${int}`:''}`;
-        return {id,name,pos,statline,yds,td,int,att,cmp,ypa,cpc};
-      }),
-      rb: (of(rush)).map(({a,L})=>{
-        const id=a.athlete?.id||a.id, name=a.athlete?.displayName||a.displayName;
-        const pos=a.athlete?.position?.abbreviation||'RB';
-        const m=Object.fromEntries(L.map((k,i)=>[k,a.stats?.[i]]));
-        const car=safeNum(m['CAR']), yds=safeNum(m['YDS']), td=safeNum(m['TD']), avg=safeNum(m['AVG']);
-        const statline=`RUSH ${car} • YDS ${yds} • TD ${td}`;
-        return {id,name,pos,statline,car,yds,td,avg,ypc:avg|| (car?yds/car:0)};
-      }),
-      wr: (of(recv)).map(({a,L})=>{
-        const id=a.athlete?.id||a.id, name=a.athlete?.displayName||a.displayName;
-        const pos=a.athlete?.position?.abbreviation||'WR';
-        const m=Object.fromEntries(L.map((k,i)=>[k,a.stats?.[i]]));
-        const rec=safeNum(m['REC']), yds=safeNum(m['YDS']), td=safeNum(m['TD']), avg=safeNum(m['AVG']);
-        const statline=`REC ${rec} • YDS ${yds} • TD ${td}`;
-        return {id,name,pos,statline,rec,yds,td,avg,ypr:avg|| (rec?yds/rec:0)};
-      })
-    };
-  }
-  function collectDefensePlayers(teamBlock){
-    const def = (teamBlock?.statistics||[]).find(x=>/defens/i.test(x.type));
-    if(!def) return [];
-    const L=def.labels||[], rows=def.athletes||[];
-    const idx=(k)=>L.indexOf(k);
-    return rows.map(r=>{
-      const id=r.athlete?.id||r.id, name=r.athlete?.displayName||r.displayName, pos=r.athlete?.position?.abbreviation||'DEF';
-      const stat = (k)=>{const i=idx(k); return i>=0? safeNum(r.stats?.[i]) : 0};
-      const TOT=stat('TOT')||stat('TOTAL'), SOLO=stat('SOLO'), TFL=stat('TFL'), SCK=stat('SCK')||stat('SACKS'), INT=stat('INT'), PBU=stat('PD')||stat('PBU');
-      const parts=[]; if(TOT) parts.push(`TKL ${TOT}`); if(TFL) parts.push(`TFL ${TFL}`); if(SCK) parts.push(`SACKS ${SCK}`); if(INT) parts.push(`INT ${INT}`);
-      return {id,name,pos,statline:parts.slice(0,3).join(' • '), TOT,SOLO,TFL,SCK,INT,PBU};
-    });
-  }
-
-  // raw scoring per role (hand-tuned v1.1)
-  function scoreQB(q){ return (q.ypa*9) + (q.cpc*0.28) + (q.td*6) - (q.int*10) + (q.yds*0.04); }
-  function scoreRB(r){ return (r.ypc*12) + (r.td*8) + (r.yds*0.09) + (r.car*0.5); }
-  function scoreWR(w){ return (w.ypr*7) + (w.td*10) + (w.yds*0.08) + (w.rec*1.2); }
-  function scoreDEF(d){ return (d.TOT*3.6) + (d.TFL*7) + (d.SCK*10) + (d.INT*14) + (d.PBU*3); }
-
-  // normalize within a group => 60..98 band (prevents the “all C-” effect)
-  function normalizeGroup(list, accessor){
-    const raw = list.map(x=>({x, s:accessor(x)}));
-    const min = Math.min(...raw.map(o=>o.s), 0);
-    const max = Math.max(...raw.map(o=>o.s), 1);
-    const span = Math.max(1, max-min);
-    return raw.map(o=>{
-      const p = (o.s-min)/span;           // 0..1
-      const pct = 60 + p*38;              // 60..98
-      return { ...o.x, pct };
-    });
-  }
-
-  function gradeize(pct){
-    const letter = letterFrom(pct);
-    return {letter, pct};
-  }
-
-  function attachMeta(arr, id2seasonPct){
-    return arr.map(v=>({
-      ...v,
-      headshot: headshot(v.id),
-      espn: `https://www.espn.com/college-football/player/_/id/${v.id}`,
-      grade: (()=>{
-        const base = gradeize(v.pct);
-        const season = id2seasonPct?.get(v.id);
-        const trend = isFinite(season) ? (base.pct - season) : 0;
-        return {...base, trend};
-      })()
-    }));
-  }
-
-  /* season leaders → coarse season % so we can trend vs last */
-  async function seasonLeaders(env){
-    const out = {offense:[], defense:[], id2pct:new Map()};
-    if(!USE_ENV_LEADERS) return out;
-
-    // try: enable=leaders view first
-    let teamL=null;
-    try{
-      teamL = await j(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/${TEAM_ID}?enable=leaders`);
-    }catch(e){ log('leaders enable failed; falling back', e); }
-
-    const groups = teamL?.team?.leaders?.leaders || teamL?.leaders || [];
-    const take = (need)=> (groups.find(g=>{
-      const n=(g?.name || g?.displayName || '').toLowerCase();
-      return need.some(k=>n.includes(k));
-    })?.leaders || []).map(L=>({
-      id: L?.athlete?.id, name:L?.athlete?.displayName, pos:L?.athlete?.position?.abbreviation,
-      val: safeNum(L?.value), text:L?.displayValue||''
-    }));
-
-    const pass = take(['passing yards','pass']);
-    const rush = take(['rushing yards','rush']);
-    const recv = take(['receiving yards','receiv']);
-    const tkl  = take(['tackles','total tackles']);
-    const sack = take(['sacks']);
-    const ints = take(['interceptions']);
-
-    const off = [];
-    if(pass[0]) off.push({id:pass[0].id, name:pass[0].name, pos:'QB', statline:`YDS ${pass[0].val}`, pct:75});
-    if(rush[0]) off.push({id:rush[0].id, name:rush[0].name, pos:'RB', statline:`YDS ${rush[0].val}`, pct:75});
-    if(recv[0]) off.push({id:recv[0].id, name:recv[0].name, pos:'WR', statline:`YDS ${recv[0].val}`, pct:75});
-
-    const def = [];
-    if(tkl[0]) def.push({id:tkl[0].id, name:tkl[0].name, pos:'DEF', statline:`TKL ${tkl[0].val}`, pct:75});
-    if(sack[0])def.push({id:sack[0].id,name:sack[0].name,pos:'DEF', statline:`SACKS ${sack[0].val}`, pct:75});
-    if(ints[0])def.push({id:ints[0].id,name:ints[0].name,pos:'DB',  statline:`INT ${ints[0].val}`, pct:75});
-
-    // Give them a gentler normalization so they don’t all tie; also populate id→pct map
-    const nn = x => x.map((v,i)=>{const pct=72 + (x.length>1? (i===0?6:(i===1?3:0)) : 4); return {...v,pct}});
-    const offense = nn(off), defense = nn(def);
-    for(const a of [...offense, ...defense]) out.id2pct.set(a.id, a.pct);
-    return {offense, defense, id2pct: out.id2pct};
-  }
-
-  /* ---------- UI STATE ---------- */
-  let side='offense', span='last';
-  wrap?.querySelectorAll('.chip').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      if(btn.dataset.side) side=btn.dataset.side;
-      if(btn.dataset.span) span=btn.dataset.span;
-      wrap.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
-      wrap.querySelectorAll(`.chip[data-side="${side}"]`).forEach(c=>c.classList.add('active'));
-      wrap.querySelectorAll(`.chip[data-span="${span}"]`).forEach(c=>c.classList.add('active'));
-      paint();
-    });
-  });
-  wrap?.querySelector(`.chip[data-side="${side}"]`)?.classList.add('active');
-  wrap?.querySelector(`.chip[data-span="${span}"]`)?.classList.add('active');
-
-  /* ---------- Ticker stays inline (unchanged) ---------- */
-  (function(){
-    const items=readJSONtag('fallback-ticker');
-    const track=document.getElementById('tickerTrack');
-    if(Array.isArray(items)&&track){
-      track.innerHTML=items.map(it=>{
-        const trend=it.trend||'warn';
-        const suffix=it.suffix?(' '+it.suffix):'';
-        return `<li><span class="trend-dot ${trend}"></span><span class="label"><strong>${it.label}</strong> <span class="trend-value ${trend}">${it.value}</span>${suffix}</span></li>`;
-      }).join('');
-    }
-  })();
-
-  // draw inline Featured quickly, then live replaces it
-  (function quickFeatured(){
-    const f=readJSONtag('fallback-spotlight_featured');
-    if(f && featuredEl){
-      const stat = Object.entries(f.last_game||f.season||{}).slice(0,3).map(([k,v])=>`${k.toUpperCase().replace('_','-')} ${v}`).join(' • ');
-      featuredEl.innerHTML = rowHTML({name:f.name,pos:f.pos,headshot:f.headshot,espn:f.espn,statline:stat});
-      featuredEl.style.display='flex';
-    }
-  })();
-
-  /* ---------- DATA CACHE ---------- */
-  const LIVE = { last:{offense:[], defense:[], map:new Map()}, season:{offense:[], defense:[], id2pct:new Map()} };
-
-  function paint(){
-    const use = (span==='last') ? LIVE.last : LIVE.season;
-    const arr = (side==='offense') ? use.offense : use.defense;
-    if(arr && arr.length){ renderList(arr); }
-    else{
-      // inline fallback if live not ready
-      const inline = readJSONtag(`fallback-spotlight_${side}_${span}`) || [];
-      const adapt = inline.map(p=>({
-        name:p.name, pos:p.pos, headshot:p.headshot, espn:p.espn,
-        statline:Object.entries((p.last_game||p.season||{})).slice(0,3).map(([k,v])=>`${k.toUpperCase().replace('_','-')} ${v}`).join(' • ')
-      }));
-      renderList(adapt);
-    }
-  }
-
-  /* ---------- LIVE BOOT ---------- */
-  async function boot(){
-    const env=await getEnv(TEAM_ID).catch(e=>{err('env',e); return null});
-    if(env){
-      const teamName=env?.team?.displayName||'Kentucky';
-      const nxt=env?.team?.nextEvent?.[0] || env?.team?.previousEvent?.[0];
-      if(nxt){
-        const comp=nxt.competitions?.[0];
-        const meta=fmtKick(nxt.date || comp?.date, comp?.broadcasts || comp?.broadcast || []);
+      function opponentFromComp(comp, teamId){
         const comps = comp?.competitors||[];
-        const foe = comps.find(c=>String(c.team?.id)!==String(TEAM_ID))||comps[0];
-        setKickoffUI(teamName, foe?.team?.displayName||'TBA', meta);
+        const foe = comps.find(c=>String(c.team?.id)!==String(teamId))||comps[0];
+        return foe?.team?.displayName||'TBA';
       }
-    }
+      function fmtKick(dateStr, networks){
+        const d=new Date(dateStr);
+        const when=isFinite(d)?d.toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'TBA';
+        const tv=(networks&&networks[0])?(networks[0].shortName||networks[0].name||'TV TBA'):'TV TBA';
+        return {when,tv};
+      }
+      function setKickoffUI(teamName, oppName, meta){
+        const t=document.getElementById('nextTeamName');
+        const o=document.getElementById('nextOpponent');
+        const m=document.getElementById('nextMeta');
+        if(t) t.textContent=teamName||'Kentucky';
+        if(o) o.textContent=oppName||'[Opponent]';
+        if(m) m.innerHTML=`Date • Time • TV: <b>${meta.when}</b> • <b>${meta.tv}</b>`;
+      }
 
-    const pick = await chooseEvent(env);
-    if(!pick){ log('no event; showing inline'); paint(); return; }
+      async function getTeamEnv(teamId){
+        try{ return await j(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/${teamId}`); }
+        catch(e){ err('team envelope failed',e); return null; }
+      }
+      async function getSummary(eventId){
+        return await j(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=${eventId}`);
+      }
+      async function chooseEvent(env){
+        const next=env?.team?.nextEvent?.[0];
+        const prev=env?.team?.previousEvent?.[0];
 
-    // LAST (from full boxscore)
-    const tb = teamBlockFromBox(pick.sum, TEAM_ID);
-    const O  = collectOffensePlayers(tb);
-    const D  = collectDefensePlayers(tb);
+        if(next?.id){
+          try{
+            const sum=await getSummary(next.id);
+            const state=sum?.header?.competitions?.[0]?.status?.type?.state; // pre|in|post
+            if(state==='in'||state==='post'){ return {id:next.id,sum,state}; }
+            if(prev?.id){
+              const sump=await getSummary(prev.id);
+              const sp=sump?.header?.competitions?.[0]?.status?.type?.state;
+              return {id:prev.id,sum:sump,state:sp,usePrev:true,nextId:next.id};
+            }
+            return {id:next.id,sum,state};
+          }catch(e){ err('next summary failed',e); }
+        }
+        if(prev?.id){
+          try{
+            const sump=await getSummary(prev.id);
+            const sp=sump?.header?.competitions?.[0]?.status?.type?.state;
+            return {id:prev.id,sum:sump,state:sp,usePrev:true};
+          }catch(e){ err('prev summary failed',e); }
+        }
+        return null;
+      }
 
-    // compute shares for offense (light impact boost)
-    const sumRush = O.rb.reduce((a,b)=>a+(b.yds||0),0);
-    const sumRecv = O.wr.reduce((a,b)=>a+(b.yds||0),0);
+      function makeRow(a, statline){
+        const id=a?.athlete?.id||a?.id;
+        const name=a?.athlete?.displayName||a?.displayName||'Unknown';
+        const pos=a?.athlete?.position?.abbreviation||a?.position?.abbreviation||'';
+        const link=id?`https://www.espn.com/college-football/player/_/id/${id}`:'#';
+        return { name, pos, headshot: headshot(id), espn: link, statline: statline||'' };
+      }
 
-    const qbN = normalizeGroup(O.qb,  scoreQB).map(v=>({...v, pct:v.pct +  (v.att>25?2:0)}));
-    const rbN = normalizeGroup(O.rb,  scoreRB).map(v=>({...v, pct:v.pct + (sumRush? Math.min(3, (v.yds/sumRush)*6):0)}));
-    const wrN = normalizeGroup(O.wr,  scoreWR).map(v=>({...v, pct:v.pct + (sumRecv? Math.min(3, (v.yds/sumRecv)*6):0)}));
-    const defN= normalizeGroup(D,     scoreDEF);
+      function offenseFromBoxscore(sum, teamId){
+        const blocks=sum?.boxscore?.players||[];
+        const teamBlock=blocks.find(b=>String(b.team?.id)===String(teamId))||blocks[0];
+        if(!teamBlock) return [];
+        const cats={}; for(const c of (teamBlock.statistics||[])) cats[c.type]=c;
 
-    // combine to offense top list (mix positions fairly)
-    const offensePool = [...qbN, ...rbN, ...wrN].sort((a,b)=>b.pct-a.pct).map(v=>({
-      id:v.id, name:v.name, pos:v.pos, statline:v.statline, pct:v.pct
-    }));
-    const defensePool = defN.sort((a,b)=>b.pct-a.pct).map(v=>({
-      id:v.id, name:v.name, pos:v.pos, statline:v.statline, pct:v.pct
-    }));
+        const pick=(cat,labels,rankLbl)=>{
+          if(!cat) return null;
+          const L=cat.labels||[], rows=cat.athletes||[];
+          const idxY=(rankLbl && L.indexOf(rankLbl)>=0)?L.indexOf(rankLbl):(L.indexOf('YDS')>=0?L.indexOf('YDS'):1);
+          const num=v=>{const s=String(v??'0');const m=s.match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):0};
+          let best=null;
+          for(const r of rows){ const y=num(r?.stats?.[idxY]); if(!best||y>best._y) best={...r,_y:y}; }
+          if(!best) return null;
+          const line=L.map((lbl,i)=>{const v=best.stats?.[i]; if(v==null) return null; const map={'CMP-ATT':'CMP/ATT','YDS':'YDS','TD':'TD','INT':'INT','CAR':'CAR','REC':'REC'}; return `${map[lbl]||lbl} ${v}`;}).filter(Boolean).slice(0,3).join(' • ');
+          return makeRow(best, line);
+        };
 
-    // SEASON leaders (coarse) for trend arrows
-    const seas = await seasonLeaders(env).catch(()=>({offense:[],defense:[],id2pct:new Map()}));
+        const pass=pick(cats.passing,['CMP-ATT','YDS','TD','INT'],'YDS');
+        const rush=pick(cats.rushing,['CAR','YDS','TD'],'YDS');
+        const recv=pick(cats.receiving,['REC','YDS','TD'],'YDS');
+        return [pass,rush,recv].filter(Boolean);
+      }
 
-    LIVE.season.offense = attachMeta(seas.offense, seas.id2pct).sort((a,b)=>b.grade.pct-a.grade.pct);
-    LIVE.season.defense = attachMeta(seas.defense, seas.id2pct).sort((a,b)=>b.grade.pct-a.grade.pct);
-    LIVE.season.id2pct  = seas.id2pct;
+      function offenseFromLeaders(sum, teamId){
+        const comp=sum?.header?.competitions?.[0];
+        const me=comp?.competitors?.find(c=>String(c.team?.id)===String(teamId));
+        const groups=me?.leaders||sum?.leaders||[];
+        const get = (keys) => {
+          const g=(groups||[]).find(x=>{
+            const name=(x?.name||x?.shortDisplayName||x?.displayName||'').toLowerCase();
+            return keys.some(k=>name.includes(k));
+          });
+          const lead=g?.leaders?.[0];
+          if(!lead) return null;
+          return makeRow(lead, lead.displayValue || lead.value || '');
+        };
+        const pass=get(['pass','qb','cmp','yds']);
+        const rush=get(['rush','rb','car']);
+        const recv=get(['receiv','wr','rec']);
+        return [pass,rush,recv].filter(Boolean);
+      }
 
-    LIVE.last.offense = attachMeta(offensePool, LIVE.season.id2pct);
-    LIVE.last.defense = attachMeta(defensePool, LIVE.season.id2pct);
+      function defenseFromBoxscore(sum, teamId){
+        const blocks=sum?.boxscore?.players||[];
+        const teamBlock=blocks.find(b=>String(b.team?.id)===String(teamId))||blocks[0];
+        if(!teamBlock) return [];
+        const cats={}; for(const c of (teamBlock.statistics||[])) cats[c.type]=c;
+        const def=cats.defensive||cats.defense; if(!def) return [];
+        const L=def.labels||[], rows=def.athletes||[];
+        const iTOT=L.indexOf('TOT'), iSOLO=L.indexOf('SOLO');
+        const sorted=rows.slice().sort((a,b)=>{
+          const A=parseInt(a?.stats?.[iTOT]||'0'), B=parseInt(b?.stats?.[iTOT]||'0');
+          if(B!==A) return B-A;
+          const As=parseInt(a?.stats?.[iSOLO]||'0'), Bs=parseInt(b?.stats?.[iSOLO]||'0');
+          return Bs-As;
+        }).slice(0,3);
+        return sorted.map(r=>{
+          const parts=[]; const push=(label,pretty)=>{const i=L.indexOf(label); if(i>=0 && r.stats?.[i]!=null) parts.push(`${pretty} ${r.stats[i]}`);};
+          push('TOT','TKL'); push('TFL','TFL'); push('SCK','SACKS'); push('SACKS','SACKS'); push('INT','INT');
+          return makeRow(r, parts.slice(0,3).join(' • '));
+        });
+      }
 
-    // Featured = top from last offense if available
-    const top = LIVE.last.offense[0] || LIVE.last.defense[0];
-    if(top && featuredEl){ featuredEl.innerHTML=rowHTML(top); featuredEl.style.display='flex'; }
+      function defenseFromLeaders(sum, teamId){
+        const comp=sum?.header?.competitions?.[0];
+        const me=comp?.competitors?.find(c=>String(c.team?.id)===String(teamId));
+        const groups=me?.leaders||sum?.leaders||[];
+        const tackles=(groups||[]).find(x=>{
+          const n=(x?.name||x?.shortDisplayName||'').toLowerCase();
+          return n.includes('tackle');
+        });
+        const lead=tackles?.leaders?.[0];
+        return lead ? [makeRow(lead, lead.displayValue||'')] : [];
+      }
 
-    paint();
-  }
+      // ---------- GRADING ----------
+      function detectRole(p){
+        const s = (p.statline||'').toUpperCase();
+        const pos = (p.pos||'').toUpperCase();
+        if (pos==='QB' || s.includes('CMP/ATT')) return 'QB';
+        if (pos==='RB' || pos==='TB' || pos==='HB' || s.includes('CAR') || s.includes('RUSH')) return 'RB';
+        if (pos==='WR' || pos==='TE' || s.includes('REC')) return 'WR';
+        return 'DEF';
+      }
+      function parseLine(statline){
+        const s=String(statline||'');
+        const N = (re) => { const m=s.match(re); return m?Number(m[1]):0; };
+        const cmpatt = s.match(/CMP\/ATT\s+(\d+)\s*\/\s*(\d+)/i);
+        return {
+          cmp: cmpatt?Number(cmpatt[1]):N(/CMP\s+(\d+)/i),
+          att: cmpatt?Number(cmpatt[2]):N(/ATT\s+(\d+)/i),
+          yds: N(/YDS\s+(-?\d+)/i),
+          td: N(/TD\s+(\d+)/i),
+          int: N(/INT\s+(\d+)/i),
+          car: N(/CAR\s+(\d+)/i),
+          rec: N(/REC\s+(\d+)/i),
+          tkl: N(/TKL\s+(\d+)/i),
+          tfl: N(/TFL\s+(\d+)/i),
+          sacks: N(/SACKS?\s+(\d+)/i)
+        };
+      }
+      const clamp=(a,b,x)=>Math.max(a,Math.min(b,x));
+      const scale=(v,lo,hi)=>clamp(0,1,(v-lo)/(hi-lo));
 
-  await boot();
-  setInterval(boot, POLL_MS);
+      function gradeQB(st){
+        const att = Math.max(1, st.att||0);
+        const ypa = st.yds/att;               // yards per attempt
+        const cmpPct = (st.cmp||0)/att;       // completion %
+        let score = 0;
+        score += 40 * scale(ypa, 5.0, 9.0);
+        score += 25 * scale(cmpPct, 0.55, 0.72);
+        score += 20 * scale(Math.min(st.td||0,3), 0, 3);
+        score -= 15 * scale(Math.min(st.int||0,2), 0, 2);
+        return clamp(0,100, 15 + score);      // small base so decent lines don’t show F
+      }
+      function gradeRB(st){
+        const car = Math.max(1, st.car||0);
+        const ypc = st.yds / car;
+        let score = 0;
+        score += 35 * scale(ypc, 2.8, 6.5);
+        score += 25 * scale(Math.min(Math.max(st.yds,0),120), 0, 120);
+        score += 20 * scale(Math.min(st.td||0,2), 0, 2);
+        if (ypc < 3.0) score -= 10;
+        return clamp(0,100, score);
+      }
+      function gradeWR(st){
+        const rec = Math.max(1, st.rec||0);
+        const ypr = st.yds / rec;
+        let score = 0;
+        score += 35 * scale(Math.min(Math.max(st.yds,0),120), 0, 120);
+        score += 25 * scale(ypr, 8, 18);
+        score += 15 * scale(Math.min(rec,10), 0, 10);
+        score += 20 * scale(Math.min(st.td||0,2), 0, 2);
+        return clamp(0,100, score);
+      }
+      function gradeDEF(st){
+        let score = 0;
+        score += Math.min(st.tkl||0, 6) * 5;       // up to 30
+        score += Math.min(st.tfl||0, 2) * 10;      // up to 20
+        score += Math.min(st.sacks||0, 2) * 15;    // up to 30
+        score += Math.min(st.int||0, 1) * 25;      // up to 25
+        return clamp(0,100, score);
+      }
+      function letterFromPct(p){
+        if (p>=97) return {L:'A+',C:'A'};
+        if (p>=93) return {L:'A', C:'A'};
+        if (p>=90) return {L:'A-',C:'A'};
+        if (p>=87) return {L:'B+',C:'B'};
+        if (p>=83) return {L:'B', C:'B'};
+        if (p>=80) return {L:'B-',C:'B'};
+        if (p>=77) return {L:'C+',C:'C'};
+        if (p>=73) return {L:'C', C:'C'};
+        if (p>=70) return {L:'C-',C:'C'};
+        if (p>=67) return {L:'D+',C:'D'};
+        if (p>=60) return {L:'D', C:'D'};
+        return {L:'F', C:'F'};
+      }
+      function computeGrade(p){
+        const role = detectRole(p);
+        const st = parseLine(p.statline);
+        let pct = 0;
+        if (role==='QB') pct = gradeQB(st);
+        else if (role==='RB') pct = gradeRB(st);
+        else if (role==='WR') pct = gradeWR(st);
+        else pct = gradeDEF(st);
+        const L = letterFromPct(pct);
+        return { pct: Math.round(pct), letter: L.L, css: 'grade-'+L.C };
+      }
 
-  // footer year
-  const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
+      // ---------- UI helpers ----------
+      const wrap=document.getElementById('miniSpotlight');
+      const list=document.getElementById('miniList');
+      const featuredEl=document.getElementById('miniFeatured');
 
-})();
-});
-</script>
+      function rowHTML(p){
+        const initials=(p.name||'').split(/\s+/).map(s=>s[0]).slice(0,2).join('').toUpperCase()||'UK';
+        const stat=p.statline||'';
+        const g = computeGrade(p);
+        return `
+          <div class="row">
+            <div class="left">
+              <img src="${p.headshot||''}" alt="${p.name} headshot"
+                   onerror="this.replaceWith((()=>{const d=document.createElement('div');d.style.cssText='width:48px;height:48px;border-radius:8px;display:grid;place-items:center;background:#0033a0;color:#fff;font:800 14px/1 system-ui';d.textContent='${initials}';return d;})())">
+              <div>
+                <div class="who">${p.name} <span class="tiny">• ${p.pos||''}</span></div>
+                <div class="stat">${stat} <a href="${p.espn||'#'}" target="_blank" rel="noopener" class="tiny">ESPN ↗</a></div>
+              </div>
+            </div>
+            <div class="grade-badge ${g.css}">
+              <span class="g-letter">${g.letter}</span>
+              <span class="g-pct">${g.pct}%</span>
+            </div>
+          </div>`;
+      }
+      function renderList(arr){ list.innerHTML=(arr&&arr.length)?arr.slice(0,3).map(rowHTML).join(''):'<div class="tiny">No data available.</div>'; }
 
+      // ---------- State & toggles ----------
+      let side='offense', span='last';
+      let LIVE={ offense_last:[], defense_last:[] };
+      wrap?.querySelectorAll('.chip').forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          if(btn.dataset.side) side=btn.dataset.side;
+          if(btn.dataset.span) span=btn.dataset.span;
+          wrap.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+          wrap.querySelectorAll(`.chip[data-side="${side}"]`).forEach(c=>c.classList.add('active'));
+          wrap.querySelectorAll(`.chip[data-span="${span}"]`).forEach(c=>c.classList.add('active'));
+          loadMini();
+        });
+      });
+      wrap?.querySelector(`.chip[data-side="${side}"]`)?.classList.add('active');
+      wrap?.querySelector(`.chip[data-span="${span}"]`)?.classList.add('active');
+
+      // ---------- Ticker: inline only for now ----------
+      (function(){
+        const items=readInlineJSON('fallback-ticker');
+        const track=document.getElementById('tickerTrack');
+        if(Array.isArray(items)&&track){
+          track.innerHTML=items.map(it=>{
+            const trend=it.trend||'warn';
+            const suffix=it.suffix?(' '+it.suffix):'';
+            return `<li><span class="trend-dot ${trend}" aria-hidden="true"></span><span class="label"><strong>${it.label}</strong> <span class="trend-value ${trend}">${it.value}</span>${suffix}</span></li>`;
+          }).join('');
+        }
+      })();
+
+      // ---------- Draw inline spotlight immediately ----------
+      (function drawInlineFirst(){
+        const feat=readInlineJSON('fallback-spotlight_featured');
+        if(feat&&feat.name&&featuredEl){
+          const stat = Object.entries(feat.last_game||feat.season||{}).slice(0,3).map(([k,v])=>`${k.toUpperCase().replace('_','-')} ${v}`).join(' • ');
+          featuredEl.innerHTML=rowHTML({name:feat.name,pos:feat.pos,headshot:feat.headshot,espn:feat.espn,statline:stat});
+          featuredEl.style.display='flex';
+        }
+        loadMini(); // inline arrays until LIVE arrives
+      })();
+
+      function loadMini(){
+        if(span==='last'){
+          const arr = side==='offense' ? LIVE.offense_last : LIVE.defense_last;
+          if(arr && arr.length){ renderList(arr); return; }
+        }
+        const inline = readInlineJSON(`fallback-spotlight_${side}_${span}`) || [];
+        const adapt = inline.map(p=>({
+          name:p.name, pos:p.pos, headshot:p.headshot, espn:p.espn,
+          statline:Object.entries((p.last_game||p.season||{})).slice(0,3).map(([k,v])=>`${k.toUpperCase().replace('_','-')} ${v}`).join(' • ')
+        }));
+        renderList(adapt);
+      }
+
+      // ---------- ESPN live boot ----------
+      async function bootLive(){
+        const env=await getTeamEnv(TEAM_ID);
+        if(env){
+          const teamName=env?.team?.displayName||'Kentucky';
+          const nxt=env?.team?.nextEvent?.[0] || env?.team?.previousEvent?.[0];
+          if(nxt){
+            const comp=nxt.competitions?.[0];
+            const meta=fmtKick(nxt.date || comp?.date, comp?.broadcasts || comp?.broadcast || []);
+            setKickoffUI(teamName, opponentFromComp(comp,TEAM_ID), meta);
+          }
+        }
+
+        const pick=await chooseEvent(env);
+        if(!pick){ log('no event found; staying on inline'); return; }
+
+        let off = offenseFromBoxscore(pick.sum, TEAM_ID);
+        if(!off.length){ off = offenseFromLeaders(pick.sum, TEAM_ID); log('offense from leaders fallback'); }
+
+        let def = defenseFromBoxscore(pick.sum, TEAM_ID);
+        if(!def.length){ def = defenseFromLeaders(pick.sum, TEAM_ID); log('defense from leaders fallback'); }
+
+        LIVE.offense_last = off;
+        LIVE.defense_last = def;
+
+        const firstLive = (off && off[0]) || (def && def[0]);
+        if(firstLive && featuredEl){ featuredEl.innerHTML=rowHTML(firstLive); featuredEl.style.display='flex'; }
+
+        if(span==='last'){ loadMini(); }
+      }
+
+      await bootLive();
+      setInterval(bootLive, POLL_MS);
+
+      // footer year
+      const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
+    })();
+  });
   </script>
 </body>
 </html>
