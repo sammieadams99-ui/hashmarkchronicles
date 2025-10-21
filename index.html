@@ -352,9 +352,7 @@
   <!-- ======== END INLINE FALLBACKS ======== -->
 
   <!-- Single inline script. ESPN-first → fallback. Adds ranking + letter grades. -->
-  <script>
-  (function start(run){ if(document.readyState!=='loading'){ run(); } else { document.addEventListener('DOMContentLoaded', run); } })(function(){
-  (async function(){
+  <script> document.addEventListener('DOMContentLoaded', async () => { try {
     /* ---------------- CONFIG ---------------- */
     const TEAM_ID = new URLSearchParams(location.search).get('team') || '96'; // UK default
     const POLL_MS = 30_000;
@@ -370,6 +368,7 @@
     const log=(...a)=>console.log('[HC]',...a);
     const headshot=id=>id?`https://a.espncdn.com/i/headshots/college-football/players/full/${id}.png`:'';
     const readJSON=id=>{const t=document.getElementById(id); if(!t) return null; try{return JSON.parse(t.textContent);}catch(_){return null;}};
+    const readInlineJSON = readJSON;
     const j = async url => { const r=await fetch(url,{cache:'no-store',mode:'cors'}); if(!r.ok) throw new Error(r.status+' '+url); return r.json(); };
 
     async function fetchRosterJSON(){
@@ -781,11 +780,11 @@
       })();
       return `
         <div class="row">
-          <img src="${p.headshot||p.head||''}" alt="${p.name} headshot"
+          <img src="${p.headshot||''}" referrerpolicy="no-referrer" alt="${p.name} headshot"
                onerror="this.replaceWith((()=>{const d=document.createElement('div');d.style.cssText='width:48px;height:48px;border-radius:8px;display:grid;place-items:center;background:#0033a0;color:#fff;font:800 14px/1 system-ui';d.textContent='${initials}';return d;})())">
           <div>
             <div class="who">${p.name} <span class="tiny">• ${p.pos||''}</span></div>
-            <div class="stat">${p.statline||''} <a href="${p.espn||p.link||'#'}" target="_blank" rel="noopener" class="tiny">ESPN ↗</a></div>
+            <div class="stat">${stat} <a href="${p.espn||'#'}" target="_blank" rel="noopener" class="tiny">ESPN ↗</a></div>
           </div>
           ${gradeObj ? gradeBadgeHTML(gradeObj) : ''}
         </div>`;
@@ -980,7 +979,7 @@
         featuredEl.innerHTML=rowHTML(normalized);
         featuredEl.style.display='flex';
       }
-      loadMini(); // uses inline until LIVE lands
+      loadMini(); // show inline list immediately
     })();
 
     function loadMini(){
@@ -1241,8 +1240,44 @@
 
     // footer year
     const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
+  } catch (e) {
+    console.error('[HC] bootstrap error:', e);
+  }
+}); </script>
+
+  <div id="hc-roster-list" style="max-width:900px;margin:20px auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px"></div>
+  <div id="hc-debug" style="position:fixed;bottom:8px;right:8px;background:#111;color:#0f0;font:12px/1.4 monospace;padding:8px 10px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.3);z-index:9999"></div>
+  <script>
+  (async function () {
+    const box = document.getElementById('hc-debug');
+    const url = './data/team/roster.json?ts=' + Date.now();
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      box.textContent = 'roster.json → HTTP ' + res.status;
+      if (!res.ok) return;
+      const roster = await res.json();
+      const count = Array.isArray(roster) ? roster.length : 0;
+      box.textContent += ' | players: ' + count;
+      window.__HC_ROSTER__ = roster;
+    } catch (e) {
+      box.textContent = 'Fetch failed: ' + (e && e.message ? e.message : e);
+    }
   })();
-  });
+  </script>
+  <script>
+  (function draw(){
+    const roster = window.__HC_ROSTER__;
+    if (!Array.isArray(roster)) return setTimeout(draw, 300);
+    const root = document.getElementById('hc-roster-list');
+    if (!root) return;
+    root.innerHTML = roster.map(p => {
+      const img = p.headshot ? '<img src="'+p.headshot+'" onerror="this.style.display=\'none\'" style="width:48px;height:48px;border-radius:50%;object-fit:cover;margin-right:8px;">' : '';
+      const name = (p.name || ((p.firstName||'') + ' ' + (p.lastName||'')).trim()) || 'Unknown';
+      const pos = p.position || '';
+      const jersey = p.jersey ? (' #' + p.jersey) : '';
+      return '<div style="display:flex;align-items:center;background:#fff;border:1px solid #eee;border-radius:10px;padding:10px;">'+img+'<div><strong>'+name+'</strong><div style="opacity:.7">'+pos+jersey+'</div></div></div>';
+    }).join('');
+  })();
   </script>
 
   <div id="hc-roster-list" style="max-width:900px;margin:20px auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px"></div>
