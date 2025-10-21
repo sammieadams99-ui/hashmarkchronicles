@@ -299,6 +299,46 @@ function foldPlayers(rows) {
   return [...byName.values()];
 }
 
+function pickTeamPlayers(raw, teamName = TEAM) {
+  if (!raw) return [];
+  const target = String(teamName || '').toLowerCase();
+  const matchTeam = (value) => {
+    if (!value) return false;
+    return String(value).toLowerCase() === target;
+  };
+
+  if (Array.isArray(raw?.players)) {
+    return raw.players;
+  }
+
+  if (Array.isArray(raw?.teams)) {
+    for (const team of raw.teams) {
+      if (matchTeam(team.team || team.school || team.school_name || team.schoolName)) {
+        if (Array.isArray(team.players)) return team.players;
+      }
+    }
+  }
+
+  if (Array.isArray(raw)) {
+    if (raw.length && Array.isArray(raw[0]?.players)) {
+      for (const entry of raw) {
+        if (matchTeam(entry.team || entry.school || entry.school_name || entry.schoolName || entry.name)) {
+          if (Array.isArray(entry.players)) return entry.players;
+        }
+      }
+      return Array.isArray(raw[0].players) ? raw[0].players : [];
+    }
+    const filtered = raw.filter(item => matchTeam(item.team || item.school || item.school_name || item.schoolName));
+    if (filtered.length) return filtered;
+  }
+
+  if (typeof raw === 'object' && raw) {
+    if (Array.isArray(raw.players)) return raw.players;
+  }
+
+  return [];
+}
+
 function scoreOff(p){
   const s = p.stats;
   return (
@@ -467,9 +507,10 @@ async function buildSpotlight(latestGame = null) {
   const played = (games||[]).filter(g => g.home_points != null && g.away_points != null);
   let lastWeek = played.length ? Math.max(...played.map(g => g.week || g.week_number || g.weekNumber || 0)) : null;
   let lastSeasonType = 'regular';
+  let match = null;
 
   if (lastWeek != null) {
-    const match = played.find(g => (g.week || g.week_number || g.weekNumber || null) === lastWeek);
+    match = played.find(g => (g.week || g.week_number || g.weekNumber || null) === lastWeek) || null;
     const st = match?.season_type || match?.seasonType;
     if (st) lastSeasonType = String(st).toLowerCase();
   }
@@ -495,29 +536,109 @@ async function buildSpotlight(latestGame = null) {
 
   // last-game stats
   let gameRows = [];
+  const seasonTypeParam = lastSeasonType && lastSeasonType !== 'regular' ? `&seasonType=${lastSeasonType}` : '';
   if (lastWeek != null) {
-    const seasonTypeParam = lastSeasonType && lastSeasonType !== 'regular' ? `&seasonType=${lastSeasonType}` : '';
     gameRows = await get(`https://api.collegefootballdata.com/stats/player/game?year=${YEAR}&team=${encodeURIComponent(TEAM)}&week=${lastWeek}${seasonTypeParam}`) || [];
   }
   const gamePlayers = foldPlayers(gameRows);
 
-  const offenseLast = rankPlayers(
-    gamePlayers.filter(p => /QB|RB|WR|TE|ATH/i.test(p.pos)),
-    scoreOff,
-    statLineOff,
-    offenseDetails,
-    map,
-    { side: 'offense', span: 'last' }
-  );
+  let box = null;
+  const latestPlayers = latestGame?.sum?.boxscore?.players;
+  if (Array.isArray(latestPlayers) && latestPlayers.length) {
+    box = { players: latestPlayers };
+  }
 
-  const defenseLast = rankPlayers(
-    gamePlayers.filter(p => !/QB|RB|WR|TE/i.test(p.pos)),
-    scoreDef,
-    statLineDef,
-    defenseDetails,
-    map,
-    { side: 'defense', span: 'last' }
-  );
+  if (!box) {
+    let boxResp = null;
+    const forcedGameId = latestGame?.id || latestGame?.game_id || match?.id || match?.game_id || null;
+    if (forcedGameId != null) {
+      boxResp = await get(`https://api.collegefootballdata.com/games/players?year=${YEAR}&gameId=${forcedGameId}${seasonTypeParam}`);
+    }
+    if (!boxResp && lastWeek != null) {
+      boxResp = await get(`https://api.collegefootballdata.com/games/players?year=${YEAR}&team=${encodeURIComponent(TEAM)}&week=${lastWeek}${seasonTypeParam}`);
+    }
+    if (!boxResp) {
+      boxResp = await get(`https://api.collegefootballdata.com/games/players?year=${YEAR}&team=${encodeURIComponent(TEAM)}${seasonTypeParam}`);
+    }
+    if (boxResp) {
+      const extracted = pickTeamPlayers(boxResp, TEAM);
+      if (extracted.length) {
+        box = { players: extracted };
+      } else {
+        box = boxResp;
+      }
+    }
+  }
+
+  let offenseLast = [];
+  let defenseLast = [];
+
+  {
+    const players = Array.isArray(box?.players) ? box.players : (Array.isArray(box) ? box : []);
+    const num = v => Number(String(v||'').replace(/[^0-9.-]/g,''))||0;
+    const mk = (name,pos,head,espn,line) => ({ name, pos, headshot: head||'', espn: espn||'#', statline: line||'' });
+
+    const passers = players.filter(p => /pass/i.test(p?.statCategory || p?.category || '') || /qb/i.test(p?.athlete?.position?.abbreviation||''));
+    const rushers = players.filter(p => /rush/i.test(p?.statCategory || p?.category || '') || /rb/i.test(p?.athlete?.position?.abbreviation||''));
+    const receivers = players.filter(p => /rec/i.test(p?.statCategory || p?.category || '') || /wr|te/i.test(p?.athlete?.position?.abbreviation||''));
+
+    function topRow(list, keyRx) {
+      if (!list.length) return null;
+      const rows = list.map(e => {
+        const id = e?.athlete?.id || e?.id;
+        const head = id ? `https://a.espncdn.com/i/headshots/college-football/players/full/${id}.png` : '';
+        const name = e?.athlete?.displayName || e?.displayName || 'Unknown';
+        const pos = e?.athlete?.position?.abbreviation || '';
+        const stats = Array.isArray(e?.stats) ? e.stats : [];
+        const yds = stats.reduce((acc,s)=>acc+(keyRx.test(String(s?.label||'').toUpperCase())?num(s.value):0),0);
+        const line = stats.map(s=>`${String(s?.label||'').toUpperCase().replace('_','-')} ${s?.value||''}`).filter(Boolean).slice(0,3).join(' • ');
+        return { name,pos,id,head,espn:`https://www.espn.com/college-football/player/_/id/${id}`,line,yds };
+      }).sort((a,b)=>b.yds-a.yds);
+      const b=rows[0]; return b?mk(b.name,b.pos,b.head,b.espn,b.line):null;
+    }
+
+    const offenseBox = [ topRow(passers,/YDS|PASS/), topRow(rushers,/YDS|RUSH/), topRow(receivers,/YDS|REC|RECEIVE/) ].filter(Boolean);
+
+    const defenders = players.filter(p => /def/i.test(p?.statCategory || p?.category || '') || /lb|db|dl|de|nt|cb|s|fs|ss/i.test(p?.athlete?.position?.abbreviation||''));
+    const defenseBox = defenders.slice(0,3).map(e=>{
+      const id = e?.athlete?.id || e?.id;
+      const head = id?`https://a.espncdn.com/i/headshots/college-football/players/full/${id}.png`:'';
+      const name = e?.athlete?.displayName || e?.displayName || 'Unknown';
+      const pos = e?.athlete?.position?.abbreviation || '';
+      const stats = Array.isArray(e?.stats)?e.stats:[];
+      const line = stats.map(s=>`${String(s?.label||'').toUpperCase().replace('_','-')} ${s?.value||''}`).filter(Boolean).slice(0,3).join(' • ');
+      return mk(name,pos,head,`https://www.espn.com/college-football/player/_/id/${id}`,line);
+    });
+
+    if (offenseBox.length) offenseLast = offenseBox;
+    if (defenseBox.length) defenseLast = defenseBox;
+  }
+
+  if (!offenseLast.length) {
+    offenseLast = rankPlayers(
+      gamePlayers.filter(p => /QB|RB|WR|TE|ATH/i.test(p.pos)),
+      scoreOff,
+      statLineOff,
+      offenseDetails,
+      map,
+      { side: 'offense', span: 'last' }
+    );
+  }
+
+  if (!defenseLast.length) {
+    defenseLast = rankPlayers(
+      gamePlayers.filter(p => !/QB|RB|WR|TE/i.test(p.pos)),
+      scoreDef,
+      statLineDef,
+      defenseDetails,
+      map,
+      { side: 'defense', span: 'last' }
+    );
+  }
+
+  await fs.writeFile('data/spotlight_offense_last.json', JSON.stringify(offenseLast,null,2));
+  await fs.writeFile('data/spotlight_defense_last.json', JSON.stringify(defenseLast,null,2));
+  console.log(`✅ wrote offense_last (${offenseLast.length}) and defense_last (${defenseLast.length})`);
 
   const offenseSeason = rankPlayers(
     seasonPlayers.filter(p => /QB|RB|WR|TE|ATH/i.test(p.pos)),

@@ -571,6 +571,40 @@
         renderList(adapt);
       }
 
+      async function fetchSpotlightFile(path) {
+        try {
+          const r = await fetch(path + '?ts=' + Date.now(), { cache: 'no-store' });
+          if (!r.ok) return [];
+          const data = await r.json();
+          const rows = Array.isArray(data) ? data : (Array.isArray(data?.rows) ? data.rows : []);
+          return rows
+            .map(p => ({
+              name: p.name || '',
+              pos: p.pos || '',
+              headshot: p.headshot || p.head || '',
+              espn: p.espn || p.link || '#',
+              statline: p.statline || ''
+            }))
+            .filter(x => x.name);
+        } catch (_) {
+          return [];
+        }
+      }
+
+      async function hydrateFromData() {
+        const oLast   = await fetchSpotlightFile('/data/spotlight_offense_last.json');
+        const dLast   = await fetchSpotlightFile('/data/spotlight_defense_last.json');
+        const oSeason = await fetchSpotlightFile('/data/spotlight_offense_season.json');
+        const dSeason = await fetchSpotlightFile('/data/spotlight_defense_season.json');
+        LIVE.offense_last  = oLast.length ? oLast : oSeason;
+        LIVE.defense_last  = dLast.length ? dLast : dSeason;
+        const f = (LIVE.offense_last[0] || LIVE.defense_last[0]);
+        if (f && featuredEl) {
+          featuredEl.innerHTML = rowHTML(f);
+          featuredEl.style.display = 'flex';
+        }
+      }
+
       // ---- ESPN live boot ----
       async function bootLive(){
         const env=await getTeamEnv(TEAM_ID);
@@ -604,6 +638,7 @@
         if(span==='last'){ loadMini(); }
       }
 
+      await hydrateFromData();
       await bootLive();
       setInterval(bootLive, POLL_MS);
 
