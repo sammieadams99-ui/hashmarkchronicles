@@ -1264,10 +1264,13 @@
     })();
 
     // footer year
-    const y=document.getElementById('year'); if(y) y.textContent=new Date().getFullYear();
-  } catch (e) {
-    console.error('[HC] bootstrap error:', e);
-  }
+try {
+  const y = document.getElementById('year');
+  if (y) y.textContent = new Date().getFullYear();
+} catch (e) {
+  console.error('[HC] bootstrap error:', e);
+}
+
 }); </script>
 
   <div id="hc-roster-list" style="max-width:900px;margin:20px auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px"></div>
