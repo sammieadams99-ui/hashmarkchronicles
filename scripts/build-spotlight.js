@@ -90,7 +90,45 @@ async function getForcedLatestGame() {
   if (latest) {
     const gid = latest.id || latest.game_id;
     console.log(`Using game ${gid} — ${latest.home_team || latest.homeTeam} vs ${latest.away_team || latest.awayTeam} on ${latest.start_date || latest.startDate}`);
-    latestGame = [latest];
+    let pick = { ...latest };
+    try {
+      const key = CFBD_KEY || process.env.CFBD_KEY || process.env.CFBD_API_KEY;
+      const url = `https://api.collegefootballdata.com/games/players?gameId=${gid}`;
+      const r = await fetch(url, {
+        headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' }
+      });
+      const ct = (r.headers.get('content-type') || '').toLowerCase();
+      console.log('GET', url, '→', r.status, ct);
+
+      let box = null;
+      if (r.ok && ct.includes('application/json')) {
+        box = await r.json();
+      } else {
+        const body = await r.text().catch(() => '(no body)');
+        console.log('[warn] CFBD non-JSON:', r.status, body.slice(0, 160));
+      }
+
+      if (!box) {
+        console.log('[spotlight] ⚠️ No player data returned for game', gid);
+      } else {
+        const players = Array.isArray(box.players) ? box.players : (Array.isArray(box) ? box : []);
+        console.log(`[spotlight] ✅ Retrieved player data for game ${gid} (${players.length} entries)`);
+        pick = {
+          ...pick,
+          sum: {
+            ...(pick.sum || {}),
+            boxscore: {
+              ...(pick.sum?.boxscore || {}),
+              players
+            }
+          }
+        };
+      }
+    } catch (err) {
+      console.log('[spotlight] ⚠️ Unable to fetch player data:', err?.message || err);
+    }
+
+    latestGame = [pick];
   } else {
     console.log('No completed games found by robust check; continuing with existing data.');
   }
