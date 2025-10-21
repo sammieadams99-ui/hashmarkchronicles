@@ -155,7 +155,24 @@
       .hero,main{grid-template-columns:1fr}
       nav ul{flex-wrap:wrap}
       .article-body h1{font-size:1.8em}
-    }
+    } 
+    .mini-spotlight .row { display:flex; align-items:center; gap:10px; }
+.mini-spotlight .row > .info { display:flex; gap:10px; align-items:center; }
+.grade-chip {
+  margin-left:auto; min-width:60px; padding:6px 10px; border-radius:12px;
+  border:1px solid var(--muted); background:#fff; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  box-shadow: var(--shadow);
+}
+.grade-chip .letter { font: 900 16px/1 "Franklin Gothic Medium","Arial Narrow",Arial,sans-serif; letter-spacing:.2px; }
+.grade-chip .pct    { font: 700 11px/1 system-ui; opacity:.85; }
+.grade-chip .trend  { font: 700 10px/1 system-ui; margin-top:2px; }
+.grade-chip.good { color: var(--good);   border-color: rgba(22,163,74,.35); }
+.grade-chip.warn { color: var(--warn);   border-color: rgba(217,119,6,.35); }
+.grade-chip.bad  { color: var(--bad);    border-color: rgba(220,38,38,.35); }
+.grade-chip .trend.up   { color: var(--good); }
+.grade-chip .trend.flat { color: #64748b; }
+.grade-chip .trend.down { color: var(--bad); }
   </style>
 </head>
 <body>
