@@ -22,8 +22,12 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 async function get(url) {
   // retry light for transient CFBD hiccups
   for (let i=0;i<2;i++){
-    const r = await fetch(url, { headers: HDRS });
-    if (r.ok) return r.json();
+    try {
+      const r = await fetch(url, { headers: HDRS });
+      if (r.ok) return r.json();
+    } catch (err) {
+      if (i === 1) console.warn('CFBD request failed:', url, err.message || err);
+    }
     await sleep(300);
   }
   return null;
@@ -32,6 +36,86 @@ function slugify(name) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
 }
 function tryNum(v){ const n = Number(v); return Number.isFinite(n) ? n : 0; }
+
+const clamp = (min,max,v) => Math.min(Math.max(Number(v)||0,min),max);
+function letterFromPct(pct){
+  const cut=[97,93,90,87,83,80,77,73,70,67,63,60];
+  const lab=['A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-','F'];
+  const n=Math.round(clamp(0,100,pct));
+  for(let i=0;i<cut.length;i++){
+    if(n>=cut[i]) return { pct:n, letter:lab[i], band:lab[i][0].toLowerCase() };
+  }
+  return { pct:n, letter:'F', band:'f' };
+}
+function gradeFromScores(scores){
+  if(!scores.length) return [];
+  const valid=scores.filter(s=>Number.isFinite(s));
+  if(!valid.length) return scores.map(()=>letterFromPct(72));
+  const hi=Math.max(...valid);
+  const lo=Math.min(...valid);
+  if(hi===lo){
+    const base=hi>0?88:72;
+    return scores.map(()=>letterFromPct(base));
+  }
+  return scores.map(s=>{
+    const pct = 68 + ((s - lo) / (hi - lo)) * 28;
+    return letterFromPct(pct);
+  });
+}
+
+function offenseDetails(p){
+  const s=p.stats||{};
+  return {
+    passingYards: tryNum(s.passingYards),
+    passingTDs: tryNum(s.passingTDs || s.passingTds),
+    interceptions: tryNum(s.passingInterceptions || s.interceptions),
+    completions: tryNum(s.passingCompletions || s.completions),
+    attempts: tryNum(s.passingAttempts || s.attempts),
+    rushingYards: tryNum(s.rushingYards),
+    rushingTDs: tryNum(s.rushingTDs || s.rushingTds),
+    carries: tryNum(s.rushingAttempts || s.carries),
+    receivingYards: tryNum(s.receivingYards),
+    receivingTDs: tryNum(s.receivingTDs || s.receivingTds),
+    receptions: tryNum(s.receptions || s.receivingReceptions || s.rec)
+  };
+}
+function defenseDetails(p){
+  const s=p.stats||{};
+  return {
+    tackles: tryNum(s.tackles),
+    solo: tryNum(s.soloTackles || s.solo),
+    tfl: tryNum(s.tfl || s.tacklesForLoss),
+    sacks: tryNum(s.sacks),
+    interceptions: tryNum(s.interceptions),
+    passesDefended: tryNum(s.passesDefended || s.pdus || s.passBreakUps || s.pbus),
+    forcedFumbles: tryNum(s.forcedFumbles)
+  };
+}
+
+function rankPlayers(players, scorer, summary, detailFn, map, meta={}){
+  const list = topK(players, scorer, meta.k || 3);
+  const scores=list.map(scorer);
+  const grades=gradeFromScores(scores);
+  return list.map((p,i)=>{
+    const base=decorate(p,map);
+    const entry={
+      name: base.name,
+      pos: base.pos,
+      headshot: base.headshot,
+      espn: base.espn,
+      statline: summary(p),
+      grade: grades[i] || letterFromPct(72),
+      side: meta.side || '',
+      span: meta.span || '',
+      source: 'cfbd'
+    };
+    const rawScore=scores[i];
+    if(Number.isFinite(rawScore)) entry.score = Number(rawScore.toFixed(2));
+    const details = detailFn ? detailFn(p) : null;
+    if(details && Object.values(details).some(v=>Number.isFinite(v) && v !== 0)) entry.details = details;
+    return entry;
+  });
+}
 
 // ---- Player stat folding (CFBD returns row-per-category) ----
 function foldPlayers(rows) {
@@ -198,41 +282,54 @@ async function buildSpotlight() {
     : [];
   const gamePlayers = foldPlayers(gameRows);
 
-  const offenseLast = topK(gamePlayers.filter(p => /QB|RB|WR|TE|ATH/i.test(p.pos)), scoreOff, 3)
-    .map(p => {
-      const base = decorate(p, map);
-      return { name: base.name, pos: base.pos, slug: base.slug, headshot: base.headshot, espn: base.espn, last_game: statLineOff(p), season: {} };
-    });
+  const offenseLast = rankPlayers(
+    gamePlayers.filter(p => /QB|RB|WR|TE|ATH/i.test(p.pos)),
+    scoreOff,
+    statLineOff,
+    offenseDetails,
+    map,
+    { side: 'offense', span: 'last' }
+  );
 
-  const defenseLast = topK(gamePlayers.filter(p => !/QB|RB|WR|TE/i.test(p.pos)), scoreDef, 3)
-    .map(p => {
-      const base = decorate(p, map);
-      return { name: base.name, pos: base.pos, slug: base.slug, headshot: base.headshot, espn: base.espn, last_game: statLineDef(p), season: {} };
-    });
+  const defenseLast = rankPlayers(
+    gamePlayers.filter(p => !/QB|RB|WR|TE/i.test(p.pos)),
+    scoreDef,
+    statLineDef,
+    defenseDetails,
+    map,
+    { side: 'defense', span: 'last' }
+  );
 
-  const offenseSeason = topK(seasonPlayers.filter(p => /QB|RB|WR|TE|ATH/i.test(p.pos)), scoreOff, 3)
-    .map(p => {
-      const base = decorate(p, map);
-      return { name: base.name, pos: base.pos, slug: base.slug, headshot: base.headshot, espn: base.espn, last_game: {}, season: statLineOff(p) };
-    });
+  const offenseSeason = rankPlayers(
+    seasonPlayers.filter(p => /QB|RB|WR|TE|ATH/i.test(p.pos)),
+    scoreOff,
+    statLineOff,
+    offenseDetails,
+    map,
+    { side: 'offense', span: 'season' }
+  );
 
-  const defenseSeason = topK(seasonPlayers.filter(p => !/QB|RB|WR|TE/i.test(p.pos)), scoreDef, 3)
-    .map(p => {
-      const base = decorate(p, map);
-      return { name: base.name, pos: base.pos, slug: base.slug, headshot: base.headshot, espn: base.espn, last_game: {}, season: statLineDef(p) };
-    });
+  const defenseSeason = rankPlayers(
+    seasonPlayers.filter(p => !/QB|RB|WR|TE/i.test(p.pos)),
+    scoreDef,
+    statLineDef,
+    defenseDetails,
+    map,
+    { side: 'defense', span: 'season' }
+  );
 
-  // featured = best of the 6 (prefer last-game offense, then defense, else season offense)
-  const candidates = [...offenseLast, ...defenseLast, ...offenseSeason];
-  const featured = candidates.length ? candidates[0] : {
-    name: '—',
-    pos: '',
-    slug: '—',
-    headshot: '',
-    espn: `https://www.espn.com/search/results?q=${encodeURIComponent('Kentucky football')}`,
-    last_game: {},
-    season: {}
-  };
+  const candidates = [offenseLast[0], defenseLast[0], offenseSeason[0]].filter(Boolean);
+  const featured = candidates.length
+    ? [...candidates].sort((a,b)=>(b.grade?.pct||0)-(a.grade?.pct||0))[0]
+    : {
+        name: '—',
+        pos: '',
+        headshot: '',
+        espn: `https://www.espn.com/search/results?q=${encodeURIComponent('Kentucky football')}`,
+        statline: '—',
+        grade: letterFromPct(72),
+        source: 'cfbd'
+      };
 
   return { lastWeek, offenseLast, defenseLast, offenseSeason, defenseSeason, featured };
 }
