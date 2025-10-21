@@ -1,50 +1,79 @@
 name: Update Spotlight Feeds
+
 on:
   workflow_dispatch:
+    inputs:
+      FALLBACK_MODE:
+        description: Force fallback pipeline (espn | cfbfastr)
+        required: false
+        default: ''
   schedule:
     - cron: "*/30 * * * *"  # every 30 minutes
 
 permissions:
   contents: write
 
+concurrency:
+  group: spotlight-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      FALLBACK_MODE: ${{ inputs.FALLBACK_MODE || '' }}
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+
+      # Persist the timestamp file across runs
+      - name: Cache last CFBD call
+        uses: actions/cache@v4
         with:
-          node-version: 20
+          path: .cfbd_last_call
+          key: cfbd-lastcall
 
       - run: npm init -y || true
       - run: npm pkg set type=module
 
-      - name: Guard against frequent CFBD calls
+      # GUARD: decide whether to skip
+      - id: guard
+        shell: bash
         run: |
           NOW=$(date +%s)
           LAST=0
-          if [ -f .cfbd_last_call ]; then
-            LAST=$(cat .cfbd_last_call)
-          fi
+          if [ -f .cfbd_last_call ]; then LAST=$(cat .cfbd_last_call); fi
           DIFF=$((NOW - LAST))
-          # 21600 seconds = 6 hours
           if [ $DIFF -lt 21600 ]; then
-            echo "⏸️ CFBD guard: last run was $DIFF seconds ago (<6h). Skipping API calls."
-            exit 0
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "msg=⏸ CFBD guard: last run was ${DIFF}s ago (<6h). Skipping API calls." >> $GITHUB_OUTPUT
+          else
+            echo $NOW > .cfbd_last_call
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "msg=Proceeding (diff ${DIFF}s ≥ 6h)" >> $GITHUB_OUTPUT
           fi
-          echo $NOW > .cfbd_last_call
 
+      - name: Show guard decision
+        run: echo "${{ steps.guard.outputs.msg }}"
+
+      # Optional env input to FORCE a fallback (espn | cfbfastr) to validate quickly
+      # Set in the Actions "Run workflow" UI
       - name: Run spotlight builder
+        if: ${{ steps.guard.outputs.skip != 'true' || env.FALLBACK_MODE != '' }}
         env:
           CFBD_KEY: ${{ secrets.CFBD_KEY }}
           TEAM: Kentucky
           YEAR: 2025
-        run: FORCE_BUILD=true node scripts/build_spotlight.js || true
+          FALLBACK_MODE: ${{ env.FALLBACK_MODE }}
+        run: node scripts/build_spotlight.js
 
-      - name: Commit data (if any)
+      - name: Commit /data updates
+        if: ${{ steps.guard.outputs.skip != 'true' || env.FALLBACK_MODE != '' }}
         run: |
           git config user.name  "data-bot"
           git config user.email "data-bot@users.noreply.github.com"
-          git add data/spotlight_*.json data/ticker.json 2>/dev/null || true
+          git add data/spotlight_*.json data/team/roster_plus.json data/ticker.json 2>/dev/null || true
           git commit -m "Update spotlight feeds" || echo "No changes"
           git push || true
