@@ -1,9 +1,16 @@
 {
-  "name": "Cutter Boley",
+  "name": "Zach Calzada",
   "pos": "QB",
-  "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5141378.png",
-  "espn": "https://www.espn.com/college-football/player/_/id/5141378",
-  "statline": "CMP/ATT 21/31 • YDS 284 • TD 3",
-  "grade_pct": 94,
-  "grade_letter": "A"
+  "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4426847.png",
+  "espn": "https://www.espn.com/college-football/player/_/id/4426847",
+  "statline": "—",
+  "grade": {
+    "pct": 72,
+    "letter": "C-",
+    "band": "c"
+  },
+  "side": "offense",
+  "span": "season",
+  "source": "cfbd",
+  "score": 0
 }

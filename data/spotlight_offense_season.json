@@ -1,29 +1,50 @@
 [
   {
-    "name": "Cutter Boley",
+    "name": "Zach Calzada",
     "pos": "QB",
-    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5141378.png",
-    "espn": "https://www.espn.com/college-football/player/_/id/5141378",
-    "statline": "YDS 3210 • TD 28 • INT 9",
-    "grade_pct": 92,
-    "grade_letter": "A"
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4426847.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4426847",
+    "statline": "—",
+    "grade": {
+      "pct": 72,
+      "letter": "C-",
+      "band": "c"
+    },
+    "side": "offense",
+    "span": "season",
+    "source": "cfbd",
+    "score": 0
   },
   {
-    "name": "Seth McGowan",
-    "pos": "RB",
-    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4686468.png",
-    "espn": "https://www.espn.com/college-football/player/_/id/4686468",
-    "statline": "YDS 1347 • TD 14",
-    "grade_pct": 87,
-    "grade_letter": "B+"
-  },
-  {
-    "name": "Kendrick Law",
+    "name": "Jay Maclin",
     "pos": "WR",
-    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4685441.png",
-    "espn": "https://www.espn.com/college-football/player/_/id/4685441",
-    "statline": "REC 73 • YDS 1045 • TD 9",
-    "grade_pct": 85,
-    "grade_letter": "B"
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4696437.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4696437",
+    "statline": "—",
+    "grade": {
+      "pct": 72,
+      "letter": "C-",
+      "band": "c"
+    },
+    "side": "offense",
+    "span": "season",
+    "source": "cfbd",
+    "score": 0
+  },
+  {
+    "name": "Troy Stellato",
+    "pos": "WR",
+    "headshot": "",
+    "espn": "https://www.espn.com/search/results?q=Troy%20Stellato%20Kentucky%20football",
+    "statline": "—",
+    "grade": {
+      "pct": 72,
+      "letter": "C-",
+      "band": "c"
+    },
+    "side": "offense",
+    "span": "season",
+    "source": "cfbd",
+    "score": 0
   }
 ]

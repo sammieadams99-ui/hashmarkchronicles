@@ -1,7 +1,7 @@
 {
   "year": "2025",
   "team": "Kentucky",
-  "lastWeek": null,
+  "lastWeek": 8,
   "items": [
     {
       "label": "Yards/Play (UK)",
@@ -10,7 +10,7 @@
     },
     {
       "label": "Off SR",
-      "value": "—",
+      "value": "41.7%",
       "trend": "steady"
     },
     {
@@ -20,7 +20,7 @@
     },
     {
       "label": "Havoc Allowed",
-      "value": "—",
+      "value": "18.3%",
       "trend": "steady"
     }
   ]
