@@ -1,0 +1,39 @@
+[
+  {
+    "id": 5141378,
+    "name": "Cutter Boley",
+    "pos": "QB",
+    "espn": "https://www.espn.com/college-football/player/_/id/5141378/cutter-boley",
+    "last_game": {
+      "opp": "Louisville",
+      "cmp_att": "18/28",
+      "yds": "245",
+      "td": "2",
+      "int": "0"
+    }
+  },
+  {
+    "id": 4685729,
+    "name": "Barion Brown",
+    "pos": "WR",
+    "espn": "https://www.espn.com/college-football/player/_/id/4685729/barion-brown",
+    "last_game": {
+      "opp": "Louisville",
+      "rec": "6",
+      "yds": "112",
+      "td": "1"
+    }
+  },
+  {
+    "id": 4685750,
+    "name": "Deone Walker",
+    "pos": "DL",
+    "espn": "https://www.espn.com/college-football/player/_/id/4685750/deone-walker",
+    "last_game": {
+      "opp": "Louisville",
+      "tackles": "5",
+      "sacks": "1.5",
+      "tfl": "2.0"
+    }
+  }
+]

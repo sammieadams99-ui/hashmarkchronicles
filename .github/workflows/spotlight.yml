@@ -20,8 +20,6 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      PURGE_REQUESTED: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.purge == 'true' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -32,18 +30,18 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Validate with fixtures (offline)
+        run: npm run test:fixtures
+
       - name: Build spotlight dataset
         env:
           CFBD_KEY: ${{ secrets.CFBD_KEY }}
+          TEAM_ID: 96
+          SEASON: 2025
         run: |
-          if [[ "${PURGE_REQUESTED}" == "true" ]]; then
-            echo "🧹 purge mode enabled — clearing caches and refetching"
-            npm run build:spotlight -- --purge
-          else
-            npm run build:spotlight
-          fi
+          npm run build:spotlight || echo "⚠️ provider failed — reusing cached /data"
 
-      - name: Validate datasets
+      - name: Validate datasets (2025 enforcement)
         run: npm run validate:data
 
       - name: Commit /data updates
