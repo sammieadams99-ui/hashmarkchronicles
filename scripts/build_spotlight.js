@@ -23,6 +23,27 @@ const ESPN_SCHEDULE_URL = `https://site.web.api.espn.com/apis/common/v3/sports/f
 const ESPN_SUMMARY_URL = (eventId) => `https://site.web.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=${eventId}`;
 const ESPN_LEADERS_URL = `https://sports.core.api.espn.com/v2/sports/football/leagues/college-football/teams/${TEAM_ID}/leaders?season=${SEASON}`;
 
+async function fetchPlayerStats(id) {
+  const url = `https://site.api.espn.com/apis/common/v3/sports/football/college-football/athletes/${id}`;
+  try {
+    const res = await fetch(url, { timeout: 8000 });
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    const statBlocks = data.athlete?.stats || [];
+    const passing = statBlocks.flatMap((b) => b?.splits?.categories || []).find((c) => c.name === 'passing');
+    const s = passing?.stats || [];
+    return {
+      yds: s.find((x) => x.name === 'passYards')?.value || null,
+      td: s.find((x) => x.name === 'passTouchdowns')?.value || null,
+      int: s.find((x) => x.name === 'interceptions')?.value || null,
+      cmp_att: `${s.find((x) => x.name === 'completions')?.value}/${s.find((x) => x.name === 'attempts')?.value}`
+    };
+  } catch (e) {
+    console.warn(`⚠️ stats fetch failed for ${id}:`, e.message);
+    return null;
+  }
+}
+
 async function main() {
   try {
     const rosterPath = path.join(TEAM_DIR, 'roster.json');
@@ -38,9 +59,37 @@ async function main() {
 
     const outputs = await buildSpotlightPayload(rosterIds, nameToId);
     for (const [key, relativePath] of Object.entries(SPOTLIGHT_TARGETS)) {
+      if (key === 'featured') {
+        continue;
+      }
       const filePath = path.join(ROOT, relativePath);
       const rows = ensureRosterCoverage(outputs[key] || [], rosterIds, nameToId, key);
       writeJSON(filePath, rows);
+    }
+
+    const defaultFeatured = roster.find((player) => player.pos === 'QB') || roster[0];
+    if (defaultFeatured) {
+      const availableFeatured = outputs.featured || [];
+      const spotlightFeatured = availableFeatured.find((player) => Number(player.id) === Number(defaultFeatured.id))
+        || availableFeatured.find((player) => Number.isFinite(Number(player.id)))
+        || null;
+      const rosterFeatured = spotlightFeatured
+        ? roster.find((player) => Number(player.id) === Number(spotlightFeatured.id)) || defaultFeatured
+        : defaultFeatured;
+      const featured = { ...(rosterFeatured || {}), ...(spotlightFeatured || {}) };
+      const fetchId = featured.id || rosterFeatured.id;
+      if (fetchId && !featured.id) {
+        featured.id = fetchId;
+      }
+      const liveStats = fetchId ? await fetchPlayerStats(fetchId) : null;
+      featured.season = liveStats || featured.season || {};
+      const featuredPath = path.join(ROOT, SPOTLIGHT_TARGETS.featured);
+      writeJSON(featuredPath, [featured]);
+      if (liveStats) {
+        console.log(`featured: ${featured.name} — live stats fetched from ESPN`);
+      } else {
+        console.warn(`featured: ${featured.name} — using cached spotlight data`);
+      }
     }
 
     console.log('✅ spotlight build complete');

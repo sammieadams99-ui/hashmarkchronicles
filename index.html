@@ -131,6 +131,23 @@
       nav ul{flex-wrap:wrap}
       .article-body h1{font-size:1.8em}
     }
+  /* --- Mobile Optimization Pack --- */
+  :root{--tap:48px}
+  .sr-only{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+  header{padding-top:env(safe-area-inset-top)}
+  .menu-btn{display:none;width:var(--tap);height:var(--tap);border:1px solid var(--muted);background:#fff;border-radius:12px;box-shadow:var(--shadow);align-items:center;justify-content:center}
+  .menu-btn .menu-lines{display:block;width:20px;height:2px;background:var(--ink);position:relative}
+  .menu-btn .menu-lines::before,.menu-btn .menu-lines::after{content:"";position:absolute;left:0;width:20px;height:2px;background:var(--ink)}
+  .menu-btn .menu-lines::before{top:-6px}.menu-btn .menu-lines::after{top:6px}
+  @media(max-width:820px){.menu-btn{display:inline-flex}header .row{gap:10px}nav#primaryNav{position:fixed;inset:calc(env(safe-area-inset-top)+56px)0 0 0;background:#fff;border-top:1px solid var(--muted);transform:translateY(-120%);transition:.25s transform ease;z-index:60;padding:16px 20px}nav#primaryNav ul{flex-direction:column;gap:14px}body.nav-open nav#primaryNav{transform:translateY(0)}body.nav-open{overflow:hidden;touch-action:none}}
+  @media(max-width:640px){h1{font-size:clamp(22px,6vw,28px)}h2{font-size:clamp(18px,5vw,22px)}.prose{padding:16px}.card .pad{padding:16px}}
+  @media(max-width:600px){.hero{gap:14px}main{gap:16px}}
+  .ticker{overscroll-behavior:contain}
+  @media(max-width:640px){.ticker__track{font-size:10px;gap:24px;animation-duration:38s!important}}
+  #pulse .feeds{content-visibility:auto;contain-intrinsic-size:500px}
+  .header-image,.atmosphere-image,.special-teams-image{aspect-ratio:16/9;object-fit:cover}
+  @media(max-width:640px){a,button{min-height:var(--tap)}.chip,.chip-x{min-height:40px}}
+  @media(prefers-reduced-motion:reduce){.ticker__track{animation:none}.hc-logo::before{animation:none}}
   </style>
 </head>
 <body>
@@ -145,7 +162,10 @@
           <small>Kentucky Athletics Blog</small>
         </div>
       </div>
-      <nav aria-label="Primary">
+      <button id="menuToggle" class="menu-btn" aria-expanded="false" aria-controls="primaryNav">
+        <span class="menu-lines" aria-hidden="true"></span><span class="sr-only">Menu</span>
+      </button>
+      <nav id="primaryNav" aria-label="Primary">
         <ul>
           <li><a href="#article">Gridiron</a></li>
           <li><a href="#hardtop">Hardtop</a></li>
@@ -837,6 +857,14 @@
       const jersey = p.jersey ? (' #' + p.jersey) : '';
       return '<div style="display:flex;align-items:center;background:#fff;border:1px solid #eee;border-radius:10px;padding:10px;">'+img+'<div><strong>'+name+'</strong><div style="opacity:.7">'+pos+jersey+'</div></div></div>';
     }).join('');
+  })();
+  </script>
+  <script>
+  (function(){
+    const btn=document.getElementById('menuToggle'),nav=document.getElementById('primaryNav');
+    if(!btn||!nav)return;
+    btn.addEventListener('click',()=>{const open=document.body.classList.toggle('nav-open');btn.setAttribute('aria-expanded',open?'true':'false');});
+    nav.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;document.body.classList.remove('nav-open');btn.setAttribute('aria-expanded','false');});
   })();
   </script>
 </body>

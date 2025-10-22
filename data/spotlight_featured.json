@@ -3,6 +3,12 @@
     "id": 5141378,
     "name": "Cutter Boley",
     "pos": "QB",
+    "number": 8,
+    "class": null,
+    "height": null,
+    "weight": null,
+    "profile_url": null,
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5141378.png",
     "espn": "https://www.espn.com/college-football/player/_/id/5141378/cutter-boley",
     "season": {
       "games": "6",
