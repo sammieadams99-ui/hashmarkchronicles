@@ -66,7 +66,7 @@ jobs:
           CFBD_KEY: ${{ secrets.CFBD_KEY }}
           TEAM: Kentucky
           YEAR: 2025
-          FALLBACK_MODE: ${{ env.FALLBACK_MODE }}
+          FALLBACK_MODE: ${{ inputs.FALLBACK_MODE || '' }}
         run: node scripts/build_spotlight.js
 
       - name: Commit /data updates

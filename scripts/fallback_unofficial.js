@@ -7,14 +7,21 @@ async function getJSON(url) {
 }
 
 export async function espnFindTeamId(teamName) {
-  const url = 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams';
-  const data = await getJSON(url);
-  const all = (data?.sports?.[0]?.leagues?.[0]?.teams || []).map((t) => t.team);
   const want = String(teamName).toLowerCase();
-  const hit = all.find(
-    (t) => (t.displayName || '').toLowerCase().includes(want) || (t.nickname || '').toLowerCase().includes(want),
-  );
-  return hit ? String(hit.id) : null;
+  let page = 1;
+  while (page <= 5) {
+    const url = `https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams?page=${page}`;
+    const data = await getJSON(url);
+    const all = (data?.sports?.[0]?.leagues?.[0]?.teams || []).map((t) => t.team);
+    const hit = all.find(
+      (t) => (t.displayName || '').toLowerCase().includes(want) || (t.nickname || '').toLowerCase().includes(want),
+    );
+    if (hit) return String(hit.id);
+    const hasNext = !!(data?.sports?.[0]?.leagues?.[0]?.teams?.length);
+    if (!hasNext) break;
+    page++;
+  }
+  return null;
 }
 
 export async function espnRosterPlus(teamId) {
