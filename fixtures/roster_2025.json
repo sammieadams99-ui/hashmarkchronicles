@@ -1,0 +1,47 @@
+[
+  {
+    "id": 5141378,
+    "name": "Cutter Boley",
+    "pos": "QB",
+    "number": 12,
+    "class": "FR",
+    "height": "6-5",
+    "weight": 215
+  },
+  {
+    "id": 4685729,
+    "name": "Barion Brown",
+    "pos": "WR",
+    "number": 7,
+    "class": "JR",
+    "height": "6-1",
+    "weight": 174
+  },
+  {
+    "id": 4893425,
+    "name": "Dane Key",
+    "pos": "WR",
+    "number": 6,
+    "class": "JR",
+    "height": "6-3",
+    "weight": 198
+  },
+  {
+    "id": 4685745,
+    "name": "Jamarion Wilcox",
+    "pos": "RB",
+    "number": 2,
+    "class": "SO",
+    "height": "5-10",
+    "weight": 195
+  },
+  {
+    "id": 4685750,
+    "name": "Deone Walker",
+    "pos": "DL",
+    "number": 0,
+    "class": "JR",
+    "height": "6-6",
+    "weight": 348
+  }
+]

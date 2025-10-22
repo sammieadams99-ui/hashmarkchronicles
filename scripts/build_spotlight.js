@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 import { fileURLToPath } from 'url';
 import path from 'path';
+import fs from 'fs';
 import { mkdir, readFile, writeFile, rm, stat } from 'fs/promises';
 import fetch from 'node-fetch';
 
-const TEAM_ID = 96;
+const TEAM_ID = Number(process.env.TEAM_ID || 96);
 const TEAM_NAME = 'Kentucky';
-const SEASON_YEAR = 2025;
+const SEASON_YEAR = Number(process.env.SEASON || 2025);
 const CACHE_GUARD_MS = 6 * 60 * 60 * 1000; // 6h
 const ROSTER_MIN = 65;
 const ROSTER_MAX = 150;
@@ -61,6 +62,16 @@ const CACHE_ROOT = path.join(ROOT, '.cache', 'spotlight', cacheKey);
 const LAST_GOOD_DIR = path.join(CACHE_ROOT, 'last-good');
 const PROVIDER_BYPASS = shouldPurge ? new Set(['espn', 'cfbd']) : new Set();
 
+function readJSONSafe(filePath, fallback = []) {
+  try {
+    if (!fs.existsSync(filePath)) return fallback;
+    const raw = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(raw);
+  } catch (error) {
+    return fallback;
+  }
+}
+
 async function main() {
   if (shouldPurge) {
     await rm(path.join(ROOT, '.cache', 'spotlight'), { recursive: true, force: true });
@@ -81,7 +92,9 @@ async function main() {
     }),
     cacheSummary
   );
-  const rosterPlayers = normalizeRoster(rosterResponse.data);
+  const rosterPath = path.join(DATA_DIR, 'team', 'roster.json');
+  let rosterPlayers = normalizeRoster(rosterResponse.data?.team || rosterResponse.data);
+  rosterPlayers = validateOrFallbackRoster(rosterPlayers, rosterPath);
   validateRoster(rosterPlayers);
   await persistRoster(rosterPlayers);
 
@@ -131,7 +144,10 @@ async function main() {
     lastGameDate: latestGame ? latestGame.start_date || latestGame.startDate || null : null
   });
 
-  await persistSpotlight(spotlightPayload, cacheSummary);
+  const rosterIds = new Set(rosterPlayers.map((player) => Number(player.id)).filter((id) => Number.isFinite(id)));
+  const sealedPayload = sealSpotlightPayload(spotlightPayload, rosterIds);
+
+  await persistSpotlight(sealedPayload, cacheSummary);
 
   console.log('✅ spotlight build complete');
   if (cacheSummary.length) {
@@ -258,7 +274,7 @@ async function fetchJSONWithCache(provider, key, loader, summary) {
 }
 
 function buildEspnRosterUrl() {
-  return `https://site.web.api.espn.com/apis/common/v3/sports/football/college-football/teams/${TEAM_ID}/roster?season=${SEASON_YEAR}`;
+  return `https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/${TEAM_ID}?enable=roster`;
 }
 
 function normalizeRoster(raw) {
@@ -311,6 +327,28 @@ function normalizeRoster(raw) {
   return players;
 }
 
+function validateOrFallbackRoster(players, cachePath) {
+  if (!Array.isArray(players) || players.length === 0) {
+    console.warn('⚠️ Provider returned empty roster — using last-known-good cache.');
+    const cached = readJSONSafe(cachePath, []);
+    if (Array.isArray(cached) && cached.length >= ROSTER_MIN) {
+      console.log(`✅ Using cached roster (${cached.length} players)`);
+      return cached.map((player) => {
+        const numericId = Number(player.id);
+        return {
+          ...player,
+          id: Number.isFinite(numericId) ? numericId : player.id
+        };
+      });
+    }
+    throw new Error('Roster fetch failed and no cached roster available.');
+  }
+  if (players.length < ROSTER_MIN || players.length > ROSTER_MAX) {
+    throw new Error(`Roster size ${players.length} outside expected range (${ROSTER_MIN}-${ROSTER_MAX})`);
+  }
+  return players;
+}
+
 function validateRoster(players) {
   const size = players.length;
   if (size < ROSTER_MIN || size > ROSTER_MAX) {
@@ -359,6 +397,15 @@ async function persistRoster(players) {
 
   await writeJSON(path.join(DATA_DIR, 'team', 'roster.json'), minimal);
   await writeJSON(path.join(DATA_DIR, 'team', 'roster_plus.json'), payloadPlus);
+  await writeJSON(
+    path.join(DATA_DIR, 'team', 'roster_meta.json'),
+    {
+      teamId: TEAM_ID,
+      season: SEASON_YEAR,
+      generated_at: new Date().toISOString(),
+      source: 'espn'
+    }
+  );
 }
 
 function buildSpotlight({ roster, seasonPlayers, lastGameData, opponent, lastGameId, lastGameDate }) {
@@ -412,6 +459,45 @@ function buildSpotlight({ roster, seasonPlayers, lastGameData, opponent, lastGam
       lastGameId,
       lastGameDate
     }
+  };
+}
+
+function ensureSpotlightId(row) {
+  if (!row || typeof row !== 'object') return null;
+  let id = Number(row.id);
+  if (!Number.isFinite(id) && typeof row.espn === 'string') {
+    const match = row.espn.match(/\/id\/(\d+)\//);
+    if (match) id = Number(match[1]);
+  }
+  if (!Number.isFinite(id)) return null;
+  return { ...row, id };
+}
+
+function sealSpotlightEntry(row, rosterIds) {
+  const normalized = ensureSpotlightId(row);
+  if (!normalized) return null;
+  if (!rosterIds.has(Number(normalized.id))) return null;
+  return normalized;
+}
+
+function sealSpotlightArray(rows, rosterIds) {
+  return (rows || []).map((row) => sealSpotlightEntry(row, rosterIds)).filter(Boolean);
+}
+
+function sealSpotlightPayload(payload, rosterIds) {
+  const offenseLast = sealSpotlightArray(payload.offense_last, rosterIds);
+  const defenseLast = sealSpotlightArray(payload.defense_last, rosterIds);
+  const offenseSeason = sealSpotlightArray(payload.offense_season, rosterIds);
+  const defenseSeason = sealSpotlightArray(payload.defense_season, rosterIds);
+  const featured = sealSpotlightEntry(payload.featured, rosterIds);
+
+  return {
+    ...payload,
+    offense_last: offenseLast,
+    defense_last: defenseLast,
+    offense_season: offenseSeason,
+    defense_season: defenseSeason,
+    featured: featured || null
   };
 }
 
