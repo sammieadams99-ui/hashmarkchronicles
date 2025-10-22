@@ -225,7 +225,7 @@
         <div class="kicker">Player Spotlight</div>
         <div id="hc-spotlight-debug" class="debug-chip" aria-live="polite">
           <span class="dot" aria-hidden="true"></span>
-          <span class="label">spotlight: loading…</span>
+          <span class="label">data-mode: init • roster: —</span>
         </div>
         <div id="hc-spotlight" data-spotlight aria-live="polite"></div>
         <div class="tiny">Auto-updating from official stats (falls back if offline).</div>
@@ -306,20 +306,25 @@
   <script type="application/json" id="fallback-spotlight-offense-last">
   [
     {
+      "id": 5141378,
       "name": "Cutter Boley",
       "pos": "QB",
-      "jersey": 12,
-      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4875786.png",
-      "espn": "https://www.espn.com/college-football/player/_/id/4875786/cutter-boley",
+      "espn": "https://www.espn.com/college-football/player/_/id/5141378/cutter-boley",
       "last_game": { "opp": "Texas", "cmp_att": "31/39", "yds": "258", "td": "0", "int": "1" }
     },
     {
+      "id": 4702366,
       "name": "Barion Brown",
       "pos": "WR",
-      "jersey": 7,
-      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4702366.png",
       "espn": "https://www.espn.com/college-football/player/_/id/4702366/barion-brown",
       "last_game": { "opp": "Texas", "rec": "8", "yds": "102", "td": "1" }
+    },
+    {
+      "id": 4702367,
+      "name": "Dane Key",
+      "pos": "WR",
+      "espn": "https://www.espn.com/college-football/player/_/id/4702367/dane-key",
+      "last_game": { "opp": "Texas", "rec": "6", "yds": "88", "td": "0" }
     }
   ]
   </script>
@@ -327,20 +332,25 @@
   <script type="application/json" id="fallback-spotlight-defense-last">
   [
     {
+      "id": 4692450,
       "name": "Trevin Wallace",
       "pos": "LB",
-      "jersey": 32,
-      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4692450.png",
       "espn": "https://www.espn.com/college-football/player/_/id/4692450/trevin-wallace",
       "last_game": { "opp": "Texas", "tkl": "11", "tfl": "1", "sacks": "0.5" }
     },
     {
+      "id": 4692799,
       "name": "Maxwell Hairston",
       "pos": "DB",
-      "jersey": 31,
-      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4692799.png",
       "espn": "https://www.espn.com/college-football/player/_/id/4692799/maxwell-hairston",
       "last_game": { "opp": "Texas", "tkl": "6", "pbu": "2" }
+    },
+    {
+      "id": 4893283,
+      "name": "Deone Walker",
+      "pos": "DL",
+      "espn": "https://www.espn.com/college-football/player/_/id/4893283/deone-walker",
+      "last_game": { "opp": "Texas", "tkl": "5", "tfl": "2", "sacks": "1.0" }
     }
   ]
   </script>
@@ -348,20 +358,25 @@
   <script type="application/json" id="fallback-spotlight-offense-season">
   [
     {
-      "name": "Ray Davis",
-      "pos": "RB",
-      "jersey": 1,
-      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4241473.png",
-      "espn": "https://www.espn.com/college-football/player/_/id/4241473/ray-davis",
-      "season": { "games": "6", "rush_yds": "612", "td": "8" }
+      "id": 5141378,
+      "name": "Cutter Boley",
+      "pos": "QB",
+      "espn": "https://www.espn.com/college-football/player/_/id/5141378/cutter-boley",
+      "season": { "games": "6", "cmp_att": "134/198", "yds": "1542", "td": "12", "int": "4" }
     },
     {
-      "name": "Dane Key",
+      "id": 4702366,
+      "name": "Barion Brown",
       "pos": "WR",
-      "jersey": 6,
-      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4702367.png",
-      "espn": "https://www.espn.com/college-football/player/_/id/4702367/dane-key",
-      "season": { "games": "6", "rec": "31", "yds": "428", "td": "4" }
+      "espn": "https://www.espn.com/college-football/player/_/id/4702366/barion-brown",
+      "season": { "games": "6", "rec": "34", "yds": "512", "td": "5" }
+    },
+    {
+      "id": 4702365,
+      "name": "Anthony Brown-Stephens",
+      "pos": "WR",
+      "espn": "https://www.espn.com/college-football/player/_/id/4702365/anthony-brown-stephens",
+      "season": { "games": "6", "rec": "21", "yds": "286", "td": "2" }
     }
   ]
   </script>
@@ -369,19 +384,24 @@
   <script type="application/json" id="fallback-spotlight-defense-season">
   [
     {
+      "id": 4692450,
+      "name": "Trevin Wallace",
+      "pos": "LB",
+      "espn": "https://www.espn.com/college-football/player/_/id/4692450/trevin-wallace",
+      "season": { "games": "6", "tkl": "54", "tfl": "6.5", "sacks": "2.5" }
+    },
+    {
+      "id": 4893283,
       "name": "Deone Walker",
       "pos": "DL",
-      "jersey": 0,
-      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4893283.png",
       "espn": "https://www.espn.com/college-football/player/_/id/4893283/deone-walker",
       "season": { "games": "6", "tfl": "8.0", "sacks": "4.0" }
     },
     {
+      "id": 4819224,
       "name": "Alex Afari Jr.",
       "pos": "DB",
-      "jersey": 3,
-      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4689389.png",
-      "espn": "https://www.espn.com/college-football/player/_/id/4689389/alex-afari-jr",
+      "espn": "https://www.espn.com/college-football/player/_/id/4819224/alex-afari-jr",
       "season": { "games": "6", "tkl": "32", "ints": "2" }
     }
   ]

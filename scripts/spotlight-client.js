@@ -10,6 +10,160 @@ const SPOTLIGHT_SOURCES = [
   { id: 'def_season', label: 'Def season', path: './data/spotlight_defense_season.json', cacheKey: 'defense_season' }
 ];
 
+const rosterState = {
+  loaded: false,
+  rows: [],
+  byId: new Map(),
+  byName: new Map(),
+  count: 0
+};
+
+function normalizeNameKey(name) {
+  return String(name || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function parseIdFromLink(link) {
+  if (typeof link !== 'string') return NaN;
+  const match = link.match(/\/id\/(\d+)\//);
+  if (match) return Number(match[1]);
+  return NaN;
+}
+
+function resolveAthleteId(entry) {
+  if (!entry || typeof entry !== 'object') return NaN;
+  const candidates = [
+    entry.id,
+    entry.athleteId,
+    entry.athlete_id,
+    entry.playerId,
+    entry.player_id,
+    entry.athlete?.id,
+    entry.athlete?.athleteId
+  ];
+  for (const candidate of candidates) {
+    const num = Number(candidate);
+    if (Number.isFinite(num)) return num;
+  }
+  const linkCandidates = [entry.espn, entry.url, entry.href, entry.link];
+  for (const link of linkCandidates) {
+    const parsed = parseIdFromLink(link);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return NaN;
+}
+
+function headshotFromId(id) {
+  if (!Number.isFinite(id)) return '';
+  return `https://a.espncdn.com/i/headshots/college-football/players/full/${id}.png`;
+}
+
+function slugifyName(name) {
+  return String(name || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '');
+}
+
+function normalizeRosterPayload(payload) {
+  const seen = new Map();
+  const ingest = (value) => {
+    if (!value || typeof value !== 'object') return;
+    const id = resolveAthleteId(value);
+    const name = fullName(value) || value.name || value.fullName || value.displayName || '';
+    if (!name) return;
+    const key = Number.isFinite(id) ? `id:${id}` : `name:${normalizeNameKey(name)}`;
+    if (seen.has(key)) return;
+    const normalized = {
+      id: Number.isFinite(id) ? id : null,
+      name,
+      pos: positionFrom(value) || '',
+      number: jerseyFrom(value) || '',
+      class: value.class || value.classification || value.year || value.season || null,
+      height: value.height || value.displayHeight || null,
+      weight: value.weight || value.displayWeight || null,
+      headshot: value.headshot || value.image || value.photo || ''
+    };
+    seen.set(key, normalized);
+  };
+
+  if (Array.isArray(payload)) {
+    payload.forEach(ingest);
+  } else if (payload && typeof payload === 'object') {
+    if (Array.isArray(payload.players)) payload.players.forEach(ingest);
+    if (Array.isArray(payload.rows)) payload.rows.forEach(ingest);
+    if (Array.isArray(payload.team)) payload.team.forEach(ingest);
+    if (Array.isArray(payload.roster)) payload.roster.forEach(ingest);
+    if (payload.byId && typeof payload.byId === 'object') {
+      Object.values(payload.byId).forEach(ingest);
+    }
+  }
+
+  const players = Array.from(seen.values()).sort((a, b) => a.name.localeCompare(b.name));
+  const byId = new Map();
+  const byName = new Map();
+  for (const player of players) {
+    if (Number.isFinite(player.id)) byId.set(player.id, player);
+    const key = normalizeNameKey(player.name);
+    if (key) byName.set(key, player);
+  }
+
+  return { players, byId, byName };
+}
+
+function enrichPlayer(entry, roster) {
+  if (!entry || typeof entry !== 'object') return null;
+  const athleteId = resolveAthleteId(entry);
+  const name = fullName(entry) || entry.name || entry.player || '';
+  const normName = normalizeNameKey(name);
+  const rosterMatch =
+    (Number.isFinite(athleteId) ? roster.byId.get(athleteId) : null) ||
+    (normName ? roster.byName.get(normName) : null) ||
+    null;
+  const finalId = Number.isFinite(athleteId) ? athleteId : rosterMatch?.id ?? null;
+  const finalName = name || rosterMatch?.name || '';
+  if (!finalName) return null;
+  const pos = positionFrom(entry) || rosterMatch?.pos || '';
+  const jersey = jerseyFrom(entry) || rosterMatch?.number || '';
+  const espnLink =
+    entry.espn ||
+    entry.url ||
+    entry.href ||
+    entry.link ||
+    (Number.isFinite(finalId) ? `https://www.espn.com/college-football/player/_/id/${finalId}/${slugifyName(finalName)}` : rosterMatch?.espn || '');
+  const headshot =
+    entry.headshot ||
+    entry.image ||
+    entry.photo ||
+    (Number.isFinite(finalId) ? headshotFromId(finalId) : rosterMatch?.headshot || '');
+  const lastGame = entry.last_game || entry.lastGame || entry.stats?.lastGame || null;
+  const season = entry.season || entry.stats?.season || null;
+
+  return {
+    id: Number.isFinite(finalId) ? finalId : null,
+    name: finalName,
+    pos: (pos || '').toUpperCase(),
+    number: jersey || '',
+    espn: espnLink,
+    headshot,
+    last_game: lastGame && typeof lastGame === 'object' ? lastGame : null,
+    season: season && typeof season === 'object' ? season : null,
+    rosterMatch
+  };
+}
+
+function isTruthy(value) {
+  if (value === true) return true;
+  if (value === false) return false;
+  const str = String(value || '').toLowerCase();
+  if (!str) return false;
+  return !['0', 'false', 'off', 'no'].includes(str);
+}
+
 function readInlineJSON(id) {
   const el = typeof document !== 'undefined' ? document.getElementById(id) : null;
   if (!el) return null;
@@ -103,17 +257,28 @@ function fetchList(path, errors) {
 }
 
 async function loadRoster(errors) {
+  if (rosterState.loaded) return rosterState;
   for (let i = 0; i < ROSTER_PATHS.length; i += 1) {
     const path = ROSTER_PATHS[i];
-    const rows = await fetchList(path, i === ROSTER_PATHS.length - 1 ? errors : null);
-    if (Array.isArray(rows) && rows.length) {
-      return rows;
+    const payload = await fetchList(path, i === ROSTER_PATHS.length - 1 ? errors : null);
+    const normalized = normalizeRosterPayload(payload);
+    if (normalized.players.length) {
+      rosterState.rows = normalized.players;
+      rosterState.byId = normalized.byId;
+      rosterState.byName = normalized.byName;
+      rosterState.count = normalized.players.length;
+      rosterState.loaded = true;
+      return rosterState;
     }
     if (i === ROSTER_PATHS.length - 1) {
-      return rows;
+      rosterState.rows = normalized.players;
+      rosterState.byId = normalized.byId;
+      rosterState.byName = normalized.byName;
+      rosterState.count = normalized.players.length;
     }
   }
-  return [];
+  rosterState.loaded = true;
+  return rosterState;
 }
 
 function fullName(entry) {
@@ -253,16 +418,10 @@ function statlineFrom(entry) {
 
 function keyFrom(entry) {
   if (!entry || typeof entry !== 'object') return '';
-  const idFields = ['athleteId', 'athlete_id', 'id', 'playerId'];
-  for (const field of idFields) {
-    if (field in entry && entry[field] != null) {
-      const raw = String(entry[field]).trim();
-      if (raw) return `id:${raw}`;
-    }
-  }
+  const id = resolveAthleteId(entry);
+  if (Number.isFinite(id)) return `id:${id}`;
   const name = fullName(entry);
-  if (!name) return '';
-  const normalizedName = name.toLowerCase().replace(/\s+/g, ' ').trim();
+  const normalizedName = normalizeNameKey(name);
   if (!normalizedName) return '';
   const pos = (positionFrom(entry) || 'UNK').toUpperCase();
   return `${normalizedName}|${pos}`;
@@ -278,15 +437,15 @@ function initials(name) {
     .toUpperCase();
 }
 
-function applyDebug(debugEl, rosterStats, spotlightStats, rendered, errors, filterLabel) {
+function applyDebug(debugEl, rosterStats, spotlightStats, rendered, errors, filterLabel, mode) {
   if (!debugEl) return;
   const label = debugEl.querySelector('.label') || debugEl;
   const dot = debugEl.querySelector('.dot');
   const suffix = filterLabel ? ` [filter=${filterLabel}]` : '';
-  const mode = typeof window !== 'undefined'
-    ? window.__HC_SPOTLIGHT_MODE || (window.__HC_SPOTLIGHT_LIVE__ ? 'live' : window.__HC_SPOTLIGHT_STATIC__ ? 'static' : 'inline')
-    : 'inline';
-  const base = `spotlight: roster=${rosterStats.keyed}/${rosterStats.total} keys=${spotlightStats.unique}/${spotlightStats.total} rendered=${rendered}${suffix} • mode=${mode}`;
+  const resolvedMode = mode || 'inline';
+  const base = `data-mode: ${resolvedMode} • roster:${rosterStats.total} (ids:${rosterStats.keyed}) • spotlight:${spotlightStats.unique}/${spotlightStats.total} • rendered:${rendered}${suffix}`;
+  debugEl.setAttribute('data-mode', resolvedMode);
+  debugEl.dataset.rosterCount = String(rosterStats.total);
   if (errors.length) {
     label.textContent = `${base} ⚠️ ${errors[0]}`;
     if (dot) dot.style.background = '#dc2626';
@@ -421,6 +580,7 @@ onReady(async () => {
   let mergedRosterStats = { total: 0, keyed: 0 };
   let lastErrors = [];
   let hydrating = false;
+  let dataMode = 'inline';
 
   function updateButtons(activeId) {
     buttons.forEach((btn, id) => {
@@ -437,7 +597,7 @@ onReady(async () => {
     const list = active ? finalized.filter((card) => active.predicate(card)) : finalized;
     const limited = list.slice(0, 24);
     renderCards(mount, limited);
-    applyDebug(debugEl, mergedRosterStats, spotlightStats, limited.length, lastErrors, active ? active.label : '');
+    applyDebug(debugEl, mergedRosterStats, spotlightStats, limited.length, lastErrors, active ? active.label : '', dataMode);
   }
 
   if (toggles) {
@@ -472,62 +632,72 @@ onReady(async () => {
         }
       }
 
-      const rosterRows = await loadRoster(errors);
-      rosterStats = { total: Array.isArray(rosterRows) ? rosterRows.length : 0, keyed: 0 };
-      const rosterMap = new Map();
-      if (Array.isArray(rosterRows)) {
-        for (const row of rosterRows) {
-          const key = keyFrom(row);
-          if (!key) continue;
-          rosterStats.keyed += 1;
-          if (!rosterMap.has(key)) {
-            rosterMap.set(key, {
-              ...row,
-              name: fullName(row),
-              pos: positionFrom(row),
-              jersey: jerseyFrom(row)
-            });
-          }
-        }
-      }
+      const rosterData = await loadRoster(errors);
+      rosterStats = { total: rosterData.count, keyed: rosterData.byId.size };
 
       const cards = new Map();
       let total = 0;
-      const dataPriority = [
-        typeof window !== 'undefined' ? window.__HC_SPOTLIGHT_LIVE__ : null,
-        typeof window !== 'undefined' ? window.__HC_SPOTLIGHT_STATIC__ : null,
-        typeof window !== 'undefined' ? window.__HC_SPOTLIGHT_INLINE__ : null
-      ];
+
+      const liveBag = typeof window !== 'undefined' ? window.__HC_SPOTLIGHT_LIVE__ : null;
+      const staticBag = typeof window !== 'undefined' ? window.__HC_SPOTLIGHT_STATIC__ : null;
+      const inlineBag = typeof window !== 'undefined' ? window.__HC_SPOTLIGHT_INLINE__ : null;
+      const forceStatic = typeof window !== 'undefined' ? isTruthy(window.FRONTEND_FORCE_STATIC) : false;
+      dataMode = forceStatic ? 'static' : 'inline';
+      const dataPriority = forceStatic ? [staticBag, inlineBag] : [liveBag, staticBag, inlineBag];
 
       const clone = (entry) => (entry && typeof entry === 'object' ? { ...entry } : {});
 
       for (const source of SPOTLIGHT_SOURCES) {
         const cacheKey = source.cacheKey || source.id;
         let rows = null;
+        let sourceMode = 'inline';
+
         for (const bag of dataPriority) {
-          if (bag && Array.isArray(bag[cacheKey]) && bag[cacheKey].length) {
-            rows = bag[cacheKey].map(clone);
+          if (!bag) continue;
+          const candidate = bag[cacheKey];
+          if (Array.isArray(candidate) && candidate.length) {
+            rows = candidate.map(clone);
+            if (bag === liveBag) sourceMode = 'live';
+            else if (bag === staticBag) sourceMode = 'static';
+            else sourceMode = 'inline';
             break;
           }
         }
+
         if (!rows) {
-          rows = await fetchList(source.path, errors);
+          const fetched = await fetchList(source.path, errors);
+          if (Array.isArray(fetched) && fetched.length) {
+            rows = fetched.map(clone);
+            sourceMode = 'static';
+          }
         }
-        if (!Array.isArray(rows) || !rows.length) {
+
+        if (!rows) {
           const fallback = INLINE_FALLBACKS[cacheKey];
           if (Array.isArray(fallback) && fallback.length) {
             rows = fallback.map(clone);
+            sourceMode = 'inline';
           }
         }
+
         if (!Array.isArray(rows) || !rows.length) continue;
+
+        if (sourceMode === 'live') {
+          dataMode = 'live';
+        } else if (sourceMode === 'static' && dataMode !== 'live') {
+          dataMode = 'static';
+        }
+
         total += rows.length;
         rows.forEach((entry) => {
           if (!entry || typeof entry !== 'object') return;
-          const entryKey = keyFrom(entry);
+          const enriched = enrichPlayer(entry, rosterData) || {};
+          const entryKey = Number.isFinite(enriched.id) ? `id:${enriched.id}` : keyFrom(entry);
           if (!entryKey) return;
-          const rosterMatch = rosterMap.get(entryKey);
+
           const existing = cards.get(entryKey) || {
             key: entryKey,
+            id: enriched.id ?? null,
             tags: new Set(),
             name: '',
             pos: '',
@@ -538,35 +708,51 @@ onReady(async () => {
             initials: '',
             displayTag: '',
             priority: 99,
-            matchedRoster: false
+            matchedRoster: false,
+            last_game: null,
+            season: null
           };
 
           existing.tags.add(source.label);
 
-          const name = fullName(entry) || rosterMatch?.name || existing.name;
+          if (Number.isFinite(enriched.id)) {
+            existing.id = enriched.id;
+          }
+
+          const name = enriched.name || fullName(entry) || existing.name;
           if (name) {
             existing.name = name;
             existing.initials = initials(name);
           }
 
-          const pos = positionFrom(entry) || rosterMatch?.pos || existing.pos;
+          const pos = enriched.pos || positionFrom(entry) || existing.pos;
           if (pos) existing.pos = pos;
 
-          const jersey = jerseyFrom(entry) || rosterMatch?.jersey || existing.jersey;
+          const jersey = enriched.number || jerseyFrom(entry) || existing.jersey;
           if (jersey) existing.jersey = jersey;
 
-          const headshot = headshotFrom(entry, rosterMatch || existing);
+          const headshot =
+            enriched.headshot ||
+            headshotFrom(entry, enriched.rosterMatch || existing) ||
+            (Number.isFinite(existing.id) ? headshotFromId(existing.id) : '');
           if (headshot) existing.headshot = headshot;
 
-          const link = linkFrom(entry, rosterMatch || existing);
+          const link = enriched.espn || linkFrom(entry, enriched.rosterMatch || existing) || existing.link;
           if (link) existing.link = link;
 
-          const statline = statlineFrom(entry);
+          const combinedStats = {
+            ...entry,
+            last_game: enriched.last_game || entry.last_game || existing.last_game,
+            season: enriched.season || entry.season || existing.season
+          };
+          const statline = statlineFrom(combinedStats);
           if (statline && (!existing.statline || existing.statline === '—')) {
             existing.statline = statline;
           }
 
-          if (rosterMatch) existing.matchedRoster = true;
+          if (enriched.last_game) existing.last_game = enriched.last_game;
+          if (enriched.season) existing.season = enriched.season;
+          if (enriched.rosterMatch) existing.matchedRoster = true;
 
           cards.set(entryKey, existing);
         });
@@ -586,6 +772,12 @@ onReady(async () => {
         card.priority = topPriority;
         if (!card.statline) card.statline = '—';
         if (!card.initials) card.initials = initials(card.name || 'UK');
+        if (!card.headshot && Number.isFinite(card.id)) {
+          card.headshot = headshotFromId(card.id);
+        }
+        if (!card.link && Number.isFinite(card.id)) {
+          card.link = `https://www.espn.com/college-football/player/_/id/${card.id}/${slugifyName(card.name || '')}`;
+        }
         return card;
       });
 
@@ -599,6 +791,10 @@ onReady(async () => {
         total: rosterStats.total,
         keyed: rosterStats.keyed
       };
+
+      if (typeof window !== 'undefined') {
+        window.__HC_SPOTLIGHT_MODE = dataMode;
+      }
 
       applyFilter(state.filter);
     } finally {

@@ -1,12 +1,9 @@
 [
   {
-    "athleteId": 4875786,
+    "id": 5141378,
     "name": "Cutter Boley",
     "pos": "QB",
-    "jersey": 12,
-    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4875786.png",
-    "espn": "https://www.espn.com/college-football/player/_/id/4875786/cutter-boley",
-    "side": "offense",
+    "espn": "https://www.espn.com/college-football/player/_/id/5141378/cutter-boley",
     "last_game": {
       "opp": "Texas",
       "cmp_att": "31/39",
@@ -16,18 +13,27 @@
     }
   },
   {
-    "athleteId": 4702366,
+    "id": 4702366,
     "name": "Barion Brown",
     "pos": "WR",
-    "jersey": 7,
-    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4702366.png",
     "espn": "https://www.espn.com/college-football/player/_/id/4702366/barion-brown",
-    "side": "offense",
     "last_game": {
       "opp": "Texas",
       "rec": "8",
       "yds": "102",
       "td": "1"
+    }
+  },
+  {
+    "id": 4702367,
+    "name": "Dane Key",
+    "pos": "WR",
+    "espn": "https://www.espn.com/college-football/player/_/id/4702367/dane-key",
+    "last_game": {
+      "opp": "Texas",
+      "rec": "6",
+      "yds": "88",
+      "td": "0"
     }
   }
 ]

@@ -3,9 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build:spotlight": "node scripts/build-spotlight.js",
+    "build:spotlight": "node scripts/build_spotlight.js",
     "build": "echo 'static site, built by GitHub Pages'",
-    "secret": "node scripts/generate-cfbd-secret.js"
+    "secret": "node scripts/generate-cfbd-secret.js",
+    "validate:data": "node scripts/validate_datasets.js"
   },
   "dependencies": {
     "node-fetch": "^3.3.2"

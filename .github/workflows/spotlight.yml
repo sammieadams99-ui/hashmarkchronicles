@@ -3,10 +3,10 @@ name: Update Spotlight Feeds
 on:
   workflow_dispatch:
     inputs:
-      FALLBACK_MODE:
-        description: Force fallback pipeline (espn | cfbfastr)
+      purge:
+        description: 'Bust cache and refetch'
         required: false
-        default: ''
+        default: 'false'
   schedule:
     - cron: "*/30 * * * *"  # every 30 minutes
 
@@ -14,66 +14,42 @@ permissions:
   contents: write
 
 concurrency:
-  group: spotlight-${{ github.ref }}
+  group: spotlight-build
   cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      FALLBACK_MODE: ${{ inputs.FALLBACK_MODE || '' }}
+      PURGE_REQUESTED: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.purge == 'true' }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
-        with: { node-version: 20 }
-
-      # Persist the timestamp file across runs
-      - name: Cache last CFBD call
-        uses: actions/cache@v4
         with:
-          path: .cfbd_last_call
-          key: cfbd-lastcall
+          node-version: 20
 
-      - run: npm init -y || true
-      - run: npm pkg set type=module
+      - name: Install dependencies
+        run: npm install
 
-      # GUARD: decide whether to skip
-      - id: guard
-        shell: bash
-        run: |
-          NOW=$(date +%s)
-          LAST=0
-          if [ -f .cfbd_last_call ]; then LAST=$(cat .cfbd_last_call); fi
-          DIFF=$((NOW - LAST))
-          if [ $DIFF -lt 21600 ]; then
-            echo "skip=true" >> $GITHUB_OUTPUT
-            echo "msg=⏸ CFBD guard: last run was ${DIFF}s ago (<6h). Skipping API calls." >> $GITHUB_OUTPUT
-          else
-            echo $NOW > .cfbd_last_call
-            echo "skip=false" >> $GITHUB_OUTPUT
-            echo "msg=Proceeding (diff ${DIFF}s ≥ 6h)" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Show guard decision
-        run: echo "${{ steps.guard.outputs.msg }}"
-
-      # Optional env input to FORCE a fallback (espn | cfbfastr) to validate quickly
-      # Set in the Actions "Run workflow" UI
-      - name: Run spotlight builder
-        if: ${{ steps.guard.outputs.skip != 'true' || env.FALLBACK_MODE != '' }}
+      - name: Build spotlight dataset
         env:
           CFBD_KEY: ${{ secrets.CFBD_KEY }}
-          TEAM: Kentucky
-          YEAR: 2025
-          FALLBACK_MODE: ${{ inputs.FALLBACK_MODE || '' }}
-        run: node scripts/build_spotlight.js
+        run: |
+          if [[ "${PURGE_REQUESTED}" == "true" ]]; then
+            echo "🧹 purge mode enabled — clearing caches and refetching"
+            npm run build:spotlight -- --purge
+          else
+            npm run build:spotlight
+          fi
+
+      - name: Validate datasets
+        run: npm run validate:data
 
       - name: Commit /data updates
-        if: ${{ steps.guard.outputs.skip != 'true' || env.FALLBACK_MODE != '' }}
         run: |
-          git config user.name  "data-bot"
+          git config user.name "data-bot"
           git config user.email "data-bot@users.noreply.github.com"
-          git add data/spotlight_*.json data/team/roster_plus.json data/ticker.json 2>/dev/null || true
+          git add data/*.json data/team/*.json 2>/dev/null || true
           git commit -m "Update spotlight feeds" || echo "No changes"
           git push || true
