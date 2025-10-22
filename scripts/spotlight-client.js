@@ -3,12 +3,41 @@ const ROSTER_PATHS = [
   './data/team/roster.json'
 ];
 const SPOTLIGHT_SOURCES = [
-  { id: 'featured', label: 'Featured', path: './data/spotlight_featured.json' },
-  { id: 'off_last', label: 'Off last', path: './data/spotlight_offense_last.json' },
-  { id: 'def_last', label: 'Def last', path: './data/spotlight_defense_last.json' },
-  { id: 'off_season', label: 'Off season', path: './data/spotlight_offense_season.json' },
-  { id: 'def_season', label: 'Def season', path: './data/spotlight_defense_season.json' }
+  { id: 'featured', label: 'Featured', path: './data/spotlight_featured.json', cacheKey: 'featured' },
+  { id: 'off_last', label: 'Off last', path: './data/spotlight_offense_last.json', cacheKey: 'offense_last' },
+  { id: 'def_last', label: 'Def last', path: './data/spotlight_defense_last.json', cacheKey: 'defense_last' },
+  { id: 'off_season', label: 'Off season', path: './data/spotlight_offense_season.json', cacheKey: 'offense_season' },
+  { id: 'def_season', label: 'Def season', path: './data/spotlight_defense_season.json', cacheKey: 'defense_season' }
 ];
+
+function readInlineJSON(id) {
+  const el = typeof document !== 'undefined' ? document.getElementById(id) : null;
+  if (!el) return null;
+  try {
+    return JSON.parse(el.textContent || 'null');
+  } catch (err) {
+    return null;
+  }
+}
+
+const INLINE_FALLBACKS = {
+  offense_last: readInlineJSON('fallback-spotlight-offense-last') || [],
+  defense_last: readInlineJSON('fallback-spotlight-defense-last') || [],
+  offense_season: readInlineJSON('fallback-spotlight-offense-season') || [],
+  defense_season: readInlineJSON('fallback-spotlight-defense-season') || [],
+  featured: readInlineJSON('fallback-spotlight-offense-last') || []
+};
+
+if (typeof window !== 'undefined') {
+  const existingInline = window.__HC_SPOTLIGHT_INLINE__ || {};
+  window.__HC_SPOTLIGHT_INLINE__ = {
+    offense_last: existingInline.offense_last?.length ? existingInline.offense_last : INLINE_FALLBACKS.offense_last,
+    defense_last: existingInline.defense_last?.length ? existingInline.defense_last : INLINE_FALLBACKS.defense_last,
+    offense_season: existingInline.offense_season?.length ? existingInline.offense_season : INLINE_FALLBACKS.offense_season,
+    defense_season: existingInline.defense_season?.length ? existingInline.defense_season : INLINE_FALLBACKS.defense_season,
+    featured: existingInline.featured?.length ? existingInline.featured : INLINE_FALLBACKS.featured
+  };
+}
 
 const TAG_PRIORITY = new Map([
   ['Featured', 0],
@@ -254,7 +283,10 @@ function applyDebug(debugEl, rosterStats, spotlightStats, rendered, errors, filt
   const label = debugEl.querySelector('.label') || debugEl;
   const dot = debugEl.querySelector('.dot');
   const suffix = filterLabel ? ` [filter=${filterLabel}]` : '';
-  const base = `spotlight: roster=${rosterStats.keyed}/${rosterStats.total} keys=${spotlightStats.unique}/${spotlightStats.total} rendered=${rendered}${suffix}`;
+  const mode = typeof window !== 'undefined'
+    ? window.__HC_SPOTLIGHT_MODE || (window.__HC_SPOTLIGHT_LIVE__ ? 'live' : window.__HC_SPOTLIGHT_STATIC__ ? 'static' : 'inline')
+    : 'inline';
+  const base = `spotlight: roster=${rosterStats.keyed}/${rosterStats.total} keys=${spotlightStats.unique}/${spotlightStats.total} rendered=${rendered}${suffix} • mode=${mode}`;
   if (errors.length) {
     label.textContent = `${base} ⚠️ ${errors[0]}`;
     if (dot) dot.style.background = '#dc2626';
@@ -366,113 +398,8 @@ onReady(async () => {
   const mount = document.getElementById('hc-spotlight');
   if (!mount) return;
   const debugEl = document.getElementById('hc-spotlight-debug');
-  const errors = [];
-
-  const rosterRows = await loadRoster(errors);
-  const rosterStats = { total: Array.isArray(rosterRows) ? rosterRows.length : 0, keyed: 0 };
-  const rosterMap = new Map();
-  if (Array.isArray(rosterRows)) {
-    for (const row of rosterRows) {
-      const key = keyFrom(row);
-      if (!key) continue;
-      rosterStats.keyed += 1;
-      if (!rosterMap.has(key)) {
-        rosterMap.set(key, {
-          ...row,
-          name: fullName(row),
-          pos: positionFrom(row),
-          jersey: jerseyFrom(row)
-        });
-      }
-    }
-  }
-
-  const cards = new Map();
-  let spotlightTotal = 0;
-
-  for (const source of SPOTLIGHT_SOURCES) {
-    const rows = await fetchList(source.path, errors);
-    if (!Array.isArray(rows)) continue;
-    spotlightTotal += rows.length;
-    rows.forEach((entry) => {
-      const key = keyFrom(entry);
-      if (!key) return;
-      const rosterMatch = rosterMap.get(key);
-      const existing = cards.get(key) || {
-        key,
-        tags: new Set(),
-        name: '',
-        pos: '',
-        jersey: '',
-        headshot: '',
-        link: '',
-        statline: '',
-        initials: '',
-        displayTag: '',
-        priority: 99,
-        matchedRoster: false
-      };
-
-      existing.tags.add(source.label);
-
-      const name = fullName(entry) || rosterMatch?.name || existing.name;
-      if (name) {
-        existing.name = name;
-        existing.initials = initials(name);
-      }
-
-      const pos = positionFrom(entry) || rosterMatch?.pos || existing.pos;
-      if (pos) existing.pos = pos;
-
-      const jersey = jerseyFrom(entry) || rosterMatch?.jersey || existing.jersey;
-      if (jersey) existing.jersey = jersey;
-
-      const headshot = headshotFrom(entry, rosterMatch || existing);
-      if (headshot) existing.headshot = headshot;
-
-      const link = linkFrom(entry, rosterMatch || existing);
-      if (link) existing.link = link;
-
-      const statline = statlineFrom(entry);
-      if (statline && (!existing.statline || existing.statline === '—')) {
-        existing.statline = statline;
-      }
-
-      if (rosterMatch) existing.matchedRoster = true;
-
-      cards.set(key, existing);
-    });
-  }
-
-  const finalized = Array.from(cards.values()).map((card) => {
-    const tags = Array.from(card.tags);
-    const sortedTags = tags.sort((a, b) => {
-      const pa = TAG_PRIORITY.get(a) ?? 9;
-      const pb = TAG_PRIORITY.get(b) ?? 9;
-      if (pa !== pb) return pa - pb;
-      return a.localeCompare(b);
-    });
-    card.tags = sortedTags;
-    card.displayTag = sortedTags[0] || '';
-    const topPriority = sortedTags.length ? TAG_PRIORITY.get(sortedTags[0]) ?? 9 : 9;
-    card.priority = topPriority;
-    if (!card.statline) card.statline = '—';
-    if (!card.initials) card.initials = initials(card.name || 'UK');
-    return card;
-  });
-
-  finalized.sort((a, b) => {
-    if (a.priority !== b.priority) return a.priority - b.priority;
-    return a.name.localeCompare(b.name);
-  });
-
-  const spotlightStats = { unique: finalized.length, total: spotlightTotal };
-  const mergedRosterStats = {
-    total: rosterStats.total,
-    keyed: rosterStats.keyed
-  };
-
   const cardContainer = mount.parentElement;
+
   let toggles = null;
   if (cardContainer) {
     toggles = cardContainer.querySelector('[data-spotlight-toggles]');
@@ -481,16 +408,19 @@ onReady(async () => {
       toggles.className = 'toggles';
       toggles.dataset.spotlightToggles = 'true';
       cardContainer.insertBefore(toggles, mount);
-    } else {
-      toggles.innerHTML = '';
     }
+    toggles.innerHTML = '';
   }
 
   const buttons = new Map();
   const preferredFilter = FILTERS.find((filter) => filter.id === 'last') ? 'last' : FILTERS[0]?.id || '';
-  const state = {
-    filter: preferredFilter
-  };
+  const state = { filter: preferredFilter };
+  let finalized = [];
+  let rosterStats = { total: 0, keyed: 0 };
+  let spotlightStats = { unique: 0, total: 0 };
+  let mergedRosterStats = { total: 0, keyed: 0 };
+  let lastErrors = [];
+  let hydrating = false;
 
   function updateButtons(activeId) {
     buttons.forEach((btn, id) => {
@@ -504,15 +434,10 @@ onReady(async () => {
     const active = FILTERS.find((filter) => filter.id === filterId) || FILTERS[0];
     state.filter = active ? active.id : '';
     updateButtons(state.filter);
-    if (!active) {
-      renderCards(mount, finalized.slice(0, 24));
-      applyDebug(debugEl, mergedRosterStats, spotlightStats, Math.min(finalized.length, 24), errors, '');
-      return;
-    }
-    const filtered = finalized.filter((card) => active.predicate(card));
-    const limited = filtered.slice(0, 24);
+    const list = active ? finalized.filter((card) => active.predicate(card)) : finalized;
+    const limited = list.slice(0, 24);
     renderCards(mount, limited);
-    applyDebug(debugEl, mergedRosterStats, spotlightStats, limited.length, errors, active.label);
+    applyDebug(debugEl, mergedRosterStats, spotlightStats, limited.length, lastErrors, active ? active.label : '');
   }
 
   if (toggles) {
@@ -532,5 +457,160 @@ onReady(async () => {
     });
   }
 
-  applyFilter(state.filter);
+  async function hydrate() {
+    if (hydrating) return;
+    hydrating = true;
+    const errors = [];
+    lastErrors = errors;
+    try {
+      const staticPromise = typeof window !== 'undefined' ? window.__HC_SPOTLIGHT_STATIC_PROMISE : null;
+      if (staticPromise && typeof staticPromise.then === 'function') {
+        try {
+          await staticPromise;
+        } catch (err) {
+          errors.push(err?.message || 'static preload');
+        }
+      }
+
+      const rosterRows = await loadRoster(errors);
+      rosterStats = { total: Array.isArray(rosterRows) ? rosterRows.length : 0, keyed: 0 };
+      const rosterMap = new Map();
+      if (Array.isArray(rosterRows)) {
+        for (const row of rosterRows) {
+          const key = keyFrom(row);
+          if (!key) continue;
+          rosterStats.keyed += 1;
+          if (!rosterMap.has(key)) {
+            rosterMap.set(key, {
+              ...row,
+              name: fullName(row),
+              pos: positionFrom(row),
+              jersey: jerseyFrom(row)
+            });
+          }
+        }
+      }
+
+      const cards = new Map();
+      let total = 0;
+      const dataPriority = [
+        typeof window !== 'undefined' ? window.__HC_SPOTLIGHT_LIVE__ : null,
+        typeof window !== 'undefined' ? window.__HC_SPOTLIGHT_STATIC__ : null,
+        typeof window !== 'undefined' ? window.__HC_SPOTLIGHT_INLINE__ : null
+      ];
+
+      const clone = (entry) => (entry && typeof entry === 'object' ? { ...entry } : {});
+
+      for (const source of SPOTLIGHT_SOURCES) {
+        const cacheKey = source.cacheKey || source.id;
+        let rows = null;
+        for (const bag of dataPriority) {
+          if (bag && Array.isArray(bag[cacheKey]) && bag[cacheKey].length) {
+            rows = bag[cacheKey].map(clone);
+            break;
+          }
+        }
+        if (!rows) {
+          rows = await fetchList(source.path, errors);
+        }
+        if (!Array.isArray(rows) || !rows.length) {
+          const fallback = INLINE_FALLBACKS[cacheKey];
+          if (Array.isArray(fallback) && fallback.length) {
+            rows = fallback.map(clone);
+          }
+        }
+        if (!Array.isArray(rows) || !rows.length) continue;
+        total += rows.length;
+        rows.forEach((entry) => {
+          if (!entry || typeof entry !== 'object') return;
+          const entryKey = keyFrom(entry);
+          if (!entryKey) return;
+          const rosterMatch = rosterMap.get(entryKey);
+          const existing = cards.get(entryKey) || {
+            key: entryKey,
+            tags: new Set(),
+            name: '',
+            pos: '',
+            jersey: '',
+            headshot: '',
+            link: '',
+            statline: '',
+            initials: '',
+            displayTag: '',
+            priority: 99,
+            matchedRoster: false
+          };
+
+          existing.tags.add(source.label);
+
+          const name = fullName(entry) || rosterMatch?.name || existing.name;
+          if (name) {
+            existing.name = name;
+            existing.initials = initials(name);
+          }
+
+          const pos = positionFrom(entry) || rosterMatch?.pos || existing.pos;
+          if (pos) existing.pos = pos;
+
+          const jersey = jerseyFrom(entry) || rosterMatch?.jersey || existing.jersey;
+          if (jersey) existing.jersey = jersey;
+
+          const headshot = headshotFrom(entry, rosterMatch || existing);
+          if (headshot) existing.headshot = headshot;
+
+          const link = linkFrom(entry, rosterMatch || existing);
+          if (link) existing.link = link;
+
+          const statline = statlineFrom(entry);
+          if (statline && (!existing.statline || existing.statline === '—')) {
+            existing.statline = statline;
+          }
+
+          if (rosterMatch) existing.matchedRoster = true;
+
+          cards.set(entryKey, existing);
+        });
+      }
+
+      finalized = Array.from(cards.values()).map((card) => {
+        const tags = Array.from(card.tags);
+        const sortedTags = tags.sort((a, b) => {
+          const pa = TAG_PRIORITY.get(a) ?? 9;
+          const pb = TAG_PRIORITY.get(b) ?? 9;
+          if (pa !== pb) return pa - pb;
+          return a.localeCompare(b);
+        });
+        card.tags = sortedTags;
+        card.displayTag = sortedTags[0] || '';
+        const topPriority = sortedTags.length ? TAG_PRIORITY.get(sortedTags[0]) ?? 9 : 9;
+        card.priority = topPriority;
+        if (!card.statline) card.statline = '—';
+        if (!card.initials) card.initials = initials(card.name || 'UK');
+        return card;
+      });
+
+      finalized.sort((a, b) => {
+        if (a.priority !== b.priority) return a.priority - b.priority;
+        return a.name.localeCompare(b.name);
+      });
+
+      spotlightStats = { unique: finalized.length, total };
+      mergedRosterStats = {
+        total: rosterStats.total,
+        keyed: rosterStats.keyed
+      };
+
+      applyFilter(state.filter);
+    } finally {
+      hydrating = false;
+    }
+  }
+
+  document.addEventListener('hc:spotlight:hydrate', () => {
+    hydrate().catch((err) => {
+      console.warn('[HC] spotlight hydrate failed', err);
+    });
+  });
+
+  await hydrate();
 });

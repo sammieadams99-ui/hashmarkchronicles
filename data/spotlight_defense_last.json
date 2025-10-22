@@ -1,1 +1,31 @@
-[]
+[
+  {
+    "athleteId": 4692450,
+    "name": "Trevin Wallace",
+    "pos": "LB",
+    "jersey": 32,
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4692450.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4692450/trevin-wallace",
+    "side": "defense",
+    "last_game": {
+      "opp": "Texas",
+      "tkl": "11",
+      "tfl": "1",
+      "sacks": "0.5"
+    }
+  },
+  {
+    "athleteId": 4692799,
+    "name": "Maxwell Hairston",
+    "pos": "DB",
+    "jersey": 31,
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4692799.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4692799/maxwell-hairston",
+    "side": "defense",
+    "last_game": {
+      "opp": "Texas",
+      "tkl": "6",
+      "pbu": "2"
+    }
+  }
+]

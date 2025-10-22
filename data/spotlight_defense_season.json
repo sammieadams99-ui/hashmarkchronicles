@@ -1,1 +1,30 @@
-[]
+[
+  {
+    "athleteId": 4893283,
+    "name": "Deone Walker",
+    "pos": "DL",
+    "jersey": 0,
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4893283.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4893283/deone-walker",
+    "side": "defense",
+    "season": {
+      "games": "6",
+      "tfl": "8.0",
+      "sacks": "4.0"
+    }
+  },
+  {
+    "athleteId": 4689389,
+    "name": "Alex Afari Jr.",
+    "pos": "DB",
+    "jersey": 3,
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4689389.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4689389/alex-afari-jr",
+    "side": "defense",
+    "season": {
+      "games": "6",
+      "tkl": "32",
+      "ints": "2"
+    }
+  }
+]

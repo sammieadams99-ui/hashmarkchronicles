@@ -1,1 +1,55 @@
-[]
+[
+  {
+    "athleteId": 4875786,
+    "name": "Cutter Boley",
+    "pos": "QB",
+    "jersey": 12,
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4875786.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4875786/cutter-boley",
+    "side": "offense",
+    "last_game": {
+      "opp": "Texas",
+      "cmp_att": "31/39",
+      "yds": "258",
+      "int": "1"
+    },
+    "season": {
+      "games": "6",
+      "pass_yds": "1542",
+      "td": "12"
+    }
+  },
+  {
+    "athleteId": 4241473,
+    "name": "Ray Davis",
+    "pos": "RB",
+    "jersey": 1,
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4241473.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4241473/ray-davis",
+    "side": "offense",
+    "season": {
+      "games": "6",
+      "rush_yds": "612",
+      "td": "8"
+    }
+  },
+  {
+    "athleteId": 4692450,
+    "name": "Trevin Wallace",
+    "pos": "LB",
+    "jersey": 32,
+    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4692450.png",
+    "espn": "https://www.espn.com/college-football/player/_/id/4692450/trevin-wallace",
+    "side": "defense",
+    "season": {
+      "games": "6",
+      "tkl": "54",
+      "tfl": "6.5"
+    },
+    "last_game": {
+      "opp": "Texas",
+      "tkl": "11",
+      "tfl": "1"
+    }
+  }
+]
