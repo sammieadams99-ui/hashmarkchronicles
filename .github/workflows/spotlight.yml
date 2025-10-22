@@ -1,25 +1,21 @@
-name: Update Spotlight Feeds
+name: Spotlight datasets
 
 on:
   workflow_dispatch:
-    inputs:
-      purge:
-        description: 'Bust cache and refetch'
-        required: false
-        default: 'false'
   schedule:
-    - cron: "*/30 * * * *"  # every 30 minutes
+    - cron: "0 * * * *"
 
 permissions:
   contents: write
 
 concurrency:
   group: spotlight-build
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
 
@@ -27,27 +23,55 @@ jobs:
         with:
           node-version: 20
 
+      - name: Restore last-good artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: data-artifacts
+          path: .lastgood
+        continue-on-error: true
+
+      - name: Restore /data from last-good if empty
+        run: |
+          mkdir -p data
+          if [ -z "$(ls -A data 2>/dev/null)" ] && [ -d .lastgood ]; then rsync -a .lastgood/ data/ || true; fi
+
       - name: Install dependencies
         run: npm install
 
-      - name: Validate with fixtures (offline)
+      - name: Validate fixtures
         run: npm run test:fixtures
 
-      - name: Build spotlight dataset
+      - name: Build roster
         env:
-          CFBD_KEY: ${{ secrets.CFBD_KEY }}
-          TEAM_ID: 96
-          SEASON: 2025
-        run: |
-          npm run build:spotlight || echo "⚠️ provider failed — reusing cached /data"
+          DRY_RUN: "false"
+        run: node scripts/build_espn_roster.js || echo "fallback to cached roster"
 
-      - name: Validate datasets (2025 enforcement)
+      - name: Build spotlight
+        env:
+          DRY_RUN: "false"
+        run: node scripts/build_spotlight.js || echo "provider hiccup — using last-good /data"
+
+      - name: Rebuild ESPN map
+        run: node scripts/rebuild_espn_map_from_roster.js
+
+      - name: JSON schema checks
+        run: npx ajv-cli validate -s data/.schema/roster.schema.json -d data/team/roster.json
+
+      - name: Validate datasets
         run: npm run validate:data
 
-      - name: Commit /data updates
+      - name: Deep audit
+        run: node scripts/audit_dataset_integrity.js --deep
+        continue-on-error: true
+
+      - name: Trim artifacts
         run: |
-          git config user.name "data-bot"
-          git config user.email "data-bot@users.noreply.github.com"
-          git add data/*.json data/team/*.json 2>/dev/null || true
-          git commit -m "Update spotlight feeds" || echo "No changes"
-          git push || true
+          mkdir -p artifacts/history
+          find artifacts -type f -size +25M -delete || true
+          ls -lt artifacts/history | tail -n +6 | awk '{print $9}' | xargs -I{} rm -rf artifacts/history/{} || true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-artifacts
+          path: artifacts

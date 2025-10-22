@@ -1,0 +1,44 @@
+name: Manual ESPN roster seed
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Restore last-good artifacts (optional)
+        uses: actions/download-artifact@v4
+        with:
+          name: data-artifacts
+          path: .lastgood
+        continue-on-error: true
+
+      - name: Restore /data from last-good if empty
+        run: |
+          mkdir -p data
+          if [ -z "$(ls -A data 2>/dev/null)" ] && [ -d .lastgood ]; then rsync -a .lastgood/ data/ || true; fi
+
+      - name: Install dependencies
+        run: npm install
+
+      - env:
+          DRY_RUN: "false"
+        run: node scripts/build_espn_roster.js || echo "fallback to cached roster"
+
+      - name: Commit roster files
+        run: |
+          git config user.name "data-bot"
+          git config user.email "data-bot@users.noreply.github.com"
+          git add data/team/roster*.json data/espn_map.json || true
+          git commit -m "espn: seed 2025 roster" || echo "no changes"
+          git push || true

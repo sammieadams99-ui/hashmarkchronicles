@@ -1,28 +1,5 @@
 [
   {
-    "id": 4692450,
-    "name": "Trevin Wallace",
-    "pos": "LB",
-    "espn": "https://www.espn.com/college-football/player/_/id/4692450/trevin-wallace",
-    "season": {
-      "games": "6",
-      "tkl": "54",
-      "tfl": "6.5",
-      "sacks": "2.5"
-    }
-  },
-  {
-    "id": 4893283,
-    "name": "Deone Walker",
-    "pos": "DL",
-    "espn": "https://www.espn.com/college-football/player/_/id/4893283/deone-walker",
-    "season": {
-      "games": "6",
-      "tfl": "8.0",
-      "sacks": "4.0"
-    }
-  },
-  {
     "id": 4819224,
     "name": "Alex Afari Jr.",
     "pos": "DB",
