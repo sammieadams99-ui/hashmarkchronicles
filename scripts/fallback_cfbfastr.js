@@ -1,24 +1,41 @@
 import fs from 'fs/promises';
 
-async function getCSV(url) {
-  const r = await fetch(url, { headers: { 'cache-control': 'no-cache' } });
-  if (!r.ok) throw new Error(`CSV ${r.status}`);
+// Robust CSV fetch with retry and year fallback
+async function fetchRosterCSV(year) {
+  const base = `https://raw.githubusercontent.com/cfbfastR/data/master/rosters/rosters_${year}.csv`;
+  const headers = { 'cache-control': 'no-cache', 'user-agent': 'hashmark-bot' };
+  let r = await fetch(base, { headers });
+  if (!r.ok) {
+    r = await fetch(`${base}?plain=1`, { headers });
+    if (!r.ok) throw new Error(`CSV ${r.status}`);
+  }
   const text = await r.text();
   const lines = text.trim().split(/\r?\n/);
-  const headers = lines[0].split(',');
-  return lines.slice(1).map((row) => {
+  const headersRow = lines[0].split(',');
+  const rows = lines.slice(1).map((row) => {
     const cols = row.split(',');
     const obj = {};
-    headers.forEach((h, i) => {
+    headersRow.forEach((h, i) => {
       obj[h] = cols[i];
     });
     return obj;
   });
+  return rows;
+}
+
+async function safeRosterCSV(year) {
+  for (const y of [year, year - 1, year - 2]) {
+    try {
+      return { rows: await fetchRosterCSV(y), y };
+    } catch (e) {
+      // continue trying previous seasons
+    }
+  }
+  throw new Error('CSV roster not found for last 3 seasons');
 }
 
 export async function cfbRosterPlus(teamName, year) {
-  const url = `https://raw.githubusercontent.com/cfbfastR/data/master/rosters/rosters_${year}.csv`;
-  const rows = await getCSV(url);
+  const { rows, y } = await safeRosterCSV(year);
   const want = String(teamName).toLowerCase();
   const out = rows
     .filter((r) => (r.team || '').toLowerCase().includes(want))
@@ -37,6 +54,7 @@ export async function cfbRosterPlus(teamName, year) {
     }));
   await fs.mkdir('data/team', { recursive: true });
   await fs.writeFile('data/team/roster_plus.json', JSON.stringify(out, null, 2));
+  console.log('[fallback-cfbfastR] year used:', y, 'roster:', out.length);
   return out;
 }
 
