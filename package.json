@@ -11,5 +11,8 @@
   },
   "dependencies": {
     "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "ajv-cli": "^5.0.0"
   }
 }

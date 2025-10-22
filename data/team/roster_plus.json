@@ -1,2174 +1,1375 @@
 {
-  "players": [
-    {
-      "id": 4819224,
-      "name": "Alex Afari Jr.",
-      "pos": "DB",
-      "number": 3
-    },
-    {
-      "id": 9900086,
-      "name": "Andrew Purcell",
-      "pos": "DB",
-      "number": 26
-    },
-    {
-      "id": 9900090,
-      "name": "Andrew Weber",
-      "pos": "DB",
-      "number": 36
-    },
-    {
-      "id": 9900062,
-      "name": "Cam Dooley",
-      "pos": "DB",
-      "number": 18
-    },
-    {
-      "id": 5092262,
-      "name": "DJ Waller Jr.",
-      "pos": "DB",
-      "number": 5
-    },
-    {
-      "id": 9900080,
-      "name": "Demarcus Gardner",
-      "pos": "DB",
-      "number": 28
-    },
-    {
-      "id": 9900066,
-      "name": "Devon Gusta",
-      "pos": "DB",
-      "number": 38
-    },
-    {
-      "id": 9900085,
-      "name": "Dyllon Williams",
-      "pos": "DB",
-      "number": 13
-    },
-    {
-      "id": 9900067,
-      "name": "Grant Grayton",
-      "pos": "DB",
-      "number": 30
-    },
-    {
-      "id": 9900040,
-      "name": "Jackson Schulz",
-      "pos": "DB",
-      "number": 29
-    },
-    {
-      "id": 9900057,
-      "name": "Jaden Smith",
-      "pos": "DB",
-      "number": 24
-    },
-    {
-      "id": 9900007,
-      "name": "Jantzen Dunn",
-      "pos": "DB",
-      "number": 10
-    },
-    {
-      "id": 9900011,
-      "name": "Jonquis Hardaway",
-      "pos": "DB",
-      "number": 6
-    },
-    {
-      "id": 4683458,
-      "name": "Jordan Lovett",
-      "pos": "DB",
-      "number": 25
-    },
-    {
-      "id": 9900097,
-      "name": "Jr. Martels Carter",
-      "pos": "DB",
-      "number": -1
-    },
-    {
-      "id": 9900019,
-      "name": "Kevis Thomas",
-      "pos": "DB",
-      "number": 19
-    },
-    {
-      "id": 9900050,
-      "name": "Martels Carter Jr.",
-      "pos": "DB",
-      "number": 4
-    },
-    {
-      "id": 4692799,
-      "name": "Maxwell Hairston",
-      "pos": "DB",
-      "number": 31
-    },
-    {
-      "id": 9900023,
-      "name": "Nasir Addison",
-      "pos": "DB",
-      "number": 21
-    },
-    {
-      "id": 9900063,
-      "name": "Quay'sheed Scott",
-      "pos": "DB",
-      "number": 12
-    },
-    {
-      "id": 9900033,
-      "name": "Terhyon Nichols",
-      "pos": "DB",
-      "number": 20
-    },
-    {
-      "id": 9900031,
-      "name": "Ty Bryant",
-      "pos": "DB",
-      "number": 14
-    },
-    {
-      "id": 9900055,
-      "name": "Lorenzo Cowan",
-      "pos": "DE",
-      "number": 34
-    },
-    {
-      "id": 9900026,
-      "name": "Austin Ramsey",
-      "pos": "DL",
-      "number": 76
-    },
-    {
-      "id": 9900035,
-      "name": "Brian Robinson",
-      "pos": "DL",
-      "number": 23
-    },
-    {
-      "id": 9900077,
-      "name": "Cedric Works",
-      "pos": "DL",
-      "number": 15
-    },
-    {
-      "id": 9900009,
-      "name": "David Gusta",
-      "pos": "DL",
-      "number": 60
-    },
-    {
-      "id": 4893283,
-      "name": "Deone Walker",
-      "pos": "DL",
-      "number": 0
-    },
-    {
-      "id": 9900072,
-      "name": "Jackson Bunn",
-      "pos": "DL",
-      "number": 64
-    },
-    {
-      "id": 9900025,
-      "name": "Jaden Williams",
-      "pos": "DL",
-      "number": 91
-    },
-    {
-      "id": 9900083,
-      "name": "Javeon Campbell",
-      "pos": "DL",
-      "number": 56
-    },
-    {
-      "id": 9900037,
-      "name": "Jerod Smith II",
-      "pos": "DL",
-      "number": 95
-    },
-    {
-      "id": 4430666,
-      "name": "Josaih Hayes",
-      "pos": "DL",
-      "number": 99
-    },
-    {
-      "id": 9900008,
-      "name": "Kahlil Saunders",
-      "pos": "DL",
-      "number": 92
-    },
-    {
-      "id": 9900051,
-      "name": "Kalen Edwards",
-      "pos": "DL",
-      "number": 93
-    },
-    {
-      "id": 9900092,
-      "name": "Kenyatta Hardge II",
-      "pos": "DL",
-      "number": 98
-    },
-    {
-      "id": 9900044,
-      "name": "Mi'Quise Humphrey-Grace",
-      "pos": "DL",
-      "number": 90
-    },
-    {
-      "id": 9900096,
-      "name": "Nic Smith",
-      "pos": "DL",
-      "number": 55
-    },
-    {
-      "id": 9900032,
-      "name": "Tavion Gadson",
-      "pos": "DL",
-      "number": 94
-    },
-    {
-      "id": 9900056,
-      "name": "Antwan Smith",
-      "pos": "LB",
-      "number": 44
-    },
-    {
-      "id": 4430670,
-      "name": "Daveren Rayner",
-      "pos": "LB",
-      "number": 13
-    },
-    {
-      "id": 9900058,
-      "name": "Devin Smith",
-      "pos": "LB",
-      "number": 32
-    },
-    {
-      "id": 9900018,
-      "name": "Grant Godfrey",
-      "pos": "LB",
-      "number": 22
-    },
-    {
-      "id": 9900071,
-      "name": "Hayden Dawahare",
-      "pos": "LB",
-      "number": 53
-    },
-    {
-      "id": 9900036,
-      "name": "Jacob Smith",
-      "pos": "LB",
-      "number": 16
-    },
-    {
-      "id": 9900024,
-      "name": "Kam Olds",
-      "pos": "LB",
-      "number": 1
-    },
-    {
-      "id": 9900095,
-      "name": "Kris Thompson",
-      "pos": "LB",
-      "number": 45
-    },
-    {
-      "id": 4431688,
-      "name": "Landyn Watson",
-      "pos": "LB",
-      "number": 9
-    },
-    {
-      "id": 9900078,
-      "name": "Quintavion Norman",
-      "pos": "LB",
-      "number": 31
-    },
-    {
-      "id": 9900091,
-      "name": "Rushaune Vilane",
-      "pos": "LB",
-      "number": 46
-    },
-    {
-      "id": 9900045,
-      "name": "Sam Greene",
-      "pos": "LB",
-      "number": 2
-    },
-    {
-      "id": 9900038,
-      "name": "Steven Soles Jr.",
-      "pos": "LB",
-      "number": 35
-    },
-    {
-      "id": 4692450,
-      "name": "Trevin Wallace",
-      "pos": "LB",
-      "number": 32
-    },
-    {
-      "id": 9900102,
-      "name": "Wyatt Phyle",
-      "pos": "LB",
-      "number": 49
-    },
-    {
-      "id": 9900020,
-      "name": "Alex McLaughlin",
-      "pos": "LS",
-      "number": 42
-    },
-    {
-      "id": 9900043,
-      "name": "David LaGanga",
-      "pos": "LS",
-      "number": 59
-    },
-    {
-      "id": 9900048,
-      "name": "Aba Selm",
-      "pos": "OL",
-      "number": 53
-    },
-    {
-      "id": 9900004,
-      "name": "Alex Wollschlaeger",
-      "pos": "OL",
-      "number": 50
-    },
-    {
-      "id": 9900099,
+  "byId": {
+    "3050837": {
+      "id": 3050837,
       "name": "Alexander DiMartino",
       "pos": "OL",
-      "number": 68
+      "number": 68,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/3050837.png"
     },
-    {
-      "id": 9900103,
-      "name": "Brady Pullins",
-      "pos": "OL",
-      "number": 67
+    "3138936": {
+      "id": 3138936,
+      "name": "Grant Godfrey",
+      "pos": "LB",
+      "number": 22,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/3138936.png"
     },
-    {
-      "id": 9900079,
-      "name": "Bryan Auguste",
-      "pos": "OL",
-      "number": 77
-    },
-    {
-      "id": 9900064,
-      "name": "Cameron Jones",
-      "pos": "OL",
-      "number": 78
-    },
-    {
-      "id": 9900084,
-      "name": "Darrin Strey",
-      "pos": "OL",
-      "number": 69
-    },
-    {
-      "id": 9900017,
-      "name": "Evan Wibberley",
-      "pos": "OL",
-      "number": 58
-    },
-    {
-      "id": 9900047,
-      "name": "Hayes Johnson",
-      "pos": "OL",
-      "number": 72
-    },
-    {
-      "id": 9900005,
-      "name": "Jager Burton",
-      "pos": "OL",
-      "number": 62
-    },
-    {
-      "id": 9900016,
-      "name": "Jalen Farmer",
-      "pos": "OL",
-      "number": 52
-    },
-    {
-      "id": 9900093,
-      "name": "Jason Ekperuoh",
-      "pos": "OL",
-      "number": 61
-    },
-    {
-      "id": 9900075,
-      "name": "Jayden Clark",
-      "pos": "OL",
-      "number": 79
-    },
-    {
-      "id": 9900060,
-      "name": "Jermiel Atkins",
-      "pos": "OL",
-      "number": 74
-    },
-    {
-      "id": 9900001,
-      "name": "Joshua Braun",
-      "pos": "OL",
-      "number": 75
-    },
-    {
-      "id": 9900089,
-      "name": "Kyle Mixon",
-      "pos": "OL",
-      "number": 63
-    },
-    {
-      "id": 9900028,
-      "name": "Malachi Wood",
-      "pos": "OL",
-      "number": 71
-    },
-    {
-      "id": 9900027,
-      "name": "Rob Fogler",
-      "pos": "OL",
-      "number": 70
-    },
-    {
-      "id": 9900021,
-      "name": "Shiyazh Pete",
-      "pos": "OL",
-      "number": 73
-    },
-    {
-      "id": 9900073,
-      "name": "Tino Merlo",
-      "pos": "OL",
-      "number": 66
-    },
-    {
-      "id": 9900022,
-      "name": "Aidan Laros",
-      "pos": "P",
-      "number": 48
-    },
-    {
-      "id": 9900010,
-      "name": "Wilson Berry",
-      "pos": "P",
-      "number": 93
-    },
-    {
-      "id": 9900059,
-      "name": "Jacob Kauwe",
-      "pos": "PK",
-      "number": 91
-    },
-    {
-      "id": 9900065,
-      "name": "Zach Schreiner",
-      "pos": "PK",
-      "number": 97
-    },
-    {
-      "id": 9900002,
-      "name": "Beau Allen",
-      "pos": "QB",
-      "number": 11
-    },
-    {
-      "id": 9900074,
-      "name": "Brennen Ward",
-      "pos": "QB",
-      "number": 14
-    },
-    {
-      "id": 5141378,
-      "name": "Cutter Boley",
-      "pos": "QB",
-      "number": 8
-    },
-    {
-      "id": 9900054,
-      "name": "Stone Saunders",
-      "pos": "QB",
-      "number": 12
-    },
-    {
-      "id": 4426847,
-      "name": "Zach Calzada",
-      "pos": "QB",
-      "number": 5
-    },
-    {
-      "id": 9900069,
-      "name": "Chy Rivers",
-      "pos": "RB",
-      "number": 36
-    },
-    {
-      "id": 9900029,
-      "name": "Dante Dowdell",
-      "pos": "RB",
-      "number": 2
-    },
-    {
-      "id": 9900030,
-      "name": "Jamarion Wilcox",
-      "pos": "RB",
-      "number": 10
-    },
-    {
-      "id": 9900098,
-      "name": "James Dalrymple",
-      "pos": "RB",
-      "number": 35
-    },
-    {
-      "id": 9900046,
-      "name": "Jason Patterson",
-      "pos": "RB",
-      "number": 26
-    },
-    {
-      "id": 4686468,
-      "name": "Seth McGowan",
-      "pos": "RB",
-      "number": 3
-    },
-    {
-      "id": 9900034,
-      "name": "Tovani Mizell",
-      "pos": "RB",
-      "number": 28
-    },
-    {
-      "id": 9900013,
-      "name": "Elijah Brown",
-      "pos": "TE",
-      "number": 85
-    },
-    {
-      "id": 9900015,
+    "3155313": {
+      "id": 3155313,
       "name": "Henry Boyer",
       "pos": "TE",
-      "number": 87
+      "number": 87,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/3155313.png"
     },
-    {
-      "id": 9900042,
-      "name": "Jack Monday",
-      "pos": "TE",
-      "number": 83
-    },
-    {
-      "id": 9900014,
-      "name": "Josh Kattus",
-      "pos": "TE",
-      "number": 84
-    },
-    {
-      "id": 9900088,
-      "name": "Justin Kattus",
-      "pos": "TE",
-      "number": 44
-    },
-    {
-      "id": 9900082,
-      "name": "Mikkel Skinner",
-      "pos": "TE",
-      "number": 18
-    },
-    {
-      "id": 9900049,
-      "name": "Willie Rodriguez",
-      "pos": "TE",
-      "number": 81
-    },
-    {
-      "id": 4702365,
-      "name": "Anthony Brown-Stephens",
-      "pos": "WR",
-      "number": 2
-    },
-    {
-      "id": 9900068,
-      "name": "Ashton Cozart",
-      "pos": "WR",
-      "number": 80
-    },
-    {
-      "id": 9900100,
-      "name": "Aumad Edwards",
-      "pos": "WR",
-      "number": 40
-    },
-    {
-      "id": 4702366,
-      "name": "Barion Brown",
-      "pos": "WR",
-      "number": 7
-    },
-    {
-      "id": 9900053,
-      "name": "Cameron Miller",
-      "pos": "WR",
-      "number": 22
-    },
-    {
-      "id": 9900041,
-      "name": "Cole Lanter",
-      "pos": "WR",
-      "number": 86
-    },
-    {
-      "id": 9900094,
+    "3179523": {
+      "id": 3179523,
       "name": "DJ Miller",
       "pos": "WR",
-      "number": 7
+      "number": 7,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/3179523.png"
     },
-    {
-      "id": 4702367,
-      "name": "Dane Key",
-      "pos": "WR",
-      "number": 6
+    "3179635": {
+      "id": 3179635,
+      "name": "Tino Merlo",
+      "pos": "OL",
+      "number": 66,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/3179635.png"
     },
-    {
-      "id": 9900039,
-      "name": "David Washington Jr.",
-      "pos": "WR",
-      "number": 82
+    "3227235": {
+      "id": 3227235,
+      "name": "Quay'sheed Scott",
+      "pos": "DB",
+      "number": 12,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/3227235.png"
     },
-    {
-      "id": 9900012,
-      "name": "Fred Farrier II",
-      "pos": "WR",
-      "number": 13
+    "3242974": {
+      "id": 3242974,
+      "name": "Kevis Thomas",
+      "pos": "DB",
+      "number": 19,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/3242974.png"
     },
-    {
-      "id": 9900052,
-      "name": "Hardley Gilmore IV",
-      "pos": "WR",
-      "number": 17
-    },
-    {
-      "id": 9900000,
-      "name": "J.J. Hester",
-      "pos": "WR",
-      "number": 4
-    },
-    {
-      "id": 9900003,
-      "name": "Ja'Mori Maclin",
-      "pos": "WR",
-      "number": 9
-    },
-    {
-      "id": 4685441,
-      "name": "Kendrick Law",
-      "pos": "WR",
-      "number": 1
-    },
-    {
-      "id": 9900076,
-      "name": "Montavin Quisenberry",
-      "pos": "WR",
-      "number": 19
-    },
-    {
-      "id": 9900081,
-      "name": "Preston Bowman",
-      "pos": "WR",
-      "number": 89
-    },
-    {
-      "id": 9900061,
+    "3378292": {
+      "id": 3378292,
       "name": "Quintin Simmons Jr.",
       "pos": "WR",
-      "number": 88
+      "number": 88,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/3378292.png"
     },
-    {
-      "id": 9900087,
-      "name": "Rico Crowder",
-      "pos": "WR",
-      "number": 33
+    "3410694": {
+      "id": 3410694,
+      "name": "Hayden Dawahare",
+      "pos": "LB",
+      "number": 53,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/3410694.png"
     },
-    {
-      "id": 9900101,
-      "name": "Saxton Howard",
-      "pos": "WR",
-      "number": 39
+    "3522633": {
+      "id": 3522633,
+      "name": "Zach Schreiner",
+      "pos": "PK",
+      "number": 97,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/3522633.png"
     },
-    {
-      "id": 9900070,
-      "name": "Spencer Leadbetter",
-      "pos": "WR",
-      "number": 37
+    "3612495": {
+      "id": 3612495,
+      "name": "Jason Patterson",
+      "pos": "RB",
+      "number": 26,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/3612495.png"
     },
-    {
-      "id": 9900006,
+    "3915983": {
+      "id": 3915983,
+      "name": "Brady Pullins",
+      "pos": "OL",
+      "number": 67,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/3915983.png"
+    },
+    "3921486": {
+      "id": 3921486,
+      "name": "Andrew Weber",
+      "pos": "DB",
+      "number": 36,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/3921486.png"
+    },
+    "3963542": {
+      "id": 3963542,
+      "name": "James Dalrymple",
+      "pos": "RB",
+      "number": 35,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/3963542.png"
+    },
+    "4033884": {
+      "id": 4033884,
+      "name": "Rushaune Vilane",
+      "pos": "LB",
+      "number": 46,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4033884.png"
+    },
+    "4115948": {
+      "id": 4115948,
+      "name": "Jacob Kauwe",
+      "pos": "PK",
+      "number": 91,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4115948.png"
+    },
+    "4154329": {
+      "id": 4154329,
+      "name": "Ty Bryant",
+      "pos": "DB",
+      "number": 14,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4154329.png"
+    },
+    "4187811": {
+      "id": 4187811,
+      "name": "Justin Kattus",
+      "pos": "TE",
+      "number": 44,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4187811.png"
+    },
+    "4229038": {
+      "id": 4229038,
+      "name": "Jordan Lovett",
+      "pos": "DB",
+      "number": 25,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4229038.png"
+    },
+    "4256240": {
+      "id": 4256240,
       "name": "Troy Stellato",
       "pos": "WR",
-      "number": 0
-    }
-  ],
-  "byId": {
+      "number": 0,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4256240.png"
+    },
+    "4270937": {
+      "id": 4270937,
+      "name": "Jaden Smith",
+      "pos": "DB",
+      "number": 24,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4270937.png"
+    },
+    "4308382": {
+      "id": 4308382,
+      "name": "Zach Calzada",
+      "pos": "QB",
+      "number": 5,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4308382.png"
+    },
+    "4384025": {
+      "id": 4384025,
+      "name": "Ja'Mori Maclin",
+      "pos": "WR",
+      "number": 9,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4384025.png"
+    },
+    "4433720": {
+      "id": 4433720,
+      "name": "Bryan Auguste",
+      "pos": "OL",
+      "number": 77,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4433720.png"
+    },
+    "4592350": {
+      "id": 4592350,
+      "name": "Brennen Ward",
+      "pos": "QB",
+      "number": 14,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4592350.png"
+    },
+    "4604655": {
+      "id": 4604655,
+      "name": "Willie Rodriguez",
+      "pos": "TE",
+      "number": 81,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4604655.png"
+    },
+    "4619499": {
+      "id": 4619499,
+      "name": "Nic Smith",
+      "pos": "DL",
+      "number": 55,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4619499.png"
+    },
+    "4685745": {
+      "id": 4685745,
+      "name": "Jamarion Wilcox",
+      "pos": "RB",
+      "number": 10,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4685745.png"
+    },
+    "4702978": {
+      "id": 4702978,
+      "name": "Kyle Mixon",
+      "pos": "OL",
+      "number": 63,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4702978.png"
+    },
+    "4737535": {
+      "id": 4737535,
+      "name": "Javeon Campbell",
+      "pos": "DL",
+      "number": 56,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4737535.png"
+    },
+    "4810236": {
+      "id": 4810236,
+      "name": "Kenyatta Hardge II",
+      "pos": "DL",
+      "number": 98,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4810236.png"
+    },
     "4819224": {
       "id": 4819224,
       "name": "Alex Afari Jr.",
-      "pos": "DB",
-      "number": 3
-    },
-    "9900086": {
-      "id": 9900086,
-      "name": "Andrew Purcell",
-      "pos": "DB",
-      "number": 26
-    },
-    "9900090": {
-      "id": 9900090,
-      "name": "Andrew Weber",
-      "pos": "DB",
-      "number": 36
-    },
-    "9900062": {
-      "id": 9900062,
-      "name": "Cam Dooley",
-      "pos": "DB",
-      "number": 18
-    },
-    "5092262": {
-      "id": 5092262,
-      "name": "DJ Waller Jr.",
-      "pos": "DB",
-      "number": 5
-    },
-    "9900080": {
-      "id": 9900080,
-      "name": "Demarcus Gardner",
-      "pos": "DB",
-      "number": 28
-    },
-    "9900066": {
-      "id": 9900066,
-      "name": "Devon Gusta",
-      "pos": "DB",
-      "number": 38
-    },
-    "9900085": {
-      "id": 9900085,
-      "name": "Dyllon Williams",
-      "pos": "DB",
-      "number": 13
-    },
-    "9900067": {
-      "id": 9900067,
-      "name": "Grant Grayton",
-      "pos": "DB",
-      "number": 30
-    },
-    "9900040": {
-      "id": 9900040,
-      "name": "Jackson Schulz",
-      "pos": "DB",
-      "number": 29
-    },
-    "9900057": {
-      "id": 9900057,
-      "name": "Jaden Smith",
-      "pos": "DB",
-      "number": 24
-    },
-    "9900007": {
-      "id": 9900007,
-      "name": "Jantzen Dunn",
-      "pos": "DB",
-      "number": 10
-    },
-    "9900011": {
-      "id": 9900011,
-      "name": "Jonquis Hardaway",
-      "pos": "DB",
-      "number": 6
-    },
-    "4683458": {
-      "id": 4683458,
-      "name": "Jordan Lovett",
-      "pos": "DB",
-      "number": 25
-    },
-    "9900097": {
-      "id": 9900097,
-      "name": "Jr. Martels Carter",
-      "pos": "DB",
-      "number": -1
-    },
-    "9900019": {
-      "id": 9900019,
-      "name": "Kevis Thomas",
-      "pos": "DB",
-      "number": 19
-    },
-    "9900050": {
-      "id": 9900050,
-      "name": "Martels Carter Jr.",
-      "pos": "DB",
-      "number": 4
-    },
-    "4692799": {
-      "id": 4692799,
-      "name": "Maxwell Hairston",
-      "pos": "DB",
-      "number": 31
-    },
-    "9900023": {
-      "id": 9900023,
-      "name": "Nasir Addison",
-      "pos": "DB",
-      "number": 21
-    },
-    "9900063": {
-      "id": 9900063,
-      "name": "Quay'sheed Scott",
-      "pos": "DB",
-      "number": 12
-    },
-    "9900033": {
-      "id": 9900033,
-      "name": "Terhyon Nichols",
-      "pos": "DB",
-      "number": 20
-    },
-    "9900031": {
-      "id": 9900031,
-      "name": "Ty Bryant",
-      "pos": "DB",
-      "number": 14
-    },
-    "9900055": {
-      "id": 9900055,
-      "name": "Lorenzo Cowan",
-      "pos": "DE",
-      "number": 34
-    },
-    "9900026": {
-      "id": 9900026,
-      "name": "Austin Ramsey",
-      "pos": "DL",
-      "number": 76
-    },
-    "9900035": {
-      "id": 9900035,
-      "name": "Brian Robinson",
-      "pos": "DL",
-      "number": 23
-    },
-    "9900077": {
-      "id": 9900077,
-      "name": "Cedric Works",
-      "pos": "DL",
-      "number": 15
-    },
-    "9900009": {
-      "id": 9900009,
-      "name": "David Gusta",
-      "pos": "DL",
-      "number": 60
-    },
-    "4893283": {
-      "id": 4893283,
-      "name": "Deone Walker",
-      "pos": "DL",
-      "number": 0
-    },
-    "9900072": {
-      "id": 9900072,
-      "name": "Jackson Bunn",
-      "pos": "DL",
-      "number": 64
-    },
-    "9900025": {
-      "id": 9900025,
-      "name": "Jaden Williams",
-      "pos": "DL",
-      "number": 91
-    },
-    "9900083": {
-      "id": 9900083,
-      "name": "Javeon Campbell",
-      "pos": "DL",
-      "number": 56
-    },
-    "9900037": {
-      "id": 9900037,
-      "name": "Jerod Smith II",
-      "pos": "DL",
-      "number": 95
-    },
-    "4430666": {
-      "id": 4430666,
-      "name": "Josaih Hayes",
-      "pos": "DL",
-      "number": 99
-    },
-    "9900008": {
-      "id": 9900008,
-      "name": "Kahlil Saunders",
-      "pos": "DL",
-      "number": 92
-    },
-    "9900051": {
-      "id": 9900051,
-      "name": "Kalen Edwards",
-      "pos": "DL",
-      "number": 93
-    },
-    "9900092": {
-      "id": 9900092,
-      "name": "Kenyatta Hardge II",
-      "pos": "DL",
-      "number": 98
-    },
-    "9900044": {
-      "id": 9900044,
-      "name": "Mi'Quise Humphrey-Grace",
-      "pos": "DL",
-      "number": 90
-    },
-    "9900096": {
-      "id": 9900096,
-      "name": "Nic Smith",
-      "pos": "DL",
-      "number": 55
-    },
-    "9900032": {
-      "id": 9900032,
-      "name": "Tavion Gadson",
-      "pos": "DL",
-      "number": 94
-    },
-    "9900056": {
-      "id": 9900056,
-      "name": "Antwan Smith",
       "pos": "LB",
-      "number": 44
+      "number": 3,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4819224.png"
     },
-    "4430670": {
-      "id": 4430670,
-      "name": "Daveren Rayner",
-      "pos": "LB",
-      "number": 13
-    },
-    "9900058": {
-      "id": 9900058,
-      "name": "Devin Smith",
-      "pos": "LB",
-      "number": 32
-    },
-    "9900018": {
-      "id": 9900018,
-      "name": "Grant Godfrey",
-      "pos": "LB",
-      "number": 22
-    },
-    "9900071": {
-      "id": 9900071,
-      "name": "Hayden Dawahare",
-      "pos": "LB",
-      "number": 53
-    },
-    "9900036": {
-      "id": 9900036,
-      "name": "Jacob Smith",
-      "pos": "LB",
-      "number": 16
-    },
-    "9900024": {
-      "id": 9900024,
-      "name": "Kam Olds",
-      "pos": "LB",
-      "number": 1
-    },
-    "9900095": {
-      "id": 9900095,
+    "4822691": {
+      "id": 4822691,
       "name": "Kris Thompson",
       "pos": "LB",
-      "number": 45
+      "number": 45,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4822691.png"
     },
-    "4431688": {
-      "id": 4431688,
-      "name": "Landyn Watson",
-      "pos": "LB",
-      "number": 9
-    },
-    "9900078": {
-      "id": 9900078,
-      "name": "Quintavion Norman",
-      "pos": "LB",
-      "number": 31
-    },
-    "9900091": {
-      "id": 9900091,
-      "name": "Rushaune Vilane",
-      "pos": "LB",
-      "number": 46
-    },
-    "9900045": {
-      "id": 9900045,
-      "name": "Sam Greene",
-      "pos": "LB",
-      "number": 2
-    },
-    "9900038": {
-      "id": 9900038,
-      "name": "Steven Soles Jr.",
-      "pos": "LB",
-      "number": 35
-    },
-    "4692450": {
-      "id": 4692450,
-      "name": "Trevin Wallace",
-      "pos": "LB",
-      "number": 32
-    },
-    "9900102": {
-      "id": 9900102,
-      "name": "Wyatt Phyle",
-      "pos": "LB",
-      "number": 49
-    },
-    "9900020": {
-      "id": 9900020,
-      "name": "Alex McLaughlin",
-      "pos": "LS",
-      "number": 42
-    },
-    "9900043": {
-      "id": 9900043,
-      "name": "David LaGanga",
-      "pos": "LS",
-      "number": 59
-    },
-    "9900048": {
-      "id": 9900048,
-      "name": "Aba Selm",
-      "pos": "OL",
-      "number": 53
-    },
-    "9900004": {
-      "id": 9900004,
-      "name": "Alex Wollschlaeger",
-      "pos": "OL",
-      "number": 50
-    },
-    "9900099": {
-      "id": 9900099,
-      "name": "Alexander DiMartino",
-      "pos": "OL",
-      "number": 68
-    },
-    "9900103": {
-      "id": 9900103,
-      "name": "Brady Pullins",
-      "pos": "OL",
-      "number": 67
-    },
-    "9900079": {
-      "id": 9900079,
-      "name": "Bryan Auguste",
-      "pos": "OL",
-      "number": 77
-    },
-    "9900064": {
-      "id": 9900064,
+    "4846066": {
+      "id": 4846066,
       "name": "Cameron Jones",
       "pos": "OL",
-      "number": 78
+      "number": 78,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4846066.png"
     },
-    "9900084": {
-      "id": 9900084,
+    "4846728": {
+      "id": 4846728,
+      "name": "Landyn Watson",
+      "pos": "LB",
+      "number": 9,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4846728.png"
+    },
+    "4886950": {
+      "id": 4886950,
+      "name": "Tovani Mizell",
+      "pos": "RB",
+      "number": 28,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4886950.png"
+    },
+    "4890709": {
+      "id": 4890709,
+      "name": "Kam Olds",
+      "pos": "LB",
+      "number": 1,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4890709.png"
+    },
+    "4955431": {
+      "id": 4955431,
       "name": "Darrin Strey",
       "pos": "OL",
-      "number": 69
+      "number": 69,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4955431.png"
     },
-    "9900017": {
-      "id": 9900017,
-      "name": "Evan Wibberley",
-      "pos": "OL",
-      "number": 58
+    "4960305": {
+      "id": 4960305,
+      "name": "Kendrick Law",
+      "pos": "WR",
+      "number": 1,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4960305.png"
     },
-    "9900047": {
-      "id": 9900047,
-      "name": "Hayes Johnson",
-      "pos": "OL",
-      "number": 72
+    "4997283": {
+      "id": 4997283,
+      "name": "Sam Greene",
+      "pos": "LB",
+      "number": 2,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4997283.png"
     },
-    "9900005": {
-      "id": 9900005,
-      "name": "Jager Burton",
-      "pos": "OL",
-      "number": 62
-    },
-    "9900016": {
-      "id": 9900016,
-      "name": "Jalen Farmer",
-      "pos": "OL",
-      "number": 52
-    },
-    "9900093": {
-      "id": 9900093,
-      "name": "Jason Ekperuoh",
-      "pos": "OL",
-      "number": 61
-    },
-    "9900075": {
-      "id": 9900075,
-      "name": "Jayden Clark",
-      "pos": "OL",
-      "number": 79
-    },
-    "9900060": {
-      "id": 9900060,
+    "5021660": {
+      "id": 5021660,
       "name": "Jermiel Atkins",
       "pos": "OL",
-      "number": 74
+      "number": 74,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5021660.png"
     },
-    "9900001": {
-      "id": 9900001,
-      "name": "Joshua Braun",
+    "5073471": {
+      "id": 5073471,
+      "name": "Evan Wibberley",
       "pos": "OL",
-      "number": 75
+      "number": 58,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5073471.png"
     },
-    "9900089": {
-      "id": 9900089,
-      "name": "Kyle Mixon",
-      "pos": "OL",
-      "number": 63
-    },
-    "9900028": {
-      "id": 9900028,
-      "name": "Malachi Wood",
-      "pos": "OL",
-      "number": 71
-    },
-    "9900027": {
-      "id": 9900027,
-      "name": "Rob Fogler",
-      "pos": "OL",
-      "number": 70
-    },
-    "9900021": {
-      "id": 9900021,
-      "name": "Shiyazh Pete",
-      "pos": "OL",
-      "number": 73
-    },
-    "9900073": {
-      "id": 9900073,
-      "name": "Tino Merlo",
-      "pos": "OL",
-      "number": 66
-    },
-    "9900022": {
-      "id": 9900022,
-      "name": "Aidan Laros",
-      "pos": "P",
-      "number": 48
-    },
-    "9900010": {
-      "id": 9900010,
-      "name": "Wilson Berry",
-      "pos": "P",
-      "number": 93
-    },
-    "9900059": {
-      "id": 9900059,
-      "name": "Jacob Kauwe",
-      "pos": "PK",
-      "number": 91
-    },
-    "9900065": {
-      "id": 9900065,
-      "name": "Zach Schreiner",
-      "pos": "PK",
-      "number": 97
-    },
-    "9900002": {
-      "id": 9900002,
-      "name": "Beau Allen",
-      "pos": "QB",
-      "number": 11
-    },
-    "9900074": {
-      "id": 9900074,
-      "name": "Brennen Ward",
-      "pos": "QB",
-      "number": 14
+    "5087549": {
+      "id": 5087549,
+      "name": "Martels Carter Jr.",
+      "pos": "DB",
+      "number": 4,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5087549.png"
     },
     "5141378": {
       "id": 5141378,
       "name": "Cutter Boley",
       "pos": "QB",
-      "number": 8
+      "number": 8,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5141378.png"
     },
-    "9900054": {
-      "id": 9900054,
-      "name": "Stone Saunders",
-      "pos": "QB",
-      "number": 12
+    "5163052": {
+      "id": 5163052,
+      "name": "Cedric Works",
+      "pos": "DL",
+      "number": 15,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5163052.png"
     },
-    "4426847": {
-      "id": 4426847,
-      "name": "Zach Calzada",
-      "pos": "QB",
-      "number": 5
-    },
-    "9900069": {
-      "id": 9900069,
-      "name": "Chy Rivers",
-      "pos": "RB",
-      "number": 36
-    },
-    "9900029": {
-      "id": 9900029,
-      "name": "Dante Dowdell",
-      "pos": "RB",
-      "number": 2
-    },
-    "9900030": {
-      "id": 9900030,
-      "name": "Jamarion Wilcox",
-      "pos": "RB",
-      "number": 10
-    },
-    "9900098": {
-      "id": 9900098,
-      "name": "James Dalrymple",
-      "pos": "RB",
-      "number": 35
-    },
-    "9900046": {
-      "id": 9900046,
-      "name": "Jason Patterson",
-      "pos": "RB",
-      "number": 26
-    },
-    "4686468": {
-      "id": 4686468,
-      "name": "Seth McGowan",
-      "pos": "RB",
-      "number": 3
-    },
-    "9900034": {
-      "id": 9900034,
-      "name": "Tovani Mizell",
-      "pos": "RB",
-      "number": 28
-    },
-    "9900013": {
-      "id": 9900013,
-      "name": "Elijah Brown",
-      "pos": "TE",
-      "number": 85
-    },
-    "9900015": {
-      "id": 9900015,
-      "name": "Henry Boyer",
-      "pos": "TE",
-      "number": 87
-    },
-    "9900042": {
-      "id": 9900042,
-      "name": "Jack Monday",
-      "pos": "TE",
-      "number": 83
-    },
-    "9900014": {
-      "id": 9900014,
-      "name": "Josh Kattus",
-      "pos": "TE",
-      "number": 84
-    },
-    "9900088": {
-      "id": 9900088,
-      "name": "Justin Kattus",
-      "pos": "TE",
-      "number": 44
-    },
-    "9900082": {
-      "id": 9900082,
-      "name": "Mikkel Skinner",
-      "pos": "TE",
-      "number": 18
-    },
-    "9900049": {
-      "id": 9900049,
-      "name": "Willie Rodriguez",
-      "pos": "TE",
-      "number": 81
-    },
-    "4702365": {
-      "id": 4702365,
-      "name": "Anthony Brown-Stephens",
-      "pos": "WR",
-      "number": 2
-    },
-    "9900068": {
-      "id": 9900068,
-      "name": "Ashton Cozart",
-      "pos": "WR",
-      "number": 80
-    },
-    "9900100": {
-      "id": 9900100,
-      "name": "Aumad Edwards",
-      "pos": "WR",
-      "number": 40
-    },
-    "4702366": {
-      "id": 4702366,
-      "name": "Barion Brown",
-      "pos": "WR",
-      "number": 7
-    },
-    "9900053": {
-      "id": 9900053,
-      "name": "Cameron Miller",
-      "pos": "WR",
-      "number": 22
-    },
-    "9900041": {
-      "id": 9900041,
-      "name": "Cole Lanter",
-      "pos": "WR",
-      "number": 86
-    },
-    "9900094": {
-      "id": 9900094,
-      "name": "DJ Miller",
-      "pos": "WR",
-      "number": 7
-    },
-    "4702367": {
-      "id": 4702367,
-      "name": "Dane Key",
-      "pos": "WR",
-      "number": 6
-    },
-    "9900039": {
-      "id": 9900039,
-      "name": "David Washington Jr.",
-      "pos": "WR",
-      "number": 82
-    },
-    "9900012": {
-      "id": 9900012,
-      "name": "Fred Farrier II",
-      "pos": "WR",
-      "number": 13
-    },
-    "9900052": {
-      "id": 9900052,
-      "name": "Hardley Gilmore IV",
-      "pos": "WR",
-      "number": 17
-    },
-    "9900000": {
-      "id": 9900000,
-      "name": "J.J. Hester",
-      "pos": "WR",
-      "number": 4
-    },
-    "9900003": {
-      "id": 9900003,
-      "name": "Ja'Mori Maclin",
-      "pos": "WR",
-      "number": 9
-    },
-    "4685441": {
-      "id": 4685441,
-      "name": "Kendrick Law",
-      "pos": "WR",
-      "number": 1
-    },
-    "9900076": {
-      "id": 9900076,
-      "name": "Montavin Quisenberry",
-      "pos": "WR",
-      "number": 19
-    },
-    "9900081": {
-      "id": 9900081,
+    "5185645": {
+      "id": 5185645,
       "name": "Preston Bowman",
       "pos": "WR",
-      "number": 89
+      "number": 89,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5185645.png"
     },
-    "9900061": {
-      "id": 9900061,
-      "name": "Quintin Simmons Jr.",
+    "5338943": {
+      "id": 5338943,
+      "name": "Steven Soles Jr.",
+      "pos": "LB",
+      "number": 35,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5338943.png"
+    },
+    "5400389": {
+      "id": 5400389,
+      "name": "Elijah Brown",
+      "pos": "TE",
+      "number": 85,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5400389.png"
+    },
+    "5445833": {
+      "id": 5445833,
+      "name": "Tavion Gadson",
+      "pos": "DL",
+      "number": 94,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5445833.png"
+    },
+    "5478999": {
+      "id": 5478999,
+      "name": "DJ Waller Jr.",
+      "pos": "DB",
+      "number": 5,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5478999.png"
+    },
+    "5502074": {
+      "id": 5502074,
+      "name": "Jaden Williams",
+      "pos": "DL",
+      "number": 91,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5502074.png"
+    },
+    "5544845": {
+      "id": 5544845,
+      "name": "David LaGanga",
+      "pos": "LS",
+      "number": 59,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5544845.png"
+    },
+    "5597424": {
+      "id": 5597424,
+      "name": "Joshua Braun",
+      "pos": "OL",
+      "number": 75,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5597424.png"
+    },
+    "5723477": {
+      "id": 5723477,
+      "name": "Hayes Johnson",
+      "pos": "OL",
+      "number": 72,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5723477.png"
+    },
+    "5748146": {
+      "id": 5748146,
+      "name": "Malachi Wood",
+      "pos": "OL",
+      "number": 71,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5748146.png"
+    },
+    "5816684": {
+      "id": 5816684,
+      "name": "Kahlil Saunders",
+      "pos": "DL",
+      "number": 92,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5816684.png"
+    },
+    "5849986": {
+      "id": 5849986,
+      "name": "Jacob Smith",
+      "pos": "LB",
+      "number": 16,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5849986.png"
+    },
+    "5862905": {
+      "id": 5862905,
+      "name": "Hardley Gilmore IV",
       "pos": "WR",
-      "number": 88
+      "number": 17,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5862905.png"
     },
-    "9900087": {
-      "id": 9900087,
-      "name": "Rico Crowder",
+    "5891258": {
+      "id": 5891258,
+      "name": "Josh Kattus",
+      "pos": "TE",
+      "number": 84,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5891258.png"
+    },
+    "5942652": {
+      "id": 5942652,
+      "name": "Dyllon Williams",
+      "pos": "DB",
+      "number": 13,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5942652.png"
+    },
+    "5981062": {
+      "id": 5981062,
+      "name": "Devon Gusta",
+      "pos": "DB",
+      "number": 38,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/5981062.png"
+    },
+    "6069937": {
+      "id": 6069937,
+      "name": "Jack Monday",
+      "pos": "TE",
+      "number": 83,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6069937.png"
+    },
+    "6206402": {
+      "id": 6206402,
+      "name": "Jonquis Hardaway",
+      "pos": "DB",
+      "number": 6,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6206402.png"
+    },
+    "6257466": {
+      "id": 6257466,
+      "name": "Fred Farrier II",
       "pos": "WR",
-      "number": 33
+      "number": 13,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6257466.png"
     },
-    "9900101": {
-      "id": 9900101,
-      "name": "Saxton Howard",
+    "6258478": {
+      "id": 6258478,
+      "name": "Wilson Berry",
+      "pos": "P",
+      "number": 93,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6258478.png"
+    },
+    "6375831": {
+      "id": 6375831,
+      "name": "Kalen Edwards",
+      "pos": "DL",
+      "number": 93,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6375831.png"
+    },
+    "6426125": {
+      "id": 6426125,
+      "name": "Mi'Quise Humphrey-Grace",
+      "pos": "DL",
+      "number": 90,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6426125.png"
+    },
+    "6439815": {
+      "id": 6439815,
+      "name": "Terhyon Nichols",
+      "pos": "DB",
+      "number": 20,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6439815.png"
+    },
+    "6489756": {
+      "id": 6489756,
+      "name": "Shiyazh Pete",
+      "pos": "OL",
+      "number": 73,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6489756.png"
+    },
+    "6530181": {
+      "id": 6530181,
+      "name": "Lorenzo Cowan",
+      "pos": "DE",
+      "number": 34,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6530181.png"
+    },
+    "6530225": {
+      "id": 6530225,
+      "name": "Jr. Martels Carter",
+      "pos": "DB",
+      "number": -1,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6530225.png"
+    },
+    "6550315": {
+      "id": 6550315,
+      "name": "Jantzen Dunn",
+      "pos": "DB",
+      "number": 10,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6550315.png"
+    },
+    "6573910": {
+      "id": 6573910,
+      "name": "Rob Fogler",
+      "pos": "OL",
+      "number": 70,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6573910.png"
+    },
+    "6617724": {
+      "id": 6617724,
+      "name": "Andrew Purcell",
+      "pos": "DB",
+      "number": 26,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6617724.png"
+    },
+    "6618564": {
+      "id": 6618564,
+      "name": "Stone Saunders",
+      "pos": "QB",
+      "number": 12,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6618564.png"
+    },
+    "6652014": {
+      "id": 6652014,
+      "name": "Cameron Miller",
       "pos": "WR",
-      "number": 39
+      "number": 22,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6652014.png"
     },
-    "9900070": {
-      "id": 9900070,
+    "6687202": {
+      "id": 6687202,
+      "name": "David Washington Jr.",
+      "pos": "WR",
+      "number": 82,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6687202.png"
+    },
+    "6719441": {
+      "id": 6719441,
+      "name": "Jerod Smith II",
+      "pos": "DL",
+      "number": 95,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6719441.png"
+    },
+    "6723091": {
+      "id": 6723091,
+      "name": "Aba Selm",
+      "pos": "OL",
+      "number": 53,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6723091.png"
+    },
+    "6724736": {
+      "id": 6724736,
+      "name": "Jackson Bunn",
+      "pos": "DL",
+      "number": 64,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6724736.png"
+    },
+    "6868834": {
+      "id": 6868834,
       "name": "Spencer Leadbetter",
       "pos": "WR",
-      "number": 37
+      "number": 37,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6868834.png"
     },
-    "9900006": {
-      "id": 9900006,
-      "name": "Troy Stellato",
+    "6871092": {
+      "id": 6871092,
+      "name": "Aumad Edwards",
       "pos": "WR",
-      "number": 0
+      "number": 40,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6871092.png"
+    },
+    "6972742": {
+      "id": 6972742,
+      "name": "David Gusta",
+      "pos": "DL",
+      "number": 60,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6972742.png"
+    },
+    "6979820": {
+      "id": 6979820,
+      "name": "Seth McGowan",
+      "pos": "RB",
+      "number": 3,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/6979820.png"
+    },
+    "7228354": {
+      "id": 7228354,
+      "name": "Alex Wollschlaeger",
+      "pos": "OL",
+      "number": 50,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/7228354.png"
+    },
+    "7339418": {
+      "id": 7339418,
+      "name": "Saxton Howard",
+      "pos": "WR",
+      "number": 39,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/7339418.png"
+    },
+    "7365025": {
+      "id": 7365025,
+      "name": "Montavin Quisenberry",
+      "pos": "WR",
+      "number": 19,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/7365025.png"
+    },
+    "7451009": {
+      "id": 7451009,
+      "name": "Quintavion Norman",
+      "pos": "LB",
+      "number": 31,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/7451009.png"
+    },
+    "7542200": {
+      "id": 7542200,
+      "name": "Ashton Cozart",
+      "pos": "WR",
+      "number": 80,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/7542200.png"
+    },
+    "7586707": {
+      "id": 7586707,
+      "name": "Demarcus Gardner",
+      "pos": "DB",
+      "number": 28,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/7586707.png"
+    },
+    "7637664": {
+      "id": 7637664,
+      "name": "Josaih Hayes",
+      "pos": "DL",
+      "number": 97,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/7637664.png"
+    },
+    "7660098": {
+      "id": 7660098,
+      "name": "Daveren Rayner",
+      "pos": "LB",
+      "number": 7,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/7660098.png"
+    },
+    "7672513": {
+      "id": 7672513,
+      "name": "Mikkel Skinner",
+      "pos": "TE",
+      "number": 18,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/7672513.png"
+    },
+    "7892429": {
+      "id": 7892429,
+      "name": "Cam Dooley",
+      "pos": "DB",
+      "number": 18,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/7892429.png"
+    },
+    "7914435": {
+      "id": 7914435,
+      "name": "Cole Lanter",
+      "pos": "WR",
+      "number": 86,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/7914435.png"
+    },
+    "8005277": {
+      "id": 8005277,
+      "name": "Rico Crowder",
+      "pos": "WR",
+      "number": 33,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/8005277.png"
+    },
+    "8041647": {
+      "id": 8041647,
+      "name": "Austin Ramsey",
+      "pos": "DL",
+      "number": 76,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/8041647.png"
+    },
+    "8078556": {
+      "id": 8078556,
+      "name": "Jayden Clark",
+      "pos": "OL",
+      "number": 79,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/8078556.png"
+    },
+    "8117203": {
+      "id": 8117203,
+      "name": "Nasir Addison",
+      "pos": "DB",
+      "number": 21,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/8117203.png"
+    },
+    "8132008": {
+      "id": 8132008,
+      "name": "Alex McLaughlin",
+      "pos": "LS",
+      "number": 42,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/8132008.png"
+    },
+    "8273967": {
+      "id": 8273967,
+      "name": "Dante Dowdell",
+      "pos": "RB",
+      "number": 2,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/8273967.png"
+    },
+    "8280665": {
+      "id": 8280665,
+      "name": "Wyatt Phyle",
+      "pos": "LB",
+      "number": 49,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/8280665.png"
+    },
+    "8446338": {
+      "id": 8446338,
+      "name": "Brian Robinson",
+      "pos": "DL",
+      "number": 23,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/8446338.png"
+    },
+    "8551479": {
+      "id": 8551479,
+      "name": "Jager Burton",
+      "pos": "OL",
+      "number": 62,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/8551479.png"
+    },
+    "8580867": {
+      "id": 8580867,
+      "name": "J.J. Hester",
+      "pos": "WR",
+      "number": 4,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/8580867.png"
+    },
+    "8662908": {
+      "id": 8662908,
+      "name": "Jason Ekperuoh",
+      "pos": "OL",
+      "number": 61,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/8662908.png"
+    },
+    "8685464": {
+      "id": 8685464,
+      "name": "Jackson Schulz",
+      "pos": "DB",
+      "number": 29,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/8685464.png"
+    },
+    "8716357": {
+      "id": 8716357,
+      "name": "Jalen Farmer",
+      "pos": "OL",
+      "number": 52,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/8716357.png"
+    },
+    "8735562": {
+      "id": 8735562,
+      "name": "Aidan Laros",
+      "pos": "P",
+      "number": 48,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/8735562.png"
+    },
+    "8815905": {
+      "id": 8815905,
+      "name": "Beau Allen",
+      "pos": "QB",
+      "number": 11,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/8815905.png"
+    },
+    "8824076": {
+      "id": 8824076,
+      "name": "Grant Grayton",
+      "pos": "DB",
+      "number": 30,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/8824076.png"
+    },
+    "8855261": {
+      "id": 8855261,
+      "name": "Devin Smith",
+      "pos": "LB",
+      "number": 32,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/8855261.png"
+    },
+    "8969811": {
+      "id": 8969811,
+      "name": "Chy Rivers",
+      "pos": "RB",
+      "number": 36,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/8969811.png"
+    },
+    "8981120": {
+      "id": 8981120,
+      "name": "Antwan Smith",
+      "pos": "LB",
+      "number": 44,
+      "class": null,
+      "height": null,
+      "weight": null,
+      "profile_url": null,
+      "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/8981120.png"
     }
   },
   "byName": {
-    "alex afari jr.": {
-      "id": 4819224,
-      "name": "Alex Afari Jr.",
-      "pos": "DB",
-      "number": 3
-    },
-    "andrew purcell": {
-      "id": 9900086,
-      "name": "Andrew Purcell",
-      "pos": "DB",
-      "number": 26
-    },
-    "andrew weber": {
-      "id": 9900090,
-      "name": "Andrew Weber",
-      "pos": "DB",
-      "number": 36
-    },
-    "cam dooley": {
-      "id": 9900062,
-      "name": "Cam Dooley",
-      "pos": "DB",
-      "number": 18
-    },
-    "dj waller jr.": {
-      "id": 5092262,
-      "name": "DJ Waller Jr.",
-      "pos": "DB",
-      "number": 5
-    },
-    "demarcus gardner": {
-      "id": 9900080,
-      "name": "Demarcus Gardner",
-      "pos": "DB",
-      "number": 28
-    },
-    "devon gusta": {
-      "id": 9900066,
-      "name": "Devon Gusta",
-      "pos": "DB",
-      "number": 38
-    },
-    "dyllon williams": {
-      "id": 9900085,
-      "name": "Dyllon Williams",
-      "pos": "DB",
-      "number": 13
-    },
-    "grant grayton": {
-      "id": 9900067,
-      "name": "Grant Grayton",
-      "pos": "DB",
-      "number": 30
-    },
-    "jackson schulz": {
-      "id": 9900040,
-      "name": "Jackson Schulz",
-      "pos": "DB",
-      "number": 29
-    },
-    "jaden smith": {
-      "id": 9900057,
-      "name": "Jaden Smith",
-      "pos": "DB",
-      "number": 24
-    },
-    "jantzen dunn": {
-      "id": 9900007,
-      "name": "Jantzen Dunn",
-      "pos": "DB",
-      "number": 10
-    },
-    "jonquis hardaway": {
-      "id": 9900011,
-      "name": "Jonquis Hardaway",
-      "pos": "DB",
-      "number": 6
-    },
-    "jordan lovett": {
-      "id": 4683458,
-      "name": "Jordan Lovett",
-      "pos": "DB",
-      "number": 25
-    },
-    "jr. martels carter": {
-      "id": 9900097,
-      "name": "Jr. Martels Carter",
-      "pos": "DB",
-      "number": -1
-    },
-    "kevis thomas": {
-      "id": 9900019,
-      "name": "Kevis Thomas",
-      "pos": "DB",
-      "number": 19
-    },
-    "martels carter jr.": {
-      "id": 9900050,
-      "name": "Martels Carter Jr.",
-      "pos": "DB",
-      "number": 4
-    },
-    "maxwell hairston": {
-      "id": 4692799,
-      "name": "Maxwell Hairston",
-      "pos": "DB",
-      "number": 31
-    },
-    "nasir addison": {
-      "id": 9900023,
-      "name": "Nasir Addison",
-      "pos": "DB",
-      "number": 21
-    },
-    "quay'sheed scott": {
-      "id": 9900063,
-      "name": "Quay'sheed Scott",
-      "pos": "DB",
-      "number": 12
-    },
-    "terhyon nichols": {
-      "id": 9900033,
-      "name": "Terhyon Nichols",
-      "pos": "DB",
-      "number": 20
-    },
-    "ty bryant": {
-      "id": 9900031,
-      "name": "Ty Bryant",
-      "pos": "DB",
-      "number": 14
-    },
-    "lorenzo cowan": {
-      "id": 9900055,
-      "name": "Lorenzo Cowan",
-      "pos": "DE",
-      "number": 34
-    },
-    "austin ramsey": {
-      "id": 9900026,
-      "name": "Austin Ramsey",
-      "pos": "DL",
-      "number": 76
-    },
-    "brian robinson": {
-      "id": 9900035,
-      "name": "Brian Robinson",
-      "pos": "DL",
-      "number": 23
-    },
-    "cedric works": {
-      "id": 9900077,
-      "name": "Cedric Works",
-      "pos": "DL",
-      "number": 15
-    },
-    "david gusta": {
-      "id": 9900009,
-      "name": "David Gusta",
-      "pos": "DL",
-      "number": 60
-    },
-    "deone walker": {
-      "id": 4893283,
-      "name": "Deone Walker",
-      "pos": "DL",
-      "number": 0
-    },
-    "jackson bunn": {
-      "id": 9900072,
-      "name": "Jackson Bunn",
-      "pos": "DL",
-      "number": 64
-    },
-    "jaden williams": {
-      "id": 9900025,
-      "name": "Jaden Williams",
-      "pos": "DL",
-      "number": 91
-    },
-    "javeon campbell": {
-      "id": 9900083,
-      "name": "Javeon Campbell",
-      "pos": "DL",
-      "number": 56
-    },
-    "jerod smith ii": {
-      "id": 9900037,
-      "name": "Jerod Smith II",
-      "pos": "DL",
-      "number": 95
-    },
-    "josaih hayes": {
-      "id": 4430666,
-      "name": "Josaih Hayes",
-      "pos": "DL",
-      "number": 99
-    },
-    "kahlil saunders": {
-      "id": 9900008,
-      "name": "Kahlil Saunders",
-      "pos": "DL",
-      "number": 92
-    },
-    "kalen edwards": {
-      "id": 9900051,
-      "name": "Kalen Edwards",
-      "pos": "DL",
-      "number": 93
-    },
-    "kenyatta hardge ii": {
-      "id": 9900092,
-      "name": "Kenyatta Hardge II",
-      "pos": "DL",
-      "number": 98
-    },
-    "mi'quise humphrey-grace": {
-      "id": 9900044,
-      "name": "Mi'Quise Humphrey-Grace",
-      "pos": "DL",
-      "number": 90
-    },
-    "nic smith": {
-      "id": 9900096,
-      "name": "Nic Smith",
-      "pos": "DL",
-      "number": 55
-    },
-    "tavion gadson": {
-      "id": 9900032,
-      "name": "Tavion Gadson",
-      "pos": "DL",
-      "number": 94
-    },
-    "antwan smith": {
-      "id": 9900056,
-      "name": "Antwan Smith",
-      "pos": "LB",
-      "number": 44
-    },
-    "daveren rayner": {
-      "id": 4430670,
-      "name": "Daveren Rayner",
-      "pos": "LB",
-      "number": 13
-    },
-    "devin smith": {
-      "id": 9900058,
-      "name": "Devin Smith",
-      "pos": "LB",
-      "number": 32
-    },
-    "grant godfrey": {
-      "id": 9900018,
-      "name": "Grant Godfrey",
-      "pos": "LB",
-      "number": 22
-    },
-    "hayden dawahare": {
-      "id": 9900071,
-      "name": "Hayden Dawahare",
-      "pos": "LB",
-      "number": 53
-    },
-    "jacob smith": {
-      "id": 9900036,
-      "name": "Jacob Smith",
-      "pos": "LB",
-      "number": 16
-    },
-    "kam olds": {
-      "id": 9900024,
-      "name": "Kam Olds",
-      "pos": "LB",
-      "number": 1
-    },
-    "kris thompson": {
-      "id": 9900095,
-      "name": "Kris Thompson",
-      "pos": "LB",
-      "number": 45
-    },
-    "landyn watson": {
-      "id": 4431688,
-      "name": "Landyn Watson",
-      "pos": "LB",
-      "number": 9
-    },
-    "quintavion norman": {
-      "id": 9900078,
-      "name": "Quintavion Norman",
-      "pos": "LB",
-      "number": 31
-    },
-    "rushaune vilane": {
-      "id": 9900091,
-      "name": "Rushaune Vilane",
-      "pos": "LB",
-      "number": 46
-    },
-    "sam greene": {
-      "id": 9900045,
-      "name": "Sam Greene",
-      "pos": "LB",
-      "number": 2
-    },
-    "steven soles jr.": {
-      "id": 9900038,
-      "name": "Steven Soles Jr.",
-      "pos": "LB",
-      "number": 35
-    },
-    "trevin wallace": {
-      "id": 4692450,
-      "name": "Trevin Wallace",
-      "pos": "LB",
-      "number": 32
-    },
-    "wyatt phyle": {
-      "id": 9900102,
-      "name": "Wyatt Phyle",
-      "pos": "LB",
-      "number": 49
-    },
-    "alex mclaughlin": {
-      "id": 9900020,
-      "name": "Alex McLaughlin",
-      "pos": "LS",
-      "number": 42
-    },
-    "david laganga": {
-      "id": 9900043,
-      "name": "David LaGanga",
-      "pos": "LS",
-      "number": 59
-    },
-    "aba selm": {
-      "id": 9900048,
-      "name": "Aba Selm",
-      "pos": "OL",
-      "number": 53
-    },
-    "alex wollschlaeger": {
-      "id": 9900004,
-      "name": "Alex Wollschlaeger",
-      "pos": "OL",
-      "number": 50
-    },
-    "alexander dimartino": {
-      "id": 9900099,
-      "name": "Alexander DiMartino",
-      "pos": "OL",
-      "number": 68
-    },
-    "brady pullins": {
-      "id": 9900103,
-      "name": "Brady Pullins",
-      "pos": "OL",
-      "number": 67
-    },
-    "bryan auguste": {
-      "id": 9900079,
-      "name": "Bryan Auguste",
-      "pos": "OL",
-      "number": 77
-    },
-    "cameron jones": {
-      "id": 9900064,
-      "name": "Cameron Jones",
-      "pos": "OL",
-      "number": 78
-    },
-    "darrin strey": {
-      "id": 9900084,
-      "name": "Darrin Strey",
-      "pos": "OL",
-      "number": 69
-    },
-    "evan wibberley": {
-      "id": 9900017,
-      "name": "Evan Wibberley",
-      "pos": "OL",
-      "number": 58
-    },
-    "hayes johnson": {
-      "id": 9900047,
-      "name": "Hayes Johnson",
-      "pos": "OL",
-      "number": 72
-    },
-    "jager burton": {
-      "id": 9900005,
-      "name": "Jager Burton",
-      "pos": "OL",
-      "number": 62
-    },
-    "jalen farmer": {
-      "id": 9900016,
-      "name": "Jalen Farmer",
-      "pos": "OL",
-      "number": 52
-    },
-    "jason ekperuoh": {
-      "id": 9900093,
-      "name": "Jason Ekperuoh",
-      "pos": "OL",
-      "number": 61
-    },
-    "jayden clark": {
-      "id": 9900075,
-      "name": "Jayden Clark",
-      "pos": "OL",
-      "number": 79
-    },
-    "jermiel atkins": {
-      "id": 9900060,
-      "name": "Jermiel Atkins",
-      "pos": "OL",
-      "number": 74
-    },
-    "joshua braun": {
-      "id": 9900001,
-      "name": "Joshua Braun",
-      "pos": "OL",
-      "number": 75
-    },
-    "kyle mixon": {
-      "id": 9900089,
-      "name": "Kyle Mixon",
-      "pos": "OL",
-      "number": 63
-    },
-    "malachi wood": {
-      "id": 9900028,
-      "name": "Malachi Wood",
-      "pos": "OL",
-      "number": 71
-    },
-    "rob fogler": {
-      "id": 9900027,
-      "name": "Rob Fogler",
-      "pos": "OL",
-      "number": 70
-    },
-    "shiyazh pete": {
-      "id": 9900021,
-      "name": "Shiyazh Pete",
-      "pos": "OL",
-      "number": 73
-    },
-    "tino merlo": {
-      "id": 9900073,
-      "name": "Tino Merlo",
-      "pos": "OL",
-      "number": 66
-    },
-    "aidan laros": {
-      "id": 9900022,
-      "name": "Aidan Laros",
-      "pos": "P",
-      "number": 48
-    },
-    "wilson berry": {
-      "id": 9900010,
-      "name": "Wilson Berry",
-      "pos": "P",
-      "number": 93
-    },
-    "jacob kauwe": {
-      "id": 9900059,
-      "name": "Jacob Kauwe",
-      "pos": "PK",
-      "number": 91
-    },
-    "zach schreiner": {
-      "id": 9900065,
-      "name": "Zach Schreiner",
-      "pos": "PK",
-      "number": 97
-    },
-    "beau allen": {
-      "id": 9900002,
-      "name": "Beau Allen",
-      "pos": "QB",
-      "number": 11
-    },
-    "brennen ward": {
-      "id": 9900074,
-      "name": "Brennen Ward",
-      "pos": "QB",
-      "number": 14
-    },
-    "cutter boley": {
-      "id": 5141378,
-      "name": "Cutter Boley",
-      "pos": "QB",
-      "number": 8
-    },
-    "stone saunders": {
-      "id": 9900054,
-      "name": "Stone Saunders",
-      "pos": "QB",
-      "number": 12
-    },
-    "zach calzada": {
-      "id": 4426847,
-      "name": "Zach Calzada",
-      "pos": "QB",
-      "number": 5
-    },
-    "chy rivers": {
-      "id": 9900069,
-      "name": "Chy Rivers",
-      "pos": "RB",
-      "number": 36
-    },
-    "dante dowdell": {
-      "id": 9900029,
-      "name": "Dante Dowdell",
-      "pos": "RB",
-      "number": 2
-    },
-    "jamarion wilcox": {
-      "id": 9900030,
-      "name": "Jamarion Wilcox",
-      "pos": "RB",
-      "number": 10
-    },
-    "james dalrymple": {
-      "id": 9900098,
-      "name": "James Dalrymple",
-      "pos": "RB",
-      "number": 35
-    },
-    "jason patterson": {
-      "id": 9900046,
-      "name": "Jason Patterson",
-      "pos": "RB",
-      "number": 26
-    },
-    "seth mcgowan": {
-      "id": 4686468,
-      "name": "Seth McGowan",
-      "pos": "RB",
-      "number": 3
-    },
-    "tovani mizell": {
-      "id": 9900034,
-      "name": "Tovani Mizell",
-      "pos": "RB",
-      "number": 28
-    },
-    "elijah brown": {
-      "id": 9900013,
-      "name": "Elijah Brown",
-      "pos": "TE",
-      "number": 85
-    },
-    "henry boyer": {
-      "id": 9900015,
-      "name": "Henry Boyer",
-      "pos": "TE",
-      "number": 87
-    },
-    "jack monday": {
-      "id": 9900042,
-      "name": "Jack Monday",
-      "pos": "TE",
-      "number": 83
-    },
-    "josh kattus": {
-      "id": 9900014,
-      "name": "Josh Kattus",
-      "pos": "TE",
-      "number": 84
-    },
-    "justin kattus": {
-      "id": 9900088,
-      "name": "Justin Kattus",
-      "pos": "TE",
-      "number": 44
-    },
-    "mikkel skinner": {
-      "id": 9900082,
-      "name": "Mikkel Skinner",
-      "pos": "TE",
-      "number": 18
-    },
-    "willie rodriguez": {
-      "id": 9900049,
-      "name": "Willie Rodriguez",
-      "pos": "TE",
-      "number": 81
-    },
-    "anthony brown-stephens": {
-      "id": 4702365,
-      "name": "Anthony Brown-Stephens",
-      "pos": "WR",
-      "number": 2
-    },
-    "ashton cozart": {
-      "id": 9900068,
-      "name": "Ashton Cozart",
-      "pos": "WR",
-      "number": 80
-    },
-    "aumad edwards": {
-      "id": 9900100,
-      "name": "Aumad Edwards",
-      "pos": "WR",
-      "number": 40
-    },
-    "barion brown": {
-      "id": 4702366,
-      "name": "Barion Brown",
-      "pos": "WR",
-      "number": 7
-    },
-    "cameron miller": {
-      "id": 9900053,
-      "name": "Cameron Miller",
-      "pos": "WR",
-      "number": 22
-    },
-    "cole lanter": {
-      "id": 9900041,
-      "name": "Cole Lanter",
-      "pos": "WR",
-      "number": 86
-    },
-    "dj miller": {
-      "id": 9900094,
-      "name": "DJ Miller",
-      "pos": "WR",
-      "number": 7
-    },
-    "dane key": {
-      "id": 4702367,
-      "name": "Dane Key",
-      "pos": "WR",
-      "number": 6
-    },
-    "david washington jr.": {
-      "id": 9900039,
-      "name": "David Washington Jr.",
-      "pos": "WR",
-      "number": 82
-    },
-    "fred farrier ii": {
-      "id": 9900012,
-      "name": "Fred Farrier II",
-      "pos": "WR",
-      "number": 13
-    },
-    "hardley gilmore iv": {
-      "id": 9900052,
-      "name": "Hardley Gilmore IV",
-      "pos": "WR",
-      "number": 17
-    },
-    "j.j. hester": {
-      "id": 9900000,
-      "name": "J.J. Hester",
-      "pos": "WR",
-      "number": 4
-    },
-    "ja'mori maclin": {
-      "id": 9900003,
-      "name": "Ja'Mori Maclin",
-      "pos": "WR",
-      "number": 9
-    },
-    "kendrick law": {
-      "id": 4685441,
-      "name": "Kendrick Law",
-      "pos": "WR",
-      "number": 1
-    },
-    "montavin quisenberry": {
-      "id": 9900076,
-      "name": "Montavin Quisenberry",
-      "pos": "WR",
-      "number": 19
-    },
-    "preston bowman": {
-      "id": 9900081,
-      "name": "Preston Bowman",
-      "pos": "WR",
-      "number": 89
-    },
-    "quintin simmons jr.": {
-      "id": 9900061,
-      "name": "Quintin Simmons Jr.",
-      "pos": "WR",
-      "number": 88
-    },
-    "rico crowder": {
-      "id": 9900087,
-      "name": "Rico Crowder",
-      "pos": "WR",
-      "number": 33
-    },
-    "saxton howard": {
-      "id": 9900101,
-      "name": "Saxton Howard",
-      "pos": "WR",
-      "number": 39
-    },
-    "spencer leadbetter": {
-      "id": 9900070,
-      "name": "Spencer Leadbetter",
-      "pos": "WR",
-      "number": 37
-    },
-    "troy stellato": {
-      "id": 9900006,
-      "name": "Troy Stellato",
-      "pos": "WR",
-      "number": 0
-    }
+    "aba selm": 6723091,
+    "aidan laros": 8735562,
+    "alex afari jr.": 4819224,
+    "alex mclaughlin": 8132008,
+    "alex wollschlaeger": 7228354,
+    "alexander dimartino": 3050837,
+    "andrew purcell": 6617724,
+    "andrew weber": 3921486,
+    "antwan smith": 8981120,
+    "ashton cozart": 7542200,
+    "aumad edwards": 6871092,
+    "austin ramsey": 8041647,
+    "beau allen": 8815905,
+    "brady pullins": 3915983,
+    "brennen ward": 4592350,
+    "brian robinson": 8446338,
+    "bryan auguste": 4433720,
+    "cam dooley": 7892429,
+    "cameron jones": 4846066,
+    "cameron miller": 6652014,
+    "cedric works": 5163052,
+    "chy rivers": 8969811,
+    "cole lanter": 7914435,
+    "cutter boley": 5141378,
+    "dante dowdell": 8273967,
+    "darrin strey": 4955431,
+    "daveren rayner": 7660098,
+    "david gusta": 6972742,
+    "david laganga": 5544845,
+    "david washington jr.": 6687202,
+    "demarcus gardner": 7586707,
+    "devin smith": 8855261,
+    "devon gusta": 5981062,
+    "dj miller": 3179523,
+    "dj waller jr.": 5478999,
+    "dyllon williams": 5942652,
+    "elijah brown": 5400389,
+    "evan wibberley": 5073471,
+    "fred farrier ii": 6257466,
+    "grant godfrey": 3138936,
+    "grant grayton": 8824076,
+    "hardley gilmore iv": 5862905,
+    "hayden dawahare": 3410694,
+    "hayes johnson": 5723477,
+    "henry boyer": 3155313,
+    "j.j. hester": 8580867,
+    "ja'mori maclin": 4384025,
+    "jack monday": 6069937,
+    "jackson bunn": 6724736,
+    "jackson schulz": 8685464,
+    "jacob kauwe": 4115948,
+    "jacob smith": 5849986,
+    "jaden smith": 4270937,
+    "jaden williams": 5502074,
+    "jager burton": 8551479,
+    "jalen farmer": 8716357,
+    "jamarion wilcox": 4685745,
+    "james dalrymple": 3963542,
+    "jantzen dunn": 6550315,
+    "jason ekperuoh": 8662908,
+    "jason patterson": 3612495,
+    "javeon campbell": 4737535,
+    "jayden clark": 8078556,
+    "jermiel atkins": 5021660,
+    "jerod smith ii": 6719441,
+    "jonquis hardaway": 6206402,
+    "jordan lovett": 4229038,
+    "josaih hayes": 7637664,
+    "josh kattus": 5891258,
+    "joshua braun": 5597424,
+    "jr. martels carter": 6530225,
+    "justin kattus": 4187811,
+    "kahlil saunders": 5816684,
+    "kalen edwards": 6375831,
+    "kam olds": 4890709,
+    "kendrick law": 4960305,
+    "kenyatta hardge ii": 4810236,
+    "kevis thomas": 3242974,
+    "kris thompson": 4822691,
+    "kyle mixon": 4702978,
+    "landyn watson": 4846728,
+    "lorenzo cowan": 6530181,
+    "malachi wood": 5748146,
+    "martels carter jr.": 5087549,
+    "mi'quise humphrey-grace": 6426125,
+    "mikkel skinner": 7672513,
+    "montavin quisenberry": 7365025,
+    "nasir addison": 8117203,
+    "nic smith": 4619499,
+    "preston bowman": 5185645,
+    "quay'sheed scott": 3227235,
+    "quintavion norman": 7451009,
+    "quintin simmons jr.": 3378292,
+    "rico crowder": 8005277,
+    "rob fogler": 6573910,
+    "rushaune vilane": 4033884,
+    "sam greene": 4997283,
+    "saxton howard": 7339418,
+    "seth mcgowan": 6979820,
+    "shiyazh pete": 6489756,
+    "spencer leadbetter": 6868834,
+    "steven soles jr.": 5338943,
+    "stone saunders": 6618564,
+    "tavion gadson": 5445833,
+    "terhyon nichols": 6439815,
+    "tino merlo": 3179635,
+    "tovani mizell": 4886950,
+    "troy stellato": 4256240,
+    "ty bryant": 4154329,
+    "willie rodriguez": 4604655,
+    "wilson berry": 6258478,
+    "wyatt phyle": 8280665,
+    "zach calzada": 4308382,
+    "zach schreiner": 3522633
   },
-  "meta": {
-    "teamId": 96,
-    "team": "Kentucky",
-    "season": 2025,
-    "updatedAt": "2025-10-21T00:00:00Z"
-  }
+  "count": 114
 }
