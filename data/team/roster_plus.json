@@ -1,1 +1,2174 @@
-[]
+{
+  "players": [
+    {
+      "id": 4819224,
+      "name": "Alex Afari Jr.",
+      "pos": "DB",
+      "number": 3
+    },
+    {
+      "id": 9900086,
+      "name": "Andrew Purcell",
+      "pos": "DB",
+      "number": 26
+    },
+    {
+      "id": 9900090,
+      "name": "Andrew Weber",
+      "pos": "DB",
+      "number": 36
+    },
+    {
+      "id": 9900062,
+      "name": "Cam Dooley",
+      "pos": "DB",
+      "number": 18
+    },
+    {
+      "id": 5092262,
+      "name": "DJ Waller Jr.",
+      "pos": "DB",
+      "number": 5
+    },
+    {
+      "id": 9900080,
+      "name": "Demarcus Gardner",
+      "pos": "DB",
+      "number": 28
+    },
+    {
+      "id": 9900066,
+      "name": "Devon Gusta",
+      "pos": "DB",
+      "number": 38
+    },
+    {
+      "id": 9900085,
+      "name": "Dyllon Williams",
+      "pos": "DB",
+      "number": 13
+    },
+    {
+      "id": 9900067,
+      "name": "Grant Grayton",
+      "pos": "DB",
+      "number": 30
+    },
+    {
+      "id": 9900040,
+      "name": "Jackson Schulz",
+      "pos": "DB",
+      "number": 29
+    },
+    {
+      "id": 9900057,
+      "name": "Jaden Smith",
+      "pos": "DB",
+      "number": 24
+    },
+    {
+      "id": 9900007,
+      "name": "Jantzen Dunn",
+      "pos": "DB",
+      "number": 10
+    },
+    {
+      "id": 9900011,
+      "name": "Jonquis Hardaway",
+      "pos": "DB",
+      "number": 6
+    },
+    {
+      "id": 4683458,
+      "name": "Jordan Lovett",
+      "pos": "DB",
+      "number": 25
+    },
+    {
+      "id": 9900097,
+      "name": "Jr. Martels Carter",
+      "pos": "DB",
+      "number": -1
+    },
+    {
+      "id": 9900019,
+      "name": "Kevis Thomas",
+      "pos": "DB",
+      "number": 19
+    },
+    {
+      "id": 9900050,
+      "name": "Martels Carter Jr.",
+      "pos": "DB",
+      "number": 4
+    },
+    {
+      "id": 4692799,
+      "name": "Maxwell Hairston",
+      "pos": "DB",
+      "number": 31
+    },
+    {
+      "id": 9900023,
+      "name": "Nasir Addison",
+      "pos": "DB",
+      "number": 21
+    },
+    {
+      "id": 9900063,
+      "name": "Quay'sheed Scott",
+      "pos": "DB",
+      "number": 12
+    },
+    {
+      "id": 9900033,
+      "name": "Terhyon Nichols",
+      "pos": "DB",
+      "number": 20
+    },
+    {
+      "id": 9900031,
+      "name": "Ty Bryant",
+      "pos": "DB",
+      "number": 14
+    },
+    {
+      "id": 9900055,
+      "name": "Lorenzo Cowan",
+      "pos": "DE",
+      "number": 34
+    },
+    {
+      "id": 9900026,
+      "name": "Austin Ramsey",
+      "pos": "DL",
+      "number": 76
+    },
+    {
+      "id": 9900035,
+      "name": "Brian Robinson",
+      "pos": "DL",
+      "number": 23
+    },
+    {
+      "id": 9900077,
+      "name": "Cedric Works",
+      "pos": "DL",
+      "number": 15
+    },
+    {
+      "id": 9900009,
+      "name": "David Gusta",
+      "pos": "DL",
+      "number": 60
+    },
+    {
+      "id": 4893283,
+      "name": "Deone Walker",
+      "pos": "DL",
+      "number": 0
+    },
+    {
+      "id": 9900072,
+      "name": "Jackson Bunn",
+      "pos": "DL",
+      "number": 64
+    },
+    {
+      "id": 9900025,
+      "name": "Jaden Williams",
+      "pos": "DL",
+      "number": 91
+    },
+    {
+      "id": 9900083,
+      "name": "Javeon Campbell",
+      "pos": "DL",
+      "number": 56
+    },
+    {
+      "id": 9900037,
+      "name": "Jerod Smith II",
+      "pos": "DL",
+      "number": 95
+    },
+    {
+      "id": 4430666,
+      "name": "Josaih Hayes",
+      "pos": "DL",
+      "number": 99
+    },
+    {
+      "id": 9900008,
+      "name": "Kahlil Saunders",
+      "pos": "DL",
+      "number": 92
+    },
+    {
+      "id": 9900051,
+      "name": "Kalen Edwards",
+      "pos": "DL",
+      "number": 93
+    },
+    {
+      "id": 9900092,
+      "name": "Kenyatta Hardge II",
+      "pos": "DL",
+      "number": 98
+    },
+    {
+      "id": 9900044,
+      "name": "Mi'Quise Humphrey-Grace",
+      "pos": "DL",
+      "number": 90
+    },
+    {
+      "id": 9900096,
+      "name": "Nic Smith",
+      "pos": "DL",
+      "number": 55
+    },
+    {
+      "id": 9900032,
+      "name": "Tavion Gadson",
+      "pos": "DL",
+      "number": 94
+    },
+    {
+      "id": 9900056,
+      "name": "Antwan Smith",
+      "pos": "LB",
+      "number": 44
+    },
+    {
+      "id": 4430670,
+      "name": "Daveren Rayner",
+      "pos": "LB",
+      "number": 13
+    },
+    {
+      "id": 9900058,
+      "name": "Devin Smith",
+      "pos": "LB",
+      "number": 32
+    },
+    {
+      "id": 9900018,
+      "name": "Grant Godfrey",
+      "pos": "LB",
+      "number": 22
+    },
+    {
+      "id": 9900071,
+      "name": "Hayden Dawahare",
+      "pos": "LB",
+      "number": 53
+    },
+    {
+      "id": 9900036,
+      "name": "Jacob Smith",
+      "pos": "LB",
+      "number": 16
+    },
+    {
+      "id": 9900024,
+      "name": "Kam Olds",
+      "pos": "LB",
+      "number": 1
+    },
+    {
+      "id": 9900095,
+      "name": "Kris Thompson",
+      "pos": "LB",
+      "number": 45
+    },
+    {
+      "id": 4431688,
+      "name": "Landyn Watson",
+      "pos": "LB",
+      "number": 9
+    },
+    {
+      "id": 9900078,
+      "name": "Quintavion Norman",
+      "pos": "LB",
+      "number": 31
+    },
+    {
+      "id": 9900091,
+      "name": "Rushaune Vilane",
+      "pos": "LB",
+      "number": 46
+    },
+    {
+      "id": 9900045,
+      "name": "Sam Greene",
+      "pos": "LB",
+      "number": 2
+    },
+    {
+      "id": 9900038,
+      "name": "Steven Soles Jr.",
+      "pos": "LB",
+      "number": 35
+    },
+    {
+      "id": 4692450,
+      "name": "Trevin Wallace",
+      "pos": "LB",
+      "number": 32
+    },
+    {
+      "id": 9900102,
+      "name": "Wyatt Phyle",
+      "pos": "LB",
+      "number": 49
+    },
+    {
+      "id": 9900020,
+      "name": "Alex McLaughlin",
+      "pos": "LS",
+      "number": 42
+    },
+    {
+      "id": 9900043,
+      "name": "David LaGanga",
+      "pos": "LS",
+      "number": 59
+    },
+    {
+      "id": 9900048,
+      "name": "Aba Selm",
+      "pos": "OL",
+      "number": 53
+    },
+    {
+      "id": 9900004,
+      "name": "Alex Wollschlaeger",
+      "pos": "OL",
+      "number": 50
+    },
+    {
+      "id": 9900099,
+      "name": "Alexander DiMartino",
+      "pos": "OL",
+      "number": 68
+    },
+    {
+      "id": 9900103,
+      "name": "Brady Pullins",
+      "pos": "OL",
+      "number": 67
+    },
+    {
+      "id": 9900079,
+      "name": "Bryan Auguste",
+      "pos": "OL",
+      "number": 77
+    },
+    {
+      "id": 9900064,
+      "name": "Cameron Jones",
+      "pos": "OL",
+      "number": 78
+    },
+    {
+      "id": 9900084,
+      "name": "Darrin Strey",
+      "pos": "OL",
+      "number": 69
+    },
+    {
+      "id": 9900017,
+      "name": "Evan Wibberley",
+      "pos": "OL",
+      "number": 58
+    },
+    {
+      "id": 9900047,
+      "name": "Hayes Johnson",
+      "pos": "OL",
+      "number": 72
+    },
+    {
+      "id": 9900005,
+      "name": "Jager Burton",
+      "pos": "OL",
+      "number": 62
+    },
+    {
+      "id": 9900016,
+      "name": "Jalen Farmer",
+      "pos": "OL",
+      "number": 52
+    },
+    {
+      "id": 9900093,
+      "name": "Jason Ekperuoh",
+      "pos": "OL",
+      "number": 61
+    },
+    {
+      "id": 9900075,
+      "name": "Jayden Clark",
+      "pos": "OL",
+      "number": 79
+    },
+    {
+      "id": 9900060,
+      "name": "Jermiel Atkins",
+      "pos": "OL",
+      "number": 74
+    },
+    {
+      "id": 9900001,
+      "name": "Joshua Braun",
+      "pos": "OL",
+      "number": 75
+    },
+    {
+      "id": 9900089,
+      "name": "Kyle Mixon",
+      "pos": "OL",
+      "number": 63
+    },
+    {
+      "id": 9900028,
+      "name": "Malachi Wood",
+      "pos": "OL",
+      "number": 71
+    },
+    {
+      "id": 9900027,
+      "name": "Rob Fogler",
+      "pos": "OL",
+      "number": 70
+    },
+    {
+      "id": 9900021,
+      "name": "Shiyazh Pete",
+      "pos": "OL",
+      "number": 73
+    },
+    {
+      "id": 9900073,
+      "name": "Tino Merlo",
+      "pos": "OL",
+      "number": 66
+    },
+    {
+      "id": 9900022,
+      "name": "Aidan Laros",
+      "pos": "P",
+      "number": 48
+    },
+    {
+      "id": 9900010,
+      "name": "Wilson Berry",
+      "pos": "P",
+      "number": 93
+    },
+    {
+      "id": 9900059,
+      "name": "Jacob Kauwe",
+      "pos": "PK",
+      "number": 91
+    },
+    {
+      "id": 9900065,
+      "name": "Zach Schreiner",
+      "pos": "PK",
+      "number": 97
+    },
+    {
+      "id": 9900002,
+      "name": "Beau Allen",
+      "pos": "QB",
+      "number": 11
+    },
+    {
+      "id": 9900074,
+      "name": "Brennen Ward",
+      "pos": "QB",
+      "number": 14
+    },
+    {
+      "id": 5141378,
+      "name": "Cutter Boley",
+      "pos": "QB",
+      "number": 8
+    },
+    {
+      "id": 9900054,
+      "name": "Stone Saunders",
+      "pos": "QB",
+      "number": 12
+    },
+    {
+      "id": 4426847,
+      "name": "Zach Calzada",
+      "pos": "QB",
+      "number": 5
+    },
+    {
+      "id": 9900069,
+      "name": "Chy Rivers",
+      "pos": "RB",
+      "number": 36
+    },
+    {
+      "id": 9900029,
+      "name": "Dante Dowdell",
+      "pos": "RB",
+      "number": 2
+    },
+    {
+      "id": 9900030,
+      "name": "Jamarion Wilcox",
+      "pos": "RB",
+      "number": 10
+    },
+    {
+      "id": 9900098,
+      "name": "James Dalrymple",
+      "pos": "RB",
+      "number": 35
+    },
+    {
+      "id": 9900046,
+      "name": "Jason Patterson",
+      "pos": "RB",
+      "number": 26
+    },
+    {
+      "id": 4686468,
+      "name": "Seth McGowan",
+      "pos": "RB",
+      "number": 3
+    },
+    {
+      "id": 9900034,
+      "name": "Tovani Mizell",
+      "pos": "RB",
+      "number": 28
+    },
+    {
+      "id": 9900013,
+      "name": "Elijah Brown",
+      "pos": "TE",
+      "number": 85
+    },
+    {
+      "id": 9900015,
+      "name": "Henry Boyer",
+      "pos": "TE",
+      "number": 87
+    },
+    {
+      "id": 9900042,
+      "name": "Jack Monday",
+      "pos": "TE",
+      "number": 83
+    },
+    {
+      "id": 9900014,
+      "name": "Josh Kattus",
+      "pos": "TE",
+      "number": 84
+    },
+    {
+      "id": 9900088,
+      "name": "Justin Kattus",
+      "pos": "TE",
+      "number": 44
+    },
+    {
+      "id": 9900082,
+      "name": "Mikkel Skinner",
+      "pos": "TE",
+      "number": 18
+    },
+    {
+      "id": 9900049,
+      "name": "Willie Rodriguez",
+      "pos": "TE",
+      "number": 81
+    },
+    {
+      "id": 4702365,
+      "name": "Anthony Brown-Stephens",
+      "pos": "WR",
+      "number": 2
+    },
+    {
+      "id": 9900068,
+      "name": "Ashton Cozart",
+      "pos": "WR",
+      "number": 80
+    },
+    {
+      "id": 9900100,
+      "name": "Aumad Edwards",
+      "pos": "WR",
+      "number": 40
+    },
+    {
+      "id": 4702366,
+      "name": "Barion Brown",
+      "pos": "WR",
+      "number": 7
+    },
+    {
+      "id": 9900053,
+      "name": "Cameron Miller",
+      "pos": "WR",
+      "number": 22
+    },
+    {
+      "id": 9900041,
+      "name": "Cole Lanter",
+      "pos": "WR",
+      "number": 86
+    },
+    {
+      "id": 9900094,
+      "name": "DJ Miller",
+      "pos": "WR",
+      "number": 7
+    },
+    {
+      "id": 4702367,
+      "name": "Dane Key",
+      "pos": "WR",
+      "number": 6
+    },
+    {
+      "id": 9900039,
+      "name": "David Washington Jr.",
+      "pos": "WR",
+      "number": 82
+    },
+    {
+      "id": 9900012,
+      "name": "Fred Farrier II",
+      "pos": "WR",
+      "number": 13
+    },
+    {
+      "id": 9900052,
+      "name": "Hardley Gilmore IV",
+      "pos": "WR",
+      "number": 17
+    },
+    {
+      "id": 9900000,
+      "name": "J.J. Hester",
+      "pos": "WR",
+      "number": 4
+    },
+    {
+      "id": 9900003,
+      "name": "Ja'Mori Maclin",
+      "pos": "WR",
+      "number": 9
+    },
+    {
+      "id": 4685441,
+      "name": "Kendrick Law",
+      "pos": "WR",
+      "number": 1
+    },
+    {
+      "id": 9900076,
+      "name": "Montavin Quisenberry",
+      "pos": "WR",
+      "number": 19
+    },
+    {
+      "id": 9900081,
+      "name": "Preston Bowman",
+      "pos": "WR",
+      "number": 89
+    },
+    {
+      "id": 9900061,
+      "name": "Quintin Simmons Jr.",
+      "pos": "WR",
+      "number": 88
+    },
+    {
+      "id": 9900087,
+      "name": "Rico Crowder",
+      "pos": "WR",
+      "number": 33
+    },
+    {
+      "id": 9900101,
+      "name": "Saxton Howard",
+      "pos": "WR",
+      "number": 39
+    },
+    {
+      "id": 9900070,
+      "name": "Spencer Leadbetter",
+      "pos": "WR",
+      "number": 37
+    },
+    {
+      "id": 9900006,
+      "name": "Troy Stellato",
+      "pos": "WR",
+      "number": 0
+    }
+  ],
+  "byId": {
+    "4819224": {
+      "id": 4819224,
+      "name": "Alex Afari Jr.",
+      "pos": "DB",
+      "number": 3
+    },
+    "9900086": {
+      "id": 9900086,
+      "name": "Andrew Purcell",
+      "pos": "DB",
+      "number": 26
+    },
+    "9900090": {
+      "id": 9900090,
+      "name": "Andrew Weber",
+      "pos": "DB",
+      "number": 36
+    },
+    "9900062": {
+      "id": 9900062,
+      "name": "Cam Dooley",
+      "pos": "DB",
+      "number": 18
+    },
+    "5092262": {
+      "id": 5092262,
+      "name": "DJ Waller Jr.",
+      "pos": "DB",
+      "number": 5
+    },
+    "9900080": {
+      "id": 9900080,
+      "name": "Demarcus Gardner",
+      "pos": "DB",
+      "number": 28
+    },
+    "9900066": {
+      "id": 9900066,
+      "name": "Devon Gusta",
+      "pos": "DB",
+      "number": 38
+    },
+    "9900085": {
+      "id": 9900085,
+      "name": "Dyllon Williams",
+      "pos": "DB",
+      "number": 13
+    },
+    "9900067": {
+      "id": 9900067,
+      "name": "Grant Grayton",
+      "pos": "DB",
+      "number": 30
+    },
+    "9900040": {
+      "id": 9900040,
+      "name": "Jackson Schulz",
+      "pos": "DB",
+      "number": 29
+    },
+    "9900057": {
+      "id": 9900057,
+      "name": "Jaden Smith",
+      "pos": "DB",
+      "number": 24
+    },
+    "9900007": {
+      "id": 9900007,
+      "name": "Jantzen Dunn",
+      "pos": "DB",
+      "number": 10
+    },
+    "9900011": {
+      "id": 9900011,
+      "name": "Jonquis Hardaway",
+      "pos": "DB",
+      "number": 6
+    },
+    "4683458": {
+      "id": 4683458,
+      "name": "Jordan Lovett",
+      "pos": "DB",
+      "number": 25
+    },
+    "9900097": {
+      "id": 9900097,
+      "name": "Jr. Martels Carter",
+      "pos": "DB",
+      "number": -1
+    },
+    "9900019": {
+      "id": 9900019,
+      "name": "Kevis Thomas",
+      "pos": "DB",
+      "number": 19
+    },
+    "9900050": {
+      "id": 9900050,
+      "name": "Martels Carter Jr.",
+      "pos": "DB",
+      "number": 4
+    },
+    "4692799": {
+      "id": 4692799,
+      "name": "Maxwell Hairston",
+      "pos": "DB",
+      "number": 31
+    },
+    "9900023": {
+      "id": 9900023,
+      "name": "Nasir Addison",
+      "pos": "DB",
+      "number": 21
+    },
+    "9900063": {
+      "id": 9900063,
+      "name": "Quay'sheed Scott",
+      "pos": "DB",
+      "number": 12
+    },
+    "9900033": {
+      "id": 9900033,
+      "name": "Terhyon Nichols",
+      "pos": "DB",
+      "number": 20
+    },
+    "9900031": {
+      "id": 9900031,
+      "name": "Ty Bryant",
+      "pos": "DB",
+      "number": 14
+    },
+    "9900055": {
+      "id": 9900055,
+      "name": "Lorenzo Cowan",
+      "pos": "DE",
+      "number": 34
+    },
+    "9900026": {
+      "id": 9900026,
+      "name": "Austin Ramsey",
+      "pos": "DL",
+      "number": 76
+    },
+    "9900035": {
+      "id": 9900035,
+      "name": "Brian Robinson",
+      "pos": "DL",
+      "number": 23
+    },
+    "9900077": {
+      "id": 9900077,
+      "name": "Cedric Works",
+      "pos": "DL",
+      "number": 15
+    },
+    "9900009": {
+      "id": 9900009,
+      "name": "David Gusta",
+      "pos": "DL",
+      "number": 60
+    },
+    "4893283": {
+      "id": 4893283,
+      "name": "Deone Walker",
+      "pos": "DL",
+      "number": 0
+    },
+    "9900072": {
+      "id": 9900072,
+      "name": "Jackson Bunn",
+      "pos": "DL",
+      "number": 64
+    },
+    "9900025": {
+      "id": 9900025,
+      "name": "Jaden Williams",
+      "pos": "DL",
+      "number": 91
+    },
+    "9900083": {
+      "id": 9900083,
+      "name": "Javeon Campbell",
+      "pos": "DL",
+      "number": 56
+    },
+    "9900037": {
+      "id": 9900037,
+      "name": "Jerod Smith II",
+      "pos": "DL",
+      "number": 95
+    },
+    "4430666": {
+      "id": 4430666,
+      "name": "Josaih Hayes",
+      "pos": "DL",
+      "number": 99
+    },
+    "9900008": {
+      "id": 9900008,
+      "name": "Kahlil Saunders",
+      "pos": "DL",
+      "number": 92
+    },
+    "9900051": {
+      "id": 9900051,
+      "name": "Kalen Edwards",
+      "pos": "DL",
+      "number": 93
+    },
+    "9900092": {
+      "id": 9900092,
+      "name": "Kenyatta Hardge II",
+      "pos": "DL",
+      "number": 98
+    },
+    "9900044": {
+      "id": 9900044,
+      "name": "Mi'Quise Humphrey-Grace",
+      "pos": "DL",
+      "number": 90
+    },
+    "9900096": {
+      "id": 9900096,
+      "name": "Nic Smith",
+      "pos": "DL",
+      "number": 55
+    },
+    "9900032": {
+      "id": 9900032,
+      "name": "Tavion Gadson",
+      "pos": "DL",
+      "number": 94
+    },
+    "9900056": {
+      "id": 9900056,
+      "name": "Antwan Smith",
+      "pos": "LB",
+      "number": 44
+    },
+    "4430670": {
+      "id": 4430670,
+      "name": "Daveren Rayner",
+      "pos": "LB",
+      "number": 13
+    },
+    "9900058": {
+      "id": 9900058,
+      "name": "Devin Smith",
+      "pos": "LB",
+      "number": 32
+    },
+    "9900018": {
+      "id": 9900018,
+      "name": "Grant Godfrey",
+      "pos": "LB",
+      "number": 22
+    },
+    "9900071": {
+      "id": 9900071,
+      "name": "Hayden Dawahare",
+      "pos": "LB",
+      "number": 53
+    },
+    "9900036": {
+      "id": 9900036,
+      "name": "Jacob Smith",
+      "pos": "LB",
+      "number": 16
+    },
+    "9900024": {
+      "id": 9900024,
+      "name": "Kam Olds",
+      "pos": "LB",
+      "number": 1
+    },
+    "9900095": {
+      "id": 9900095,
+      "name": "Kris Thompson",
+      "pos": "LB",
+      "number": 45
+    },
+    "4431688": {
+      "id": 4431688,
+      "name": "Landyn Watson",
+      "pos": "LB",
+      "number": 9
+    },
+    "9900078": {
+      "id": 9900078,
+      "name": "Quintavion Norman",
+      "pos": "LB",
+      "number": 31
+    },
+    "9900091": {
+      "id": 9900091,
+      "name": "Rushaune Vilane",
+      "pos": "LB",
+      "number": 46
+    },
+    "9900045": {
+      "id": 9900045,
+      "name": "Sam Greene",
+      "pos": "LB",
+      "number": 2
+    },
+    "9900038": {
+      "id": 9900038,
+      "name": "Steven Soles Jr.",
+      "pos": "LB",
+      "number": 35
+    },
+    "4692450": {
+      "id": 4692450,
+      "name": "Trevin Wallace",
+      "pos": "LB",
+      "number": 32
+    },
+    "9900102": {
+      "id": 9900102,
+      "name": "Wyatt Phyle",
+      "pos": "LB",
+      "number": 49
+    },
+    "9900020": {
+      "id": 9900020,
+      "name": "Alex McLaughlin",
+      "pos": "LS",
+      "number": 42
+    },
+    "9900043": {
+      "id": 9900043,
+      "name": "David LaGanga",
+      "pos": "LS",
+      "number": 59
+    },
+    "9900048": {
+      "id": 9900048,
+      "name": "Aba Selm",
+      "pos": "OL",
+      "number": 53
+    },
+    "9900004": {
+      "id": 9900004,
+      "name": "Alex Wollschlaeger",
+      "pos": "OL",
+      "number": 50
+    },
+    "9900099": {
+      "id": 9900099,
+      "name": "Alexander DiMartino",
+      "pos": "OL",
+      "number": 68
+    },
+    "9900103": {
+      "id": 9900103,
+      "name": "Brady Pullins",
+      "pos": "OL",
+      "number": 67
+    },
+    "9900079": {
+      "id": 9900079,
+      "name": "Bryan Auguste",
+      "pos": "OL",
+      "number": 77
+    },
+    "9900064": {
+      "id": 9900064,
+      "name": "Cameron Jones",
+      "pos": "OL",
+      "number": 78
+    },
+    "9900084": {
+      "id": 9900084,
+      "name": "Darrin Strey",
+      "pos": "OL",
+      "number": 69
+    },
+    "9900017": {
+      "id": 9900017,
+      "name": "Evan Wibberley",
+      "pos": "OL",
+      "number": 58
+    },
+    "9900047": {
+      "id": 9900047,
+      "name": "Hayes Johnson",
+      "pos": "OL",
+      "number": 72
+    },
+    "9900005": {
+      "id": 9900005,
+      "name": "Jager Burton",
+      "pos": "OL",
+      "number": 62
+    },
+    "9900016": {
+      "id": 9900016,
+      "name": "Jalen Farmer",
+      "pos": "OL",
+      "number": 52
+    },
+    "9900093": {
+      "id": 9900093,
+      "name": "Jason Ekperuoh",
+      "pos": "OL",
+      "number": 61
+    },
+    "9900075": {
+      "id": 9900075,
+      "name": "Jayden Clark",
+      "pos": "OL",
+      "number": 79
+    },
+    "9900060": {
+      "id": 9900060,
+      "name": "Jermiel Atkins",
+      "pos": "OL",
+      "number": 74
+    },
+    "9900001": {
+      "id": 9900001,
+      "name": "Joshua Braun",
+      "pos": "OL",
+      "number": 75
+    },
+    "9900089": {
+      "id": 9900089,
+      "name": "Kyle Mixon",
+      "pos": "OL",
+      "number": 63
+    },
+    "9900028": {
+      "id": 9900028,
+      "name": "Malachi Wood",
+      "pos": "OL",
+      "number": 71
+    },
+    "9900027": {
+      "id": 9900027,
+      "name": "Rob Fogler",
+      "pos": "OL",
+      "number": 70
+    },
+    "9900021": {
+      "id": 9900021,
+      "name": "Shiyazh Pete",
+      "pos": "OL",
+      "number": 73
+    },
+    "9900073": {
+      "id": 9900073,
+      "name": "Tino Merlo",
+      "pos": "OL",
+      "number": 66
+    },
+    "9900022": {
+      "id": 9900022,
+      "name": "Aidan Laros",
+      "pos": "P",
+      "number": 48
+    },
+    "9900010": {
+      "id": 9900010,
+      "name": "Wilson Berry",
+      "pos": "P",
+      "number": 93
+    },
+    "9900059": {
+      "id": 9900059,
+      "name": "Jacob Kauwe",
+      "pos": "PK",
+      "number": 91
+    },
+    "9900065": {
+      "id": 9900065,
+      "name": "Zach Schreiner",
+      "pos": "PK",
+      "number": 97
+    },
+    "9900002": {
+      "id": 9900002,
+      "name": "Beau Allen",
+      "pos": "QB",
+      "number": 11
+    },
+    "9900074": {
+      "id": 9900074,
+      "name": "Brennen Ward",
+      "pos": "QB",
+      "number": 14
+    },
+    "5141378": {
+      "id": 5141378,
+      "name": "Cutter Boley",
+      "pos": "QB",
+      "number": 8
+    },
+    "9900054": {
+      "id": 9900054,
+      "name": "Stone Saunders",
+      "pos": "QB",
+      "number": 12
+    },
+    "4426847": {
+      "id": 4426847,
+      "name": "Zach Calzada",
+      "pos": "QB",
+      "number": 5
+    },
+    "9900069": {
+      "id": 9900069,
+      "name": "Chy Rivers",
+      "pos": "RB",
+      "number": 36
+    },
+    "9900029": {
+      "id": 9900029,
+      "name": "Dante Dowdell",
+      "pos": "RB",
+      "number": 2
+    },
+    "9900030": {
+      "id": 9900030,
+      "name": "Jamarion Wilcox",
+      "pos": "RB",
+      "number": 10
+    },
+    "9900098": {
+      "id": 9900098,
+      "name": "James Dalrymple",
+      "pos": "RB",
+      "number": 35
+    },
+    "9900046": {
+      "id": 9900046,
+      "name": "Jason Patterson",
+      "pos": "RB",
+      "number": 26
+    },
+    "4686468": {
+      "id": 4686468,
+      "name": "Seth McGowan",
+      "pos": "RB",
+      "number": 3
+    },
+    "9900034": {
+      "id": 9900034,
+      "name": "Tovani Mizell",
+      "pos": "RB",
+      "number": 28
+    },
+    "9900013": {
+      "id": 9900013,
+      "name": "Elijah Brown",
+      "pos": "TE",
+      "number": 85
+    },
+    "9900015": {
+      "id": 9900015,
+      "name": "Henry Boyer",
+      "pos": "TE",
+      "number": 87
+    },
+    "9900042": {
+      "id": 9900042,
+      "name": "Jack Monday",
+      "pos": "TE",
+      "number": 83
+    },
+    "9900014": {
+      "id": 9900014,
+      "name": "Josh Kattus",
+      "pos": "TE",
+      "number": 84
+    },
+    "9900088": {
+      "id": 9900088,
+      "name": "Justin Kattus",
+      "pos": "TE",
+      "number": 44
+    },
+    "9900082": {
+      "id": 9900082,
+      "name": "Mikkel Skinner",
+      "pos": "TE",
+      "number": 18
+    },
+    "9900049": {
+      "id": 9900049,
+      "name": "Willie Rodriguez",
+      "pos": "TE",
+      "number": 81
+    },
+    "4702365": {
+      "id": 4702365,
+      "name": "Anthony Brown-Stephens",
+      "pos": "WR",
+      "number": 2
+    },
+    "9900068": {
+      "id": 9900068,
+      "name": "Ashton Cozart",
+      "pos": "WR",
+      "number": 80
+    },
+    "9900100": {
+      "id": 9900100,
+      "name": "Aumad Edwards",
+      "pos": "WR",
+      "number": 40
+    },
+    "4702366": {
+      "id": 4702366,
+      "name": "Barion Brown",
+      "pos": "WR",
+      "number": 7
+    },
+    "9900053": {
+      "id": 9900053,
+      "name": "Cameron Miller",
+      "pos": "WR",
+      "number": 22
+    },
+    "9900041": {
+      "id": 9900041,
+      "name": "Cole Lanter",
+      "pos": "WR",
+      "number": 86
+    },
+    "9900094": {
+      "id": 9900094,
+      "name": "DJ Miller",
+      "pos": "WR",
+      "number": 7
+    },
+    "4702367": {
+      "id": 4702367,
+      "name": "Dane Key",
+      "pos": "WR",
+      "number": 6
+    },
+    "9900039": {
+      "id": 9900039,
+      "name": "David Washington Jr.",
+      "pos": "WR",
+      "number": 82
+    },
+    "9900012": {
+      "id": 9900012,
+      "name": "Fred Farrier II",
+      "pos": "WR",
+      "number": 13
+    },
+    "9900052": {
+      "id": 9900052,
+      "name": "Hardley Gilmore IV",
+      "pos": "WR",
+      "number": 17
+    },
+    "9900000": {
+      "id": 9900000,
+      "name": "J.J. Hester",
+      "pos": "WR",
+      "number": 4
+    },
+    "9900003": {
+      "id": 9900003,
+      "name": "Ja'Mori Maclin",
+      "pos": "WR",
+      "number": 9
+    },
+    "4685441": {
+      "id": 4685441,
+      "name": "Kendrick Law",
+      "pos": "WR",
+      "number": 1
+    },
+    "9900076": {
+      "id": 9900076,
+      "name": "Montavin Quisenberry",
+      "pos": "WR",
+      "number": 19
+    },
+    "9900081": {
+      "id": 9900081,
+      "name": "Preston Bowman",
+      "pos": "WR",
+      "number": 89
+    },
+    "9900061": {
+      "id": 9900061,
+      "name": "Quintin Simmons Jr.",
+      "pos": "WR",
+      "number": 88
+    },
+    "9900087": {
+      "id": 9900087,
+      "name": "Rico Crowder",
+      "pos": "WR",
+      "number": 33
+    },
+    "9900101": {
+      "id": 9900101,
+      "name": "Saxton Howard",
+      "pos": "WR",
+      "number": 39
+    },
+    "9900070": {
+      "id": 9900070,
+      "name": "Spencer Leadbetter",
+      "pos": "WR",
+      "number": 37
+    },
+    "9900006": {
+      "id": 9900006,
+      "name": "Troy Stellato",
+      "pos": "WR",
+      "number": 0
+    }
+  },
+  "byName": {
+    "alex afari jr.": {
+      "id": 4819224,
+      "name": "Alex Afari Jr.",
+      "pos": "DB",
+      "number": 3
+    },
+    "andrew purcell": {
+      "id": 9900086,
+      "name": "Andrew Purcell",
+      "pos": "DB",
+      "number": 26
+    },
+    "andrew weber": {
+      "id": 9900090,
+      "name": "Andrew Weber",
+      "pos": "DB",
+      "number": 36
+    },
+    "cam dooley": {
+      "id": 9900062,
+      "name": "Cam Dooley",
+      "pos": "DB",
+      "number": 18
+    },
+    "dj waller jr.": {
+      "id": 5092262,
+      "name": "DJ Waller Jr.",
+      "pos": "DB",
+      "number": 5
+    },
+    "demarcus gardner": {
+      "id": 9900080,
+      "name": "Demarcus Gardner",
+      "pos": "DB",
+      "number": 28
+    },
+    "devon gusta": {
+      "id": 9900066,
+      "name": "Devon Gusta",
+      "pos": "DB",
+      "number": 38
+    },
+    "dyllon williams": {
+      "id": 9900085,
+      "name": "Dyllon Williams",
+      "pos": "DB",
+      "number": 13
+    },
+    "grant grayton": {
+      "id": 9900067,
+      "name": "Grant Grayton",
+      "pos": "DB",
+      "number": 30
+    },
+    "jackson schulz": {
+      "id": 9900040,
+      "name": "Jackson Schulz",
+      "pos": "DB",
+      "number": 29
+    },
+    "jaden smith": {
+      "id": 9900057,
+      "name": "Jaden Smith",
+      "pos": "DB",
+      "number": 24
+    },
+    "jantzen dunn": {
+      "id": 9900007,
+      "name": "Jantzen Dunn",
+      "pos": "DB",
+      "number": 10
+    },
+    "jonquis hardaway": {
+      "id": 9900011,
+      "name": "Jonquis Hardaway",
+      "pos": "DB",
+      "number": 6
+    },
+    "jordan lovett": {
+      "id": 4683458,
+      "name": "Jordan Lovett",
+      "pos": "DB",
+      "number": 25
+    },
+    "jr. martels carter": {
+      "id": 9900097,
+      "name": "Jr. Martels Carter",
+      "pos": "DB",
+      "number": -1
+    },
+    "kevis thomas": {
+      "id": 9900019,
+      "name": "Kevis Thomas",
+      "pos": "DB",
+      "number": 19
+    },
+    "martels carter jr.": {
+      "id": 9900050,
+      "name": "Martels Carter Jr.",
+      "pos": "DB",
+      "number": 4
+    },
+    "maxwell hairston": {
+      "id": 4692799,
+      "name": "Maxwell Hairston",
+      "pos": "DB",
+      "number": 31
+    },
+    "nasir addison": {
+      "id": 9900023,
+      "name": "Nasir Addison",
+      "pos": "DB",
+      "number": 21
+    },
+    "quay'sheed scott": {
+      "id": 9900063,
+      "name": "Quay'sheed Scott",
+      "pos": "DB",
+      "number": 12
+    },
+    "terhyon nichols": {
+      "id": 9900033,
+      "name": "Terhyon Nichols",
+      "pos": "DB",
+      "number": 20
+    },
+    "ty bryant": {
+      "id": 9900031,
+      "name": "Ty Bryant",
+      "pos": "DB",
+      "number": 14
+    },
+    "lorenzo cowan": {
+      "id": 9900055,
+      "name": "Lorenzo Cowan",
+      "pos": "DE",
+      "number": 34
+    },
+    "austin ramsey": {
+      "id": 9900026,
+      "name": "Austin Ramsey",
+      "pos": "DL",
+      "number": 76
+    },
+    "brian robinson": {
+      "id": 9900035,
+      "name": "Brian Robinson",
+      "pos": "DL",
+      "number": 23
+    },
+    "cedric works": {
+      "id": 9900077,
+      "name": "Cedric Works",
+      "pos": "DL",
+      "number": 15
+    },
+    "david gusta": {
+      "id": 9900009,
+      "name": "David Gusta",
+      "pos": "DL",
+      "number": 60
+    },
+    "deone walker": {
+      "id": 4893283,
+      "name": "Deone Walker",
+      "pos": "DL",
+      "number": 0
+    },
+    "jackson bunn": {
+      "id": 9900072,
+      "name": "Jackson Bunn",
+      "pos": "DL",
+      "number": 64
+    },
+    "jaden williams": {
+      "id": 9900025,
+      "name": "Jaden Williams",
+      "pos": "DL",
+      "number": 91
+    },
+    "javeon campbell": {
+      "id": 9900083,
+      "name": "Javeon Campbell",
+      "pos": "DL",
+      "number": 56
+    },
+    "jerod smith ii": {
+      "id": 9900037,
+      "name": "Jerod Smith II",
+      "pos": "DL",
+      "number": 95
+    },
+    "josaih hayes": {
+      "id": 4430666,
+      "name": "Josaih Hayes",
+      "pos": "DL",
+      "number": 99
+    },
+    "kahlil saunders": {
+      "id": 9900008,
+      "name": "Kahlil Saunders",
+      "pos": "DL",
+      "number": 92
+    },
+    "kalen edwards": {
+      "id": 9900051,
+      "name": "Kalen Edwards",
+      "pos": "DL",
+      "number": 93
+    },
+    "kenyatta hardge ii": {
+      "id": 9900092,
+      "name": "Kenyatta Hardge II",
+      "pos": "DL",
+      "number": 98
+    },
+    "mi'quise humphrey-grace": {
+      "id": 9900044,
+      "name": "Mi'Quise Humphrey-Grace",
+      "pos": "DL",
+      "number": 90
+    },
+    "nic smith": {
+      "id": 9900096,
+      "name": "Nic Smith",
+      "pos": "DL",
+      "number": 55
+    },
+    "tavion gadson": {
+      "id": 9900032,
+      "name": "Tavion Gadson",
+      "pos": "DL",
+      "number": 94
+    },
+    "antwan smith": {
+      "id": 9900056,
+      "name": "Antwan Smith",
+      "pos": "LB",
+      "number": 44
+    },
+    "daveren rayner": {
+      "id": 4430670,
+      "name": "Daveren Rayner",
+      "pos": "LB",
+      "number": 13
+    },
+    "devin smith": {
+      "id": 9900058,
+      "name": "Devin Smith",
+      "pos": "LB",
+      "number": 32
+    },
+    "grant godfrey": {
+      "id": 9900018,
+      "name": "Grant Godfrey",
+      "pos": "LB",
+      "number": 22
+    },
+    "hayden dawahare": {
+      "id": 9900071,
+      "name": "Hayden Dawahare",
+      "pos": "LB",
+      "number": 53
+    },
+    "jacob smith": {
+      "id": 9900036,
+      "name": "Jacob Smith",
+      "pos": "LB",
+      "number": 16
+    },
+    "kam olds": {
+      "id": 9900024,
+      "name": "Kam Olds",
+      "pos": "LB",
+      "number": 1
+    },
+    "kris thompson": {
+      "id": 9900095,
+      "name": "Kris Thompson",
+      "pos": "LB",
+      "number": 45
+    },
+    "landyn watson": {
+      "id": 4431688,
+      "name": "Landyn Watson",
+      "pos": "LB",
+      "number": 9
+    },
+    "quintavion norman": {
+      "id": 9900078,
+      "name": "Quintavion Norman",
+      "pos": "LB",
+      "number": 31
+    },
+    "rushaune vilane": {
+      "id": 9900091,
+      "name": "Rushaune Vilane",
+      "pos": "LB",
+      "number": 46
+    },
+    "sam greene": {
+      "id": 9900045,
+      "name": "Sam Greene",
+      "pos": "LB",
+      "number": 2
+    },
+    "steven soles jr.": {
+      "id": 9900038,
+      "name": "Steven Soles Jr.",
+      "pos": "LB",
+      "number": 35
+    },
+    "trevin wallace": {
+      "id": 4692450,
+      "name": "Trevin Wallace",
+      "pos": "LB",
+      "number": 32
+    },
+    "wyatt phyle": {
+      "id": 9900102,
+      "name": "Wyatt Phyle",
+      "pos": "LB",
+      "number": 49
+    },
+    "alex mclaughlin": {
+      "id": 9900020,
+      "name": "Alex McLaughlin",
+      "pos": "LS",
+      "number": 42
+    },
+    "david laganga": {
+      "id": 9900043,
+      "name": "David LaGanga",
+      "pos": "LS",
+      "number": 59
+    },
+    "aba selm": {
+      "id": 9900048,
+      "name": "Aba Selm",
+      "pos": "OL",
+      "number": 53
+    },
+    "alex wollschlaeger": {
+      "id": 9900004,
+      "name": "Alex Wollschlaeger",
+      "pos": "OL",
+      "number": 50
+    },
+    "alexander dimartino": {
+      "id": 9900099,
+      "name": "Alexander DiMartino",
+      "pos": "OL",
+      "number": 68
+    },
+    "brady pullins": {
+      "id": 9900103,
+      "name": "Brady Pullins",
+      "pos": "OL",
+      "number": 67
+    },
+    "bryan auguste": {
+      "id": 9900079,
+      "name": "Bryan Auguste",
+      "pos": "OL",
+      "number": 77
+    },
+    "cameron jones": {
+      "id": 9900064,
+      "name": "Cameron Jones",
+      "pos": "OL",
+      "number": 78
+    },
+    "darrin strey": {
+      "id": 9900084,
+      "name": "Darrin Strey",
+      "pos": "OL",
+      "number": 69
+    },
+    "evan wibberley": {
+      "id": 9900017,
+      "name": "Evan Wibberley",
+      "pos": "OL",
+      "number": 58
+    },
+    "hayes johnson": {
+      "id": 9900047,
+      "name": "Hayes Johnson",
+      "pos": "OL",
+      "number": 72
+    },
+    "jager burton": {
+      "id": 9900005,
+      "name": "Jager Burton",
+      "pos": "OL",
+      "number": 62
+    },
+    "jalen farmer": {
+      "id": 9900016,
+      "name": "Jalen Farmer",
+      "pos": "OL",
+      "number": 52
+    },
+    "jason ekperuoh": {
+      "id": 9900093,
+      "name": "Jason Ekperuoh",
+      "pos": "OL",
+      "number": 61
+    },
+    "jayden clark": {
+      "id": 9900075,
+      "name": "Jayden Clark",
+      "pos": "OL",
+      "number": 79
+    },
+    "jermiel atkins": {
+      "id": 9900060,
+      "name": "Jermiel Atkins",
+      "pos": "OL",
+      "number": 74
+    },
+    "joshua braun": {
+      "id": 9900001,
+      "name": "Joshua Braun",
+      "pos": "OL",
+      "number": 75
+    },
+    "kyle mixon": {
+      "id": 9900089,
+      "name": "Kyle Mixon",
+      "pos": "OL",
+      "number": 63
+    },
+    "malachi wood": {
+      "id": 9900028,
+      "name": "Malachi Wood",
+      "pos": "OL",
+      "number": 71
+    },
+    "rob fogler": {
+      "id": 9900027,
+      "name": "Rob Fogler",
+      "pos": "OL",
+      "number": 70
+    },
+    "shiyazh pete": {
+      "id": 9900021,
+      "name": "Shiyazh Pete",
+      "pos": "OL",
+      "number": 73
+    },
+    "tino merlo": {
+      "id": 9900073,
+      "name": "Tino Merlo",
+      "pos": "OL",
+      "number": 66
+    },
+    "aidan laros": {
+      "id": 9900022,
+      "name": "Aidan Laros",
+      "pos": "P",
+      "number": 48
+    },
+    "wilson berry": {
+      "id": 9900010,
+      "name": "Wilson Berry",
+      "pos": "P",
+      "number": 93
+    },
+    "jacob kauwe": {
+      "id": 9900059,
+      "name": "Jacob Kauwe",
+      "pos": "PK",
+      "number": 91
+    },
+    "zach schreiner": {
+      "id": 9900065,
+      "name": "Zach Schreiner",
+      "pos": "PK",
+      "number": 97
+    },
+    "beau allen": {
+      "id": 9900002,
+      "name": "Beau Allen",
+      "pos": "QB",
+      "number": 11
+    },
+    "brennen ward": {
+      "id": 9900074,
+      "name": "Brennen Ward",
+      "pos": "QB",
+      "number": 14
+    },
+    "cutter boley": {
+      "id": 5141378,
+      "name": "Cutter Boley",
+      "pos": "QB",
+      "number": 8
+    },
+    "stone saunders": {
+      "id": 9900054,
+      "name": "Stone Saunders",
+      "pos": "QB",
+      "number": 12
+    },
+    "zach calzada": {
+      "id": 4426847,
+      "name": "Zach Calzada",
+      "pos": "QB",
+      "number": 5
+    },
+    "chy rivers": {
+      "id": 9900069,
+      "name": "Chy Rivers",
+      "pos": "RB",
+      "number": 36
+    },
+    "dante dowdell": {
+      "id": 9900029,
+      "name": "Dante Dowdell",
+      "pos": "RB",
+      "number": 2
+    },
+    "jamarion wilcox": {
+      "id": 9900030,
+      "name": "Jamarion Wilcox",
+      "pos": "RB",
+      "number": 10
+    },
+    "james dalrymple": {
+      "id": 9900098,
+      "name": "James Dalrymple",
+      "pos": "RB",
+      "number": 35
+    },
+    "jason patterson": {
+      "id": 9900046,
+      "name": "Jason Patterson",
+      "pos": "RB",
+      "number": 26
+    },
+    "seth mcgowan": {
+      "id": 4686468,
+      "name": "Seth McGowan",
+      "pos": "RB",
+      "number": 3
+    },
+    "tovani mizell": {
+      "id": 9900034,
+      "name": "Tovani Mizell",
+      "pos": "RB",
+      "number": 28
+    },
+    "elijah brown": {
+      "id": 9900013,
+      "name": "Elijah Brown",
+      "pos": "TE",
+      "number": 85
+    },
+    "henry boyer": {
+      "id": 9900015,
+      "name": "Henry Boyer",
+      "pos": "TE",
+      "number": 87
+    },
+    "jack monday": {
+      "id": 9900042,
+      "name": "Jack Monday",
+      "pos": "TE",
+      "number": 83
+    },
+    "josh kattus": {
+      "id": 9900014,
+      "name": "Josh Kattus",
+      "pos": "TE",
+      "number": 84
+    },
+    "justin kattus": {
+      "id": 9900088,
+      "name": "Justin Kattus",
+      "pos": "TE",
+      "number": 44
+    },
+    "mikkel skinner": {
+      "id": 9900082,
+      "name": "Mikkel Skinner",
+      "pos": "TE",
+      "number": 18
+    },
+    "willie rodriguez": {
+      "id": 9900049,
+      "name": "Willie Rodriguez",
+      "pos": "TE",
+      "number": 81
+    },
+    "anthony brown-stephens": {
+      "id": 4702365,
+      "name": "Anthony Brown-Stephens",
+      "pos": "WR",
+      "number": 2
+    },
+    "ashton cozart": {
+      "id": 9900068,
+      "name": "Ashton Cozart",
+      "pos": "WR",
+      "number": 80
+    },
+    "aumad edwards": {
+      "id": 9900100,
+      "name": "Aumad Edwards",
+      "pos": "WR",
+      "number": 40
+    },
+    "barion brown": {
+      "id": 4702366,
+      "name": "Barion Brown",
+      "pos": "WR",
+      "number": 7
+    },
+    "cameron miller": {
+      "id": 9900053,
+      "name": "Cameron Miller",
+      "pos": "WR",
+      "number": 22
+    },
+    "cole lanter": {
+      "id": 9900041,
+      "name": "Cole Lanter",
+      "pos": "WR",
+      "number": 86
+    },
+    "dj miller": {
+      "id": 9900094,
+      "name": "DJ Miller",
+      "pos": "WR",
+      "number": 7
+    },
+    "dane key": {
+      "id": 4702367,
+      "name": "Dane Key",
+      "pos": "WR",
+      "number": 6
+    },
+    "david washington jr.": {
+      "id": 9900039,
+      "name": "David Washington Jr.",
+      "pos": "WR",
+      "number": 82
+    },
+    "fred farrier ii": {
+      "id": 9900012,
+      "name": "Fred Farrier II",
+      "pos": "WR",
+      "number": 13
+    },
+    "hardley gilmore iv": {
+      "id": 9900052,
+      "name": "Hardley Gilmore IV",
+      "pos": "WR",
+      "number": 17
+    },
+    "j.j. hester": {
+      "id": 9900000,
+      "name": "J.J. Hester",
+      "pos": "WR",
+      "number": 4
+    },
+    "ja'mori maclin": {
+      "id": 9900003,
+      "name": "Ja'Mori Maclin",
+      "pos": "WR",
+      "number": 9
+    },
+    "kendrick law": {
+      "id": 4685441,
+      "name": "Kendrick Law",
+      "pos": "WR",
+      "number": 1
+    },
+    "montavin quisenberry": {
+      "id": 9900076,
+      "name": "Montavin Quisenberry",
+      "pos": "WR",
+      "number": 19
+    },
+    "preston bowman": {
+      "id": 9900081,
+      "name": "Preston Bowman",
+      "pos": "WR",
+      "number": 89
+    },
+    "quintin simmons jr.": {
+      "id": 9900061,
+      "name": "Quintin Simmons Jr.",
+      "pos": "WR",
+      "number": 88
+    },
+    "rico crowder": {
+      "id": 9900087,
+      "name": "Rico Crowder",
+      "pos": "WR",
+      "number": 33
+    },
+    "saxton howard": {
+      "id": 9900101,
+      "name": "Saxton Howard",
+      "pos": "WR",
+      "number": 39
+    },
+    "spencer leadbetter": {
+      "id": 9900070,
+      "name": "Spencer Leadbetter",
+      "pos": "WR",
+      "number": 37
+    },
+    "troy stellato": {
+      "id": 9900006,
+      "name": "Troy Stellato",
+      "pos": "WR",
+      "number": 0
+    }
+  },
+  "meta": {
+    "teamId": 96,
+    "team": "Kentucky",
+    "season": 2025,
+    "updatedAt": "2025-10-21T00:00:00Z"
+  }
+}

@@ -1,8 +1,5 @@
 {
-  "last_featured": "Josh Braun",
-  "counts": {
-    "Zach Calzada": 2,
-    "Daveren Rayner": 1,
-    "Josh Braun": 1
-  }
+  "season": 2025,
+  "lastGameId": null,
+  "lastGameDate": null
 }

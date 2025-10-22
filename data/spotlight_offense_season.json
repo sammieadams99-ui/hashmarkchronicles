@@ -1,31 +1,39 @@
 [
   {
-    "athleteId": 4241473,
-    "name": "Ray Davis",
-    "pos": "RB",
-    "jersey": 1,
-    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4241473.png",
-    "espn": "https://www.espn.com/college-football/player/_/id/4241473/ray-davis",
-    "side": "offense",
+    "id": 5141378,
+    "name": "Cutter Boley",
+    "pos": "QB",
+    "espn": "https://www.espn.com/college-football/player/_/id/5141378/cutter-boley",
     "season": {
       "games": "6",
-      "rush_yds": "612",
-      "td": "8"
+      "cmp_att": "134/198",
+      "yds": "1542",
+      "td": "12",
+      "int": "4"
     }
   },
   {
-    "athleteId": 4702367,
-    "name": "Dane Key",
+    "id": 4702366,
+    "name": "Barion Brown",
     "pos": "WR",
-    "jersey": 6,
-    "headshot": "https://a.espncdn.com/i/headshots/college-football/players/full/4702367.png",
-    "espn": "https://www.espn.com/college-football/player/_/id/4702367/dane-key",
-    "side": "offense",
+    "espn": "https://www.espn.com/college-football/player/_/id/4702366/barion-brown",
     "season": {
       "games": "6",
-      "rec": "31",
-      "yds": "428",
-      "td": "4"
+      "rec": "34",
+      "yds": "512",
+      "td": "5"
+    }
+  },
+  {
+    "id": 4702365,
+    "name": "Anthony Brown-Stephens",
+    "pos": "WR",
+    "espn": "https://www.espn.com/college-football/player/_/id/4702365/anthony-brown-stephens",
+    "season": {
+      "games": "6",
+      "rec": "21",
+      "yds": "286",
+      "td": "2"
     }
   }
 ]
