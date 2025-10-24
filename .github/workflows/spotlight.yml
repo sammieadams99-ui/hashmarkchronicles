@@ -55,6 +55,7 @@ jobs:
               rm -rf data/team/roster.json data/team/roster_plus.json data/team/roster_meta.json ./.cache/espn* || true
             fi
           fi
+          fi
 
       - name: Install dependencies
         run: npm install

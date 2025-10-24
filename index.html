@@ -320,123 +320,6 @@
   <!-- X/Twitter embeds -->
   <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-  <!-- ======== INLINE FALLBACK DATA (used only if ESPN fails) ======== -->
-  <script type="application/json" id="fallback-ticker">
-  [
-    { "label":"Explosive PA rate", "value":"+6.3%", "trend":"good", "suffix":"vs base" },
-    { "label":"Yds/Play (UK)", "value":"5.7", "trend":"good" },
-    { "label":"Havoc Allowed", "value":"42%", "trend":"warn", "suffix":"steady" },
-    { "label":"3rd & 6+ defense", "value":"46%", "trend":"bad", "suffix":"conv. allowed" },
-    { "label":"Boley", "value":"885 yds • 4 TD", "trend":"good" }
-  ]
-  </script>
-
-  <script type="application/json" id="fallback-spotlight-offense-last">
-  [
-    {
-      "id": 5141378,
-      "name": "Cutter Boley",
-      "pos": "QB",
-      "espn": "https://www.espn.com/college-football/player/_/id/5141378/cutter-boley",
-      "last_game": { "opp": "Texas", "cmp_att": "31/39", "yds": "258", "td": "0", "int": "1" }
-    },
-    {
-      "id": 4702366,
-      "name": "Barion Brown",
-      "pos": "WR",
-      "espn": "https://www.espn.com/college-football/player/_/id/4702366/barion-brown",
-      "last_game": { "opp": "Texas", "rec": "8", "yds": "102", "td": "1" }
-    },
-    {
-      "id": 4702367,
-      "name": "Dane Key",
-      "pos": "WR",
-      "espn": "https://www.espn.com/college-football/player/_/id/4702367/dane-key",
-      "last_game": { "opp": "Texas", "rec": "6", "yds": "88", "td": "0" }
-    }
-  ]
-  </script>
-
-  <script type="application/json" id="fallback-spotlight-defense-last">
-  [
-    {
-      "id": 4692450,
-      "name": "Trevin Wallace",
-      "pos": "LB",
-      "espn": "https://www.espn.com/college-football/player/_/id/4692450/trevin-wallace",
-      "last_game": { "opp": "Texas", "tkl": "11", "tfl": "1", "sacks": "0.5" }
-    },
-    {
-      "id": 4692799,
-      "name": "Maxwell Hairston",
-      "pos": "DB",
-      "espn": "https://www.espn.com/college-football/player/_/id/4692799/maxwell-hairston",
-      "last_game": { "opp": "Texas", "tkl": "6", "pbu": "2" }
-    },
-    {
-      "id": 4893283,
-      "name": "Deone Walker",
-      "pos": "DL",
-      "espn": "https://www.espn.com/college-football/player/_/id/4893283/deone-walker",
-      "last_game": { "opp": "Texas", "tkl": "5", "tfl": "2", "sacks": "1.0" }
-    }
-  ]
-  </script>
-
-  <script type="application/json" id="fallback-spotlight-offense-season">
-  [
-    {
-      "id": 5141378,
-      "name": "Cutter Boley",
-      "pos": "QB",
-      "espn": "https://www.espn.com/college-football/player/_/id/5141378/cutter-boley",
-      "season": { "games": "6", "cmp_att": "134/198", "yds": "1542", "td": "12", "int": "4" }
-    },
-    {
-      "id": 4702366,
-      "name": "Barion Brown",
-      "pos": "WR",
-      "espn": "https://www.espn.com/college-football/player/_/id/4702366/barion-brown",
-      "season": { "games": "6", "rec": "34", "yds": "512", "td": "5" }
-    },
-    {
-      "id": 4702365,
-      "name": "Anthony Brown-Stephens",
-      "pos": "WR",
-      "espn": "https://www.espn.com/college-football/player/_/id/4702365/anthony-brown-stephens",
-      "season": { "games": "6", "rec": "21", "yds": "286", "td": "2" }
-    }
-  ]
-  </script>
-
-  <script type="application/json" id="fallback-spotlight-defense-season">
-  [
-    {
-      "id": 4692450,
-      "name": "Trevin Wallace",
-      "pos": "LB",
-      "espn": "https://www.espn.com/college-football/player/_/id/4692450/trevin-wallace",
-      "season": { "games": "6", "tkl": "54", "tfl": "6.5", "sacks": "2.5" }
-    },
-    {
-      "id": 4893283,
-      "name": "Deone Walker",
-      "pos": "DL",
-      "espn": "https://www.espn.com/college-football/player/_/id/4893283/deone-walker",
-      "season": { "games": "6", "tfl": "8.0", "sacks": "4.0" }
-    },
-    {
-      "id": 4819224,
-      "name": "Alex Afari Jr.",
-      "pos": "DB",
-      "espn": "https://www.espn.com/college-football/player/_/id/4819224/alex-afari-jr",
-      "season": { "games": "6", "tkl": "32", "ints": "2" }
-    }
-  ]
-  </script>
-
-  <!-- ======== END INLINE FALLBACKS ======== -->
-
   <!-- Single inline script. No /data fetch. Offline-first, then ESPN live. -->
   <script>
   (function start(run){ if(document.readyState!=='loading'){ run(); } else { document.addEventListener('DOMContentLoaded', run); } })(function(){
@@ -444,12 +327,23 @@
       // ---- CONFIG ----
       const TEAM_ID = new URLSearchParams(location.search).get('team') || '96'; // Kentucky default
       const POLL_MS = 30_000;
+      const targetSeason = 2025;
+      const bust = `?v=${Date.now()}`;
+      const INLINE_ENABLED = window.__HC_INLINE__ === true;
+      let rosterMeta = null;
+      let roster = [];
+      let rosterIds = new Set();
 
       // ---- UTILS ----
       const log = (...a)=>console.log('[HC]',...a);
       const err = (...a)=>console.error('[HC]',...a);
       const headshot = id => id ? `https://a.espncdn.com/i/headshots/college-football/players/full/${id}.png` : '';
-      const readInlineJSON = id => { const t=document.getElementById(id); if(!t) return null; try{return JSON.parse(t.textContent);}catch(e){return null;} };
+      const readInlineJSON = id => {
+        if (!INLINE_ENABLED) return null;
+        const t=document.getElementById(id);
+        if(!t) return null;
+        try{return JSON.parse(t.textContent);}catch(e){return null;}
+      };
 
       const featuredEl = document.getElementById('hc-spotlight');
       const spotlightCard = document.getElementById('hc-spotlight-card');
@@ -474,6 +368,25 @@
         defense_season: []
       };
       let span = 'last';
+
+      function rosterIdFrom(entry){
+        if(!entry||typeof entry!=='object') return null;
+        const candidates=[entry.id, entry.athleteId, entry.athlete_id, entry.playerId, entry.player_id];
+        for(const candidate of candidates){
+          const num=Number(candidate);
+          if(Number.isFinite(num) && rosterIds.has(num)) return num;
+        }
+        return null;
+      }
+
+      function keepRosterEntry(entry){
+        const id=rosterIdFrom(entry);
+        if(id==null) return false;
+        if(entry && typeof entry==='object' && entry.id==null){
+          entry.id=id;
+        }
+        return true;
+      }
 
       function initialsFromName(name){
         return (name||'')
@@ -533,14 +446,27 @@
         featuredEl.style.display = 'block';
       }
 
+      function renderList(rows){
+        if(!featuredEl) return;
+        if(!Array.isArray(rows) || rows.length===0){
+          featuredEl.innerHTML = '<div class="row" data-mode="empty"><div><div class="who">Spotlight unavailable</div><div class="stat">Season mismatch — refresh later.</div></div></div>';
+          featuredEl.style.display = 'block';
+          return;
+        }
+        featuredEl.innerHTML = rows.map(rowHTML).join('');
+        featuredEl.style.display = 'block';
+      }
+
       function applyInlineFallback(){
         const inline = window.__HC_SPOTLIGHT_INLINE__ || inlineSpotlightRaw;
         const adapt = p => ({ ...p, statline: p.statline || statlineFromSource(p) });
-        LIVE.offense_last = (inline.offense_last || []).map(adapt);
-        LIVE.defense_last = (inline.defense_last || []).map(adapt);
-        LIVE.offense_season = (inline.offense_season || []).map(adapt);
-        LIVE.defense_season = (inline.defense_season || []).map(adapt);
-        applyFeatured(LIVE.offense_last[0] || LIVE.defense_last[0]);
+        const filter = (rows) => (rows || []).filter(keepRosterEntry).map(adapt);
+        LIVE.offense_last = filter(inline.offense_last);
+        LIVE.defense_last = filter(inline.defense_last);
+        LIVE.offense_season = filter(inline.offense_season);
+        LIVE.defense_season = filter(inline.defense_season);
+        const first = LIVE.offense_last[0] || LIVE.defense_last[0] || null;
+        if(first) applyFeatured(first);
         setSpotlightMode('inline');
       }
 
@@ -552,7 +478,7 @@
       async function getJSON(url,{timeout=8000}={}) {
         const ctrl=new AbortController();
         const id=setTimeout(()=>ctrl.abort(),timeout);
-        const res=await fetch(url+`?v=${Date.now()}`,{signal:ctrl.signal,cache:'no-store'});
+        const res=await fetch(url,{signal:ctrl.signal,cache:'no-store'});
         clearTimeout(id);
         const ct=res.headers.get('content-type')||'';
         if(!res.ok || !ct.includes('application/json'))
@@ -564,19 +490,20 @@
         try {
           const base='/data';
           const [ol,dl,os,ds]=await Promise.all([
-            getJSON(`${base}/spotlight_offense_last.json`),
-            getJSON(`${base}/spotlight_defense_last.json`),
-            getJSON(`${base}/spotlight_offense_season.json`).catch(()=>[]),
-            getJSON(`${base}/spotlight_defense_season.json`).catch(()=>[])
+            getJSON(`${base}/spotlight_offense_last.json${bust}`),
+            getJSON(`${base}/spotlight_defense_last.json${bust}`),
+            getJSON(`${base}/spotlight_offense_season.json${bust}`).catch(()=>[]),
+            getJSON(`${base}/spotlight_defense_season.json${bust}`).catch(()=>[])
           ]);
           const adapt=p=>{
             const statline=statlineFromSource(p);
             return {...p,statline};
           };
-          LIVE.offense_last=ol.map(adapt);
-          LIVE.defense_last=dl.map(adapt);
-          LIVE.offense_season=os.map(adapt);
-          LIVE.defense_season=ds.map(adapt);
+          const filterRows=(rows)=> (rows||[]).filter(keepRosterEntry).map(adapt);
+          LIVE.offense_last=filterRows(ol);
+          LIVE.defense_last=filterRows(dl);
+          LIVE.offense_season=filterRows(os);
+          LIVE.defense_season=filterRows(ds);
           window.__HC_SPOTLIGHT_STATIC__={
             offense_last: LIVE.offense_last,
             defense_last: LIVE.defense_last,
@@ -600,6 +527,36 @@
           window.__HC_SPOTLIGHT_STATIC_PROMISE=staticPromise;
         }
         return staticPromise;
+      }
+
+      async function primeRoster(){
+        try{
+          rosterMeta = await getJSON(`/data/team/roster_meta.json${bust}`);
+        }catch(e){
+          rosterMeta = null;
+        }
+        if(!rosterMeta || Number(rosterMeta.season) !== targetSeason){
+          console.warn('Season mismatch — refusing to hydrate spotlight');
+          setSpotlightMode('season-blocked');
+          renderList([]);
+          if(spotlightDebug){
+            spotlightDebug.textContent = `data-mode:blocked • season:${rosterMeta?.season ?? 'unknown'} • roster:0`;
+          }
+          throw new Error('season-mismatch');
+        }
+        roster = await getJSON(`/data/team/roster.json${bust}`);
+        rosterIds = new Set((roster||[]).map(p=>Number(p.id)).filter((id)=>Number.isFinite(id)));
+        if(!rosterIds.size){
+          throw new Error('roster-empty');
+        }
+      }
+
+      async function updateDebugBadge(){
+        if(!spotlightDebug) return;
+        const meta = await getJSON(`/data/meta.json${bust}`).catch(()=>null);
+        const mode = meta?.mode || 'unknown';
+        const seasonValue = meta?.season ?? rosterMeta?.season ?? 'n/a';
+        spotlightDebug.textContent = `data-mode:${mode} • season:${seasonValue} • roster:${rosterIds.size}`;
       }
 
       async function fetchJSONExternal(url,{timeout=8000}={}){
@@ -700,11 +657,24 @@
         const defSeason=merged.filter(p=>!OFFENSE_POS.has((p.pos||'').toUpperCase()));
         const offLast=last.length?mergeLivePlayers([], last.filter(p=>(p.side||'offense').toLowerCase()==='offense')):offSeason;
         const defLast=last.length?mergeLivePlayers([], last.filter(p=>(p.side||'defense').toLowerCase()==='defense')):defSeason;
-        const adapt=p=>({ ...p, statline: statlineFromSource(p) });
-        LIVE.offense_last=(offLast.length?offLast:offSeason).map(adapt);
-        LIVE.defense_last=(defLast.length?defLast:defSeason).map(adapt);
-        LIVE.offense_season=offSeason.map(adapt);
-        LIVE.defense_season=defSeason.map(adapt);
+        const filterLiveRows=(rows)=>{
+          const out=[];
+          for(const row of rows||[]){
+            const clone={...row};
+            if(!keepRosterEntry(clone)) continue;
+            clone.statline=statlineFromSource(clone);
+            out.push(clone);
+          }
+          return out;
+        };
+        const seasonOffRows=filterLiveRows(offSeason);
+        const seasonDefRows=filterLiveRows(defSeason);
+        const lastOffRows=filterLiveRows(offLast.length?offLast:offSeason);
+        const lastDefRows=filterLiveRows(defLast.length?defLast:defSeason);
+        LIVE.offense_last=lastOffRows;
+        LIVE.defense_last=lastDefRows;
+        LIVE.offense_season=seasonOffRows;
+        LIVE.defense_season=seasonDefRows;
         window.__HC_SPOTLIGHT_LIVE__={
           offense_last: LIVE.offense_last,
           defense_last: LIVE.defense_last,
@@ -797,6 +767,15 @@
         await loadLiveSpotlightFromESPN(TEAM_ID);
       }
 
+      try{
+        await primeRoster();
+      }catch(err){
+        console.warn('primeRoster halted spotlight hydration',err?.message||err);
+        return;
+      }
+
+      await updateDebugBadge();
+
       await ensureStaticSpotlight();
       try {
         await bootLive();
@@ -837,7 +816,8 @@
   (async function () {
     const box = document.getElementById('hc-debug');
     if (!box) return;
-    const url = './data/team/roster.json?ts=' + Date.now();
+    const bust = '?v=' + Date.now();
+    const url = './data/team/roster.json' + bust;
     try {
       const res = await fetch(url, { cache: 'no-store' });
       box.textContent = 'roster.json → HTTP ' + res.status;

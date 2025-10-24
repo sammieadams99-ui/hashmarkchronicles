@@ -10,12 +10,18 @@ const SPOTLIGHT_SOURCES = [
   { id: 'def_season', label: 'Def season', path: './data/spotlight_defense_season.json', cacheKey: 'defense_season' }
 ];
 
+const TARGET_SEASON = 2025;
+const CACHE_BUST = `?v=${Date.now()}`;
+const INLINE_ENABLED = typeof window !== 'undefined' && window.__HC_INLINE__ === true;
+
 const rosterState = {
   loaded: false,
   rows: [],
   byId: new Map(),
   byName: new Map(),
-  count: 0
+  count: 0,
+  meta: null,
+  season: null
 };
 
 function normalizeNameKey(name) {
@@ -165,6 +171,7 @@ function isTruthy(value) {
 }
 
 function readInlineJSON(id) {
+  if (!INLINE_ENABLED) return null;
   const el = typeof document !== 'undefined' ? document.getElementById(id) : null;
   if (!el) return null;
   try {
@@ -174,23 +181,41 @@ function readInlineJSON(id) {
   }
 }
 
-const INLINE_FALLBACKS = {
-  offense_last: readInlineJSON('fallback-spotlight-offense-last') || [],
-  defense_last: readInlineJSON('fallback-spotlight-defense-last') || [],
-  offense_season: readInlineJSON('fallback-spotlight-offense-season') || [],
-  defense_season: readInlineJSON('fallback-spotlight-defense-season') || [],
-  featured: readInlineJSON('fallback-spotlight-offense-last') || []
-};
+const INLINE_FALLBACKS = INLINE_ENABLED
+  ? {
+      offense_last: readInlineJSON('fallback-spotlight-offense-last') || [],
+      defense_last: readInlineJSON('fallback-spotlight-defense-last') || [],
+      offense_season: readInlineJSON('fallback-spotlight-offense-season') || [],
+      defense_season: readInlineJSON('fallback-spotlight-defense-season') || [],
+      featured: readInlineJSON('fallback-spotlight-offense-last') || []
+    }
+  : {
+      offense_last: [],
+      defense_last: [],
+      offense_season: [],
+      defense_season: [],
+      featured: []
+    };
 
 if (typeof window !== 'undefined') {
   const existingInline = window.__HC_SPOTLIGHT_INLINE__ || {};
-  window.__HC_SPOTLIGHT_INLINE__ = {
-    offense_last: existingInline.offense_last?.length ? existingInline.offense_last : INLINE_FALLBACKS.offense_last,
-    defense_last: existingInline.defense_last?.length ? existingInline.defense_last : INLINE_FALLBACKS.defense_last,
-    offense_season: existingInline.offense_season?.length ? existingInline.offense_season : INLINE_FALLBACKS.offense_season,
-    defense_season: existingInline.defense_season?.length ? existingInline.defense_season : INLINE_FALLBACKS.defense_season,
-    featured: existingInline.featured?.length ? existingInline.featured : INLINE_FALLBACKS.featured
-  };
+  if (INLINE_ENABLED) {
+    window.__HC_SPOTLIGHT_INLINE__ = {
+      offense_last: existingInline.offense_last?.length ? existingInline.offense_last : INLINE_FALLBACKS.offense_last,
+      defense_last: existingInline.defense_last?.length ? existingInline.defense_last : INLINE_FALLBACKS.defense_last,
+      offense_season: existingInline.offense_season?.length ? existingInline.offense_season : INLINE_FALLBACKS.offense_season,
+      defense_season: existingInline.defense_season?.length ? existingInline.defense_season : INLINE_FALLBACKS.defense_season,
+      featured: existingInline.featured?.length ? existingInline.featured : INLINE_FALLBACKS.featured
+    };
+  } else {
+    window.__HC_SPOTLIGHT_INLINE__ = {
+      offense_last: Array.isArray(existingInline.offense_last) ? existingInline.offense_last : [],
+      defense_last: Array.isArray(existingInline.defense_last) ? existingInline.defense_last : [],
+      offense_season: Array.isArray(existingInline.offense_season) ? existingInline.offense_season : [],
+      defense_season: Array.isArray(existingInline.defense_season) ? existingInline.defense_season : [],
+      featured: Array.isArray(existingInline.featured) ? existingInline.featured : []
+    };
+  }
 }
 
 const TAG_PRIORITY = new Map([
@@ -233,8 +258,8 @@ function onReady(fn) {
 }
 
 function fetchList(path, errors) {
-  const bust = `${path}?ts=${Date.now()}`;
-  return fetch(bust, { cache: 'no-store' })
+  const url = `${path}${CACHE_BUST}`;
+  return fetch(url, { cache: 'no-store' })
     .then(async (res) => {
       if (!res.ok) {
         if (Array.isArray(errors)) errors.push(`HTTP ${res.status} ${path}`);
@@ -256,8 +281,42 @@ function fetchList(path, errors) {
     });
 }
 
+function fetchJSON(path, errors) {
+  const url = `${path}${CACHE_BUST}`;
+  return fetch(url, { cache: 'no-store' })
+    .then(async (res) => {
+      if (!res.ok) {
+        const error = new Error(`HTTP ${res.status} ${path}`);
+        if (Array.isArray(errors)) errors.push(error.message);
+        throw error;
+      }
+      try {
+        return await res.json();
+      } catch (err) {
+        if (Array.isArray(errors)) errors.push(`parse ${path}`);
+        throw err;
+      }
+    })
+    .catch((err) => {
+      if (Array.isArray(errors)) errors.push(`${err?.message || 'fetch failed'} ${path}`);
+      throw err;
+    });
+}
+
 async function loadRoster(errors) {
   if (rosterState.loaded) return rosterState;
+  if (!rosterState.meta) {
+    const meta = await fetchJSON('./data/team/roster_meta.json', errors).catch((err) => {
+      throw err;
+    });
+    const season = Number(meta?.season);
+    if (!Number.isFinite(season) || season !== TARGET_SEASON) {
+      if (Array.isArray(errors)) errors.push(`season mismatch ${season}`);
+      throw new Error('season-mismatch');
+    }
+    rosterState.meta = meta;
+    rosterState.season = season;
+  }
   for (let i = 0; i < ROSTER_PATHS.length; i += 1) {
     const path = ROSTER_PATHS[i];
     const payload = await fetchList(path, i === ROSTER_PATHS.length - 1 ? errors : null);
@@ -692,6 +751,9 @@ onReady(async () => {
         rows.forEach((entry) => {
           if (!entry || typeof entry !== 'object') return;
           const enriched = enrichPlayer(entry, rosterData) || {};
+          if (!Number.isFinite(enriched.id) || !rosterData.byId.has(enriched.id)) {
+            return;
+          }
           const entryKey = Number.isFinite(enriched.id) ? `id:${enriched.id}` : keyFrom(entry);
           if (!entryKey) return;
 
@@ -805,8 +867,18 @@ onReady(async () => {
   document.addEventListener('hc:spotlight:hydrate', () => {
     hydrate().catch((err) => {
       console.warn('[HC] spotlight hydrate failed', err);
+      lastErrors = [err?.message || 'hydrate error'];
+      renderCards(mount, []);
+      applyDebug(debugEl, mergedRosterStats, spotlightStats, 0, lastErrors, state.filter, dataMode);
     });
   });
 
-  await hydrate();
+  try {
+    await hydrate();
+  } catch (err) {
+    console.warn('[HC] initial spotlight hydrate failed', err);
+    lastErrors = [err?.message || 'hydrate error'];
+    renderCards(mount, []);
+    applyDebug(debugEl, mergedRosterStats, spotlightStats, 0, lastErrors, state.filter, dataMode);
+  }
 });

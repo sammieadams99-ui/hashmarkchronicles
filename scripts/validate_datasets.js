@@ -14,7 +14,6 @@ const ARTIFACT_STATUS = path.join(ROOT, 'artifacts', 'status', 'last-good-roster
 const TEAM_ID = Number(process.env.TEAM_ID || 96);
 const TARGET_SEASON = Number(process.env.SEASON || 2025);
 const STRICT_SEASON = (process.env.STRICT_SEASON ?? 'true').toLowerCase() === 'true';
-const SEASON_MISMATCH_MESSAGE = 'Season mismatch: not publishing stale roster';
 
 function readJSONSafe(filePath, fallback = null) {
   try {
@@ -65,11 +64,10 @@ const roster = readJSONSafe(rosterPath, []);
 if (!meta || typeof meta !== 'object') fail('roster_meta.json missing');
 if (!Array.isArray(roster) || roster.length === 0) softExit('roster missing — builder should reuse cache');
 
+const metaSeason = Number(meta.season);
 if (meta.teamId !== TEAM_ID) fail(`teamId must equal ${TEAM_ID}`);
-if (meta.season !== TARGET_SEASON) {
-  if (STRICT_SEASON) {
-    fail(SEASON_MISMATCH_MESSAGE);
-  }
+if (!Number.isFinite(metaSeason)) fail('roster_meta season must be numeric');
+if (metaSeason !== TARGET_SEASON) {
   fail(`season must equal ${TARGET_SEASON}`);
 }
 const allowedSources = new Set(['espn', 'espn+uka', 'cache']);
