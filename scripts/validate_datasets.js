@@ -11,6 +11,10 @@ const ROOT = path.join(__dirname, '..');
 const DATA_DIR = path.join(ROOT, 'data');
 const TEAM_DIR = path.join(DATA_DIR, 'team');
 const ARTIFACT_STATUS = path.join(ROOT, 'artifacts', 'status', 'last-good-roster.flag');
+const TEAM_ID = Number(process.env.TEAM_ID || 96);
+const TARGET_SEASON = Number(process.env.SEASON || 2025);
+const STRICT_SEASON = (process.env.STRICT_SEASON ?? 'true').toLowerCase() === 'true';
+const SEASON_MISMATCH_MESSAGE = 'Season mismatch: not publishing stale roster';
 
 function readJSONSafe(filePath, fallback = null) {
   try {
@@ -40,7 +44,7 @@ function slugify(value) {
 }
 
 if (useFixture) {
-  const roster = readJSONSafe(path.join(ROOT, 'fixtures', 'roster_2025.json'), []);
+  const roster = readJSONSafe(path.join(ROOT, 'fixtures', `roster_${TARGET_SEASON}.json`), []);
   const spotlight = readJSONSafe(path.join(ROOT, 'fixtures', 'spotlight_last.json'), []);
   const rosterIds = new Set(roster.map((player) => Number(player.id)).filter((id) => Number.isFinite(id)));
   if (roster.length === 0) fail('fixture roster missing entries');
@@ -61,10 +65,17 @@ const roster = readJSONSafe(rosterPath, []);
 if (!meta || typeof meta !== 'object') fail('roster_meta.json missing');
 if (!Array.isArray(roster) || roster.length === 0) softExit('roster missing — builder should reuse cache');
 
-if (meta.teamId !== 96) fail('teamId must equal 96');
-if (meta.season !== 2025) fail('season must equal 2025');
-if (meta.source !== 'espn') fail('source must equal "espn"');
+if (meta.teamId !== TEAM_ID) fail(`teamId must equal ${TEAM_ID}`);
+if (meta.season !== TARGET_SEASON) {
+  if (STRICT_SEASON) {
+    fail(SEASON_MISMATCH_MESSAGE);
+  }
+  fail(`season must equal ${TARGET_SEASON}`);
+}
+const allowedSources = new Set(['espn', 'espn+uka', 'cache']);
+if (!allowedSources.has(meta.source)) fail('source must be one of "espn", "espn+uka", or "cache"');
 if (!meta.generated_at) fail('generated_at timestamp missing');
+if (STRICT_SEASON && meta.strict === false) fail('strict flag must remain enabled under STRICT_SEASON');
 
 if (roster.length < 65 || roster.length > 150) {
   fail(`roster size ${roster.length} out of range (65-150)`);

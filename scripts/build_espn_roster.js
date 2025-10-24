@@ -5,8 +5,14 @@ import { fileURLToPath } from 'url';
 import fetch from 'node-fetch';
 import { DRY, LOG, writeJSON, retry, readJSON } from './lib/stability.js';
 
-const TEAM_ID = 96;
-const SEASON = 2025;
+const TEAM_ID = Number(process.env.TEAM_ID || 96);
+const DEFAULT_SEASON = 2025;
+const TARGET_SEASON = Number(process.env.SEASON || DEFAULT_SEASON);
+const STRICT_SEASON = (process.env.STRICT_SEASON ?? 'true').toLowerCase() === 'true';
+const PURGE_IF_SEASON_MISMATCH = (process.env.PURGE_IF_SEASON_MISMATCH ?? 'true').toLowerCase() === 'true';
+const ESPN_BACKOFF = parseBackoff(process.env.ESPN_BACKOFF || '250,600,1200');
+const ESPN_TIMEOUT = Number(process.env.ESPN_TIMEOUT || 9000);
+
 const ESPN_ROSTER_URL = `https://www.espn.com/college-football/team/roster/_/id/${TEAM_ID}/kentucky-wildcats`;
 const ESPN_TEAM_API = `https://site.web.api.espn.com/apis/site/v2/sports/football/college-football/teams/${TEAM_ID}?enable=roster`;
 
@@ -23,7 +29,47 @@ let usedLastGood = false;
 
 async function main() {
   try {
-    const players = await loadRoster();
+    let { players, detectedSeason, seasonResolvedFrom } = await loadRoster();
+
+    const targetSeason = TARGET_SEASON;
+    const strict = STRICT_SEASON;
+    const purgeIfMismatch = PURGE_IF_SEASON_MISMATCH;
+
+    let source = seasonResolvedFrom || 'espn';
+    let detected = Number.isFinite(Number(detectedSeason)) ? Number(detectedSeason) : null;
+
+    if (!Array.isArray(players) || players.length === 0) {
+      warn('ESPN roster empty; attempt last-good reuse or alt provider');
+      const fallback = loadLastGoodRoster({ targetSeason, strict });
+      if (!fallback) {
+        throw new Error('No roster data available after fallback attempts');
+      }
+      ({ players, detectedSeason: detected, seasonResolvedFrom: source } = fallback);
+    } else if (strict && detected && detected !== targetSeason) {
+      warn(`Detected season ${detected} != target ${targetSeason}`);
+      const ukaFallback = attemptUkaIntersection(players, targetSeason, detected);
+      if (ukaFallback) {
+        ({ players, detectedSeason: detected, seasonResolvedFrom: source } = ukaFallback);
+      } else if (purgeIfMismatch) {
+        throw new Error('Season mismatch; aborting roster write to prevent publishing wrong year');
+      } else {
+        const cached = readSafe('data/team/roster_meta.json', null);
+        if (!cached || Number(cached.season) !== targetSeason) {
+          throw new Error('Season mismatch and last-good not for target season');
+        }
+        info('Reusing last-good roster for correct season');
+        const fallback = loadLastGoodRoster({ targetSeason, strict: true });
+        if (!fallback) {
+          throw new Error('Season mismatch and last-good roster unavailable for target season');
+        }
+        ({ players, detectedSeason: detected, seasonResolvedFrom: source } = fallback);
+      }
+    }
+
+    if (!Array.isArray(players) || players.length === 0) {
+      throw new Error('No roster payload available after fallbacks');
+    }
+
     const normalized = normalizeRoster(players);
     const idCoverage = computeIdCoverage(normalized);
 
@@ -33,8 +79,10 @@ async function main() {
 
     const meta = {
       teamId: TEAM_ID,
-      season: SEASON,
-      source: 'espn',
+      season: targetSeason,
+      source: source || 'espn',
+      strict,
+      lastGoodReuse: usedLastGood,
       generated_at: new Date().toISOString()
     };
 
@@ -70,7 +118,7 @@ async function loadRoster() {
   for (const strategy of strategies) {
     try {
       const result = await strategy();
-      if (Array.isArray(result) && result.length > 0) {
+      if (Array.isArray(result?.players) && result.players.length > 0) {
         return result;
       }
     } catch (error) {
@@ -81,9 +129,9 @@ async function loadRoster() {
     }
   }
 
-  const fallback = loadLastGoodRoster();
+  const fallback = loadLastGoodRoster({ targetSeason: TARGET_SEASON, strict: STRICT_SEASON });
   if (fallback) {
-    usedLastGood = true;
+    warn('Using last-good roster payload after ESPN fetch failure');
     return fallback;
   }
 
@@ -97,13 +145,14 @@ async function fetchRosterFromApi() {
       headers: {
         'User-Agent': 'hashmark-chronicles/1.0 (+https://hashmarkchronicles.com)',
         Accept: 'application/json'
-      }
+      },
+      timeout: ESPN_TIMEOUT
     });
     if (!response.ok) {
       throw new Error(`API responded with status ${response.status}`);
     }
     return response.json();
-  }, [250, 600, 1200]);
+  }, ESPN_BACKOFF);
 
   const groups = payload?.team?.athletes || payload?.athletes || [];
   const players = [];
@@ -118,7 +167,9 @@ async function fetchRosterFromApi() {
   if (!players.length) {
     throw new Error('API payload missing athlete list');
   }
-  return players;
+
+  const detectedSeason = extractSeasonFromApi(payload);
+  return { players, detectedSeason, seasonResolvedFrom: 'espn' };
 }
 
 async function fetchRosterFromPage() {
@@ -127,23 +178,31 @@ async function fetchRosterFromPage() {
       headers: {
         'User-Agent': 'hashmark-chronicles/1.0 (+https://hashmarkchronicles.com)',
         Accept: 'text/html'
-      }
+      },
+      timeout: ESPN_TIMEOUT
     });
     if (!response.ok) {
       throw new Error(`Page responded with status ${response.status}`);
     }
     return response.text();
-  }, [250, 600, 1200]);
+  }, ESPN_BACKOFF);
 
+  let detectedSeason = detectSeasonFromHtml(html);
   const jsonCandidates = extractJsonCandidates(html);
   for (const candidate of jsonCandidates) {
     try {
       const parsed = JSON.parse(candidate);
       const nodes = Array.isArray(parsed) ? parsed : [parsed];
       for (const node of nodes) {
+        if (!detectedSeason) {
+          const fromNode = findSeasonInNode(node);
+          if (Number.isFinite(fromNode)) {
+            detectedSeason = Number(fromNode);
+          }
+        }
         const rosterNodes = findAllRosterNodes(node);
         if (rosterNodes.length) {
-          return rosterNodes;
+          return { players: rosterNodes, detectedSeason, seasonResolvedFrom: 'espn' };
         }
       }
     } catch (error) {
@@ -164,6 +223,51 @@ function extractJsonCandidates(html) {
     candidates.push(json);
   }
   return candidates;
+}
+
+function detectSeasonFromHtml(html) {
+  const headingMatch = html.match(/<h[12][^>]*>\s*(\d{4})[^<]*Roster/iu);
+  if (headingMatch) {
+    const value = Number(headingMatch[1]);
+    if (Number.isFinite(value)) {
+      return value;
+    }
+  }
+  return null;
+}
+
+function findSeasonInNode(node) {
+  const seen = new Set();
+  const stack = [node];
+  while (stack.length) {
+    const current = stack.pop();
+    if (!current || typeof current !== 'object') continue;
+    if (seen.has(current)) continue;
+    seen.add(current);
+    const candidates = [];
+    if (typeof current.season === 'object' && current.season) {
+      candidates.push(current.season.year, current.season.season, current.season.displayYear);
+    }
+    candidates.push(current.season, current.year, current.seasonYear);
+    if (typeof current.header === 'object' && current.header) {
+      candidates.push(current.header.season, current.header.seasonYear);
+      if (typeof current.header.season === 'object') {
+        candidates.push(current.header.season.year);
+      }
+    }
+    for (const candidate of candidates) {
+      const value = Number(candidate);
+      if (Number.isFinite(value) && value > 1900) {
+        return value;
+      }
+    }
+    for (const value of Object.values(current)) {
+      if (value && typeof value === 'object') {
+        stack.push(value);
+      }
+    }
+  }
+  return null;
 }
 
 function findAllRosterNodes(node) {
@@ -189,23 +293,95 @@ function findAllRosterNodes(node) {
   return results;
 }
 
-function loadLastGoodRoster() {
-  const current = readJSON(ROSTER_PATH, null);
-  if (isViableRoster(current)) {
-    return current;
+function extractSeasonFromApi(payload) {
+  const candidates = [
+    payload?.team?.season?.year,
+    payload?.team?.record?.season?.year,
+    payload?.season?.year,
+    payload?.team?.nextEvent?.season?.year,
+    payload?.team?.previousEvent?.season?.year
+  ];
+  for (const candidate of candidates) {
+    const value = Number(candidate);
+    if (Number.isFinite(value) && value > 1900) {
+      return value;
+    }
   }
-  const legacyConverted = transformLegacyRoster(current);
-  if (isViableRoster(legacyConverted)) {
-    console.warn('⚠️  transformed legacy roster payload');
-    usedLastGood = true;
-    return legacyConverted;
+  const groups = payload?.team?.athletes || [];
+  for (const group of groups) {
+    const items = group?.items || group?.athletes || [];
+    for (const player of items) {
+      const season = player?.athlete?.season?.year || player?.season?.year;
+      const value = Number(season);
+      if (Number.isFinite(value) && value > 1900) {
+        return value;
+      }
+    }
   }
-  const fixturePath = path.join(ROOT, 'fixtures', 'roster_2025.json');
-  const fixture = readJSON(fixturePath, null);
-  if (isViableRoster(fixture)) {
-    console.warn('⚠️  falling back to fixture roster payload');
+  return null;
+}
+
+function attemptUkaIntersection(players, targetSeason, detectedSeason) {
+  const ukaRoster = readSafe('data/team/uka_roster.json', null);
+  if (!Array.isArray(ukaRoster) || ukaRoster.length === 0) {
+    return null;
+  }
+  const ukaMeta = readSafe('data/team/uka_meta.json', null);
+  const ukaSeason = Number(ukaMeta?.season);
+  const allow = (Number(detectedSeason) === targetSeason) || (Number(ukaSeason) === targetSeason);
+  const ukaNames = new Set(
+    ukaRoster
+      .map((row) => normalizeName(row?.name || row?.displayName || row?.fullName || null))
+      .filter(Boolean)
+  );
+  if (!ukaNames.size) {
+    return null;
+  }
+  const filtered = players.filter((player) => ukaNames.has(normalizeName(player?.displayName || player?.fullName || player?.name)));
+  if (!filtered.length) {
+    return null;
+  }
+  if (!allow) {
+    warn('UKA intersection available but season metadata does not match target');
+    return null;
+  }
+  info(`Using ESPN+UKA intersection fallback (${filtered.length} players)`);
+  return { players: filtered, detectedSeason: targetSeason, seasonResolvedFrom: 'espn+uka' };
+}
+
+function loadLastGoodRoster({ targetSeason, strict } = {}) {
+  const meta = readSafe('data/team/roster_meta.json', null);
+  const roster = readJSON(ROSTER_PATH, null);
+  if (Array.isArray(roster) && roster.length) {
+    if (!strict || Number(meta?.season) === targetSeason) {
+      usedLastGood = true;
+      return { players: roster, detectedSeason: Number(meta?.season) || null, seasonResolvedFrom: 'cache' };
+    }
+  }
+  if (!strict) {
+    const legacyConverted = transformLegacyRoster(roster);
+    if (isViableRoster(legacyConverted)) {
+      usedLastGood = true;
+      return { players: legacyConverted, detectedSeason: targetSeason || Number(meta?.season) || null, seasonResolvedFrom: 'cache' };
+    }
+  }
+  const fixture = loadFixtureRoster(targetSeason);
+  if (fixture) {
     usedLastGood = true;
     return fixture;
+  }
+  return null;
+}
+
+function loadFixtureRoster(targetSeason) {
+  if (!Number.isFinite(targetSeason)) {
+    return null;
+  }
+  const fixturePath = path.join(ROOT, 'fixtures', `roster_${targetSeason}.json`);
+  const fixture = readJSON(fixturePath, null);
+  if (isViableRoster(fixture)) {
+    warn(`Falling back to roster fixture for season ${targetSeason}`);
+    return { players: fixture, detectedSeason: targetSeason, seasonResolvedFrom: 'cache' };
   }
   return null;
 }
@@ -349,6 +525,33 @@ function computeIdCoverage(players) {
   if (!players.length) return 0;
   const withId = players.filter((player) => Number.isFinite(player.id));
   return withId.length / players.length;
+}
+
+function normalizeName(value) {
+  if (!value || typeof value !== 'string') return null;
+  return value.trim().toLowerCase();
+}
+
+function readSafe(relativePath, fallback) {
+  const filePath = path.join(ROOT, relativePath);
+  return readJSON(filePath, fallback);
+}
+
+function warn(message) {
+  console.warn(`⚠️  ${message}`);
+}
+
+function info(message) {
+  console.log(`ℹ️  ${message}`);
+}
+
+function parseBackoff(input) {
+  if (!input) return [250, 600, 1200];
+  const parts = String(input)
+    .split(',')
+    .map((token) => Number(token.trim()))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  return parts.length ? parts : [250, 600, 1200];
 }
 
 main();

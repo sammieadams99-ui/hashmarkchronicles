@@ -16,6 +16,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    env:
+      SEASON: "2025"
+      TEAM_ID: "96"
+      STRICT_SEASON: "true"
+      PURGE_IF_SEASON_MISMATCH: "true"
+      ESPN_BACKOFF: "250,600,1200"
+      ESPN_TIMEOUT: "9000"
+      FRONTEND_FORCE_STATIC: "false"
     steps:
       - uses: actions/checkout@v4
 
@@ -34,6 +42,19 @@ jobs:
         run: |
           mkdir -p data
           if [ -z "$(ls -A data 2>/dev/null)" ] && [ -d .lastgood ]; then rsync -a .lastgood/ data/ || true; fi
+
+      - name: Season guard / purge outdated last-good
+        run: |
+          set -e
+          mkdir -p data/team
+          TARGET="${{ env.SEASON }}"
+          if [ -f data/team/roster_meta.json ]; then
+            META_SEASON=$(jq -r '.season' data/team/roster_meta.json || echo "unknown")
+            if [ "${{ env.PURGE_IF_SEASON_MISMATCH }}" = "true" ] && [ "$META_SEASON" != "$TARGET" ]; then
+              echo "Purging last-good cache: $META_SEASON != $TARGET"
+              rm -rf data/team/roster.json data/team/roster_plus.json data/team/roster_meta.json ./.cache/espn* || true
+            fi
+          fi
 
       - name: Install dependencies
         run: npm install
