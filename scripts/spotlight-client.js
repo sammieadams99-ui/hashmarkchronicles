@@ -10,12 +10,21 @@ const SPOTLIGHT_SOURCES = [
   { id: 'def_season', label: 'Def season', path: './data/spotlight_defense_season.json', cacheKey: 'defense_season' }
 ];
 
+const TARGET_SEASON = 2025;
+const INLINE_ENABLED = typeof window !== 'undefined' && window.__HC_INLINE__ === true;
+
+function withBust(path) {
+  return path.includes('?') ? `${path}&v=${Date.now()}` : `${path}?v=${Date.now()}`;
+}
+
 const rosterState = {
   loaded: false,
   rows: [],
   byId: new Map(),
   byName: new Map(),
-  count: 0
+  count: 0,
+  metaSeason: null,
+  metaOk: null
 };
 
 function normalizeNameKey(name) {
@@ -165,6 +174,7 @@ function isTruthy(value) {
 }
 
 function readInlineJSON(id) {
+  if (!INLINE_ENABLED) return null;
   const el = typeof document !== 'undefined' ? document.getElementById(id) : null;
   if (!el) return null;
   try {
@@ -174,22 +184,39 @@ function readInlineJSON(id) {
   }
 }
 
-const INLINE_FALLBACKS = {
-  offense_last: readInlineJSON('fallback-spotlight-offense-last') || [],
-  defense_last: readInlineJSON('fallback-spotlight-defense-last') || [],
-  offense_season: readInlineJSON('fallback-spotlight-offense-season') || [],
-  defense_season: readInlineJSON('fallback-spotlight-defense-season') || [],
-  featured: readInlineJSON('fallback-spotlight-offense-last') || []
-};
+const INLINE_FALLBACKS = INLINE_ENABLED
+  ? {
+      offense_last: readInlineJSON('fallback-spotlight-offense-last') || [],
+      defense_last: readInlineJSON('fallback-spotlight-defense-last') || [],
+      offense_season: readInlineJSON('fallback-spotlight-offense-season') || [],
+      defense_season: readInlineJSON('fallback-spotlight-defense-season') || [],
+      featured: readInlineJSON('fallback-spotlight-offense-last') || []
+    }
+  : { offense_last: [], defense_last: [], offense_season: [], defense_season: [], featured: [] };
 
 if (typeof window !== 'undefined') {
   const existingInline = window.__HC_SPOTLIGHT_INLINE__ || {};
   window.__HC_SPOTLIGHT_INLINE__ = {
-    offense_last: existingInline.offense_last?.length ? existingInline.offense_last : INLINE_FALLBACKS.offense_last,
-    defense_last: existingInline.defense_last?.length ? existingInline.defense_last : INLINE_FALLBACKS.defense_last,
-    offense_season: existingInline.offense_season?.length ? existingInline.offense_season : INLINE_FALLBACKS.offense_season,
-    defense_season: existingInline.defense_season?.length ? existingInline.defense_season : INLINE_FALLBACKS.defense_season,
-    featured: existingInline.featured?.length ? existingInline.featured : INLINE_FALLBACKS.featured
+    offense_last:
+      INLINE_ENABLED && existingInline.offense_last?.length
+        ? existingInline.offense_last
+        : INLINE_FALLBACKS.offense_last,
+    defense_last:
+      INLINE_ENABLED && existingInline.defense_last?.length
+        ? existingInline.defense_last
+        : INLINE_FALLBACKS.defense_last,
+    offense_season:
+      INLINE_ENABLED && existingInline.offense_season?.length
+        ? existingInline.offense_season
+        : INLINE_FALLBACKS.offense_season,
+    defense_season:
+      INLINE_ENABLED && existingInline.defense_season?.length
+        ? existingInline.defense_season
+        : INLINE_FALLBACKS.defense_season,
+    featured:
+      INLINE_ENABLED && existingInline.featured?.length
+        ? existingInline.featured
+        : INLINE_FALLBACKS.featured
   };
 }
 
@@ -233,8 +260,8 @@ function onReady(fn) {
 }
 
 function fetchList(path, errors) {
-  const bust = `${path}?ts=${Date.now()}`;
-  return fetch(bust, { cache: 'no-store' })
+  const url = withBust(path);
+  return fetch(url, { cache: 'no-store' })
     .then(async (res) => {
       if (!res.ok) {
         if (Array.isArray(errors)) errors.push(`HTTP ${res.status} ${path}`);
@@ -256,8 +283,42 @@ function fetchList(path, errors) {
     });
 }
 
+async function fetchRosterMeta(errors) {
+  if (rosterState.metaOk !== null) return rosterState.metaOk;
+  const url = withBust('./data/team/roster_meta.json');
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) {
+      if (Array.isArray(errors)) errors.push(`HTTP ${res.status} roster_meta`);
+      rosterState.metaOk = false;
+      return rosterState.metaOk;
+    }
+    const meta = await res.json();
+    const season = Number(meta?.season);
+    rosterState.metaSeason = Number.isFinite(season) ? season : null;
+    rosterState.metaOk = Number.isFinite(season) && season === TARGET_SEASON;
+    if (!rosterState.metaOk && Array.isArray(errors)) {
+      errors.push(`season mismatch ${season ?? 'unknown'}`);
+    }
+    return rosterState.metaOk;
+  } catch (err) {
+    if (Array.isArray(errors)) errors.push(`meta ${err?.message || err}`);
+    rosterState.metaOk = false;
+    return rosterState.metaOk;
+  }
+}
+
 async function loadRoster(errors) {
   if (rosterState.loaded) return rosterState;
+  const metaOk = await fetchRosterMeta(errors);
+  if (!metaOk) {
+    rosterState.loaded = true;
+    rosterState.rows = [];
+    rosterState.byId = new Map();
+    rosterState.byName = new Map();
+    rosterState.count = 0;
+    return rosterState;
+  }
   for (let i = 0; i < ROSTER_PATHS.length; i += 1) {
     const path = ROSTER_PATHS[i];
     const payload = await fetchList(path, i === ROSTER_PATHS.length - 1 ? errors : null);
@@ -267,6 +328,7 @@ async function loadRoster(errors) {
       rosterState.byId = normalized.byId;
       rosterState.byName = normalized.byName;
       rosterState.count = normalized.players.length;
+      rosterState.metaOk = true;
       rosterState.loaded = true;
       return rosterState;
     }
@@ -278,6 +340,7 @@ async function loadRoster(errors) {
     }
   }
   rosterState.loaded = true;
+  rosterState.metaOk = rosterState.metaOk ?? false;
   return rosterState;
 }
 
@@ -635,12 +698,24 @@ onReady(async () => {
       const rosterData = await loadRoster(errors);
       rosterStats = { total: rosterData.count, keyed: rosterData.byId.size };
 
+      if (rosterData.metaOk === false || rosterData.metaSeason !== null && rosterData.metaSeason !== TARGET_SEASON) {
+        dataMode = 'stale';
+        finalized = [];
+        spotlightStats = { unique: 0, total: 0 };
+        mergedRosterStats = { total: rosterStats.total, keyed: rosterStats.keyed };
+        if (typeof window !== 'undefined') {
+          window.__HC_SPOTLIGHT_MODE = dataMode;
+        }
+        applyFilter(state.filter);
+        return;
+      }
+
       const cards = new Map();
       let total = 0;
 
       const liveBag = typeof window !== 'undefined' ? window.__HC_SPOTLIGHT_LIVE__ : null;
       const staticBag = typeof window !== 'undefined' ? window.__HC_SPOTLIGHT_STATIC__ : null;
-      const inlineBag = typeof window !== 'undefined' ? window.__HC_SPOTLIGHT_INLINE__ : null;
+      const inlineBag = INLINE_ENABLED && typeof window !== 'undefined' ? window.__HC_SPOTLIGHT_INLINE__ : null;
       const forceStatic = typeof window !== 'undefined' ? isTruthy(window.FRONTEND_FORCE_STATIC) : false;
       dataMode = forceStatic ? 'static' : 'inline';
       const dataPriority = forceStatic ? [staticBag, inlineBag] : [liveBag, staticBag, inlineBag];
@@ -672,7 +747,7 @@ onReady(async () => {
           }
         }
 
-        if (!rows) {
+        if (!rows && INLINE_ENABLED) {
           const fallback = INLINE_FALLBACKS[cacheKey];
           if (Array.isArray(fallback) && fallback.length) {
             rows = fallback.map(clone);
@@ -758,7 +833,14 @@ onReady(async () => {
         });
       }
 
-      finalized = Array.from(cards.values()).map((card) => {
+      const filteredCards = Array.from(cards.values()).filter((card) => {
+        const id = Number(card.id);
+        return Number.isFinite(id) && rosterData.byId.has(id);
+      });
+
+      total = filteredCards.length;
+
+      finalized = filteredCards.map((card) => {
         const tags = Array.from(card.tags);
         const sortedTags = tags.sort((a, b) => {
           const pa = TAG_PRIORITY.get(a) ?? 9;

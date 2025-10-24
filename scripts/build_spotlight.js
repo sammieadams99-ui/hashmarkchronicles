@@ -27,22 +27,37 @@ const ESPN_SUMMARY_URL = (eventId) => `https://site.web.api.espn.com/apis/site/v
 const ESPN_LEADERS_URL = `https://sports.core.api.espn.com/v2/sports/football/leagues/college-football/teams/${TEAM_ID}/leaders?season=${TARGET_SEASON}`;
 
 async function fetchPlayerStats(id) {
-  const url = `https://site.api.espn.com/apis/common/v3/sports/football/college-football/athletes/${id}`;
+  const season = Number(process.env.SEASON || TARGET_SEASON);
+  const url = `https://site.api.espn.com/apis/common/v3/sports/football/college-football/athletes/${id}?season=${season}&region=us&lang=en`;
   try {
     const res = await fetch(url, { timeout: ESPN_TIMEOUT });
-    if (!res.ok) throw new Error(res.status);
+    if (!res.ok) throw new Error(String(res.status));
     const data = await res.json();
-    const statBlocks = data.athlete?.stats || [];
-    const passing = statBlocks.flatMap((b) => b?.splits?.categories || []).find((c) => c.name === 'passing');
+
+    const blocks = data?.athlete?.stats || data?.stats || [];
+    const categories = blocks.flatMap((b) => b?.splits?.categories || []);
+    const passing = categories.find((c) => (c?.name || '').toLowerCase() === 'passing');
     const s = passing?.stats || [];
-    return {
-      yds: s.find((x) => x.name === 'passYards')?.value || null,
-      td: s.find((x) => x.name === 'passTouchdowns')?.value || null,
-      int: s.find((x) => x.name === 'interceptions')?.value || null,
-      cmp_att: `${s.find((x) => x.name === 'completions')?.value}/${s.find((x) => x.name === 'attempts')?.value}`
-    };
+    const val = (name) => s.find((x) => x?.name === name)?.value ?? null;
+
+    const yds = val('passYards') ?? val('yards');
+    const td = val('passTouchdowns') ?? val('touchdowns');
+    const interceptions = val('interceptions');
+    const completions = val('completions');
+    const attempts = val('attempts');
+
+    if (yds || td || interceptions || completions || attempts) {
+      return {
+        yds,
+        td,
+        int: interceptions,
+        cmp_att: completions != null && attempts != null ? `${completions}/${attempts}` : null
+      };
+    }
+
+    return null;
   } catch (e) {
-    console.warn(`⚠️ stats fetch failed for ${id}:`, e.message);
+    console.warn(`⚠️  stats fetch failed for ${id}:`, e.message);
     return null;
   }
 }
