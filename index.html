@@ -148,6 +148,12 @@
   .header-image,.atmosphere-image,.special-teams-image{aspect-ratio:16/9;object-fit:cover}
   @media(max-width:640px){a,button{min-height:var(--tap)}.chip,.chip-x{min-height:40px}}
   @media(prefers-reduced-motion:reduce){.ticker__track{animation:none}.hc-logo::before{animation:none}}
+  .nav-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.32);backdrop-filter:saturate(120%) blur(2px);opacity:0;pointer-events:none;transition:.2s opacity ease;z-index:59}
+  body.nav-open .nav-backdrop{opacity:1;pointer-events:auto}
+  nav#primaryNav{z-index:60}
+  body.nav-open{overflow:hidden;touch-action:none;overscroll-behavior:contain}
+  header{position:sticky;top:0;z-index:70}
+  @media (max-width:640px){.hc-debug-badge{position:fixed;right:12px;bottom:12px;z-index:80}}
   </style>
 </head>
 <body>
@@ -181,6 +187,8 @@
       </nav>
     </div>
   </header>
+
+  <div id="navBackdrop" class="nav-backdrop" hidden></div>
 
   <!-- TICKER -->
   <div class="ticker" aria-label="Season leaders & trending stats">
@@ -861,10 +869,30 @@
   </script>
   <script>
   (function(){
-    const btn=document.getElementById('menuToggle'),nav=document.getElementById('primaryNav');
-    if(!btn||!nav)return;
-    btn.addEventListener('click',()=>{const open=document.body.classList.toggle('nav-open');btn.setAttribute('aria-expanded',open?'true':'false');});
-    nav.addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;document.body.classList.remove('nav-open');btn.setAttribute('aria-expanded','false');});
+    const btn=document.getElementById('menuToggle');
+    const nav=document.getElementById('primaryNav');
+    const backdrop=document.getElementById('navBackdrop');
+    if(!btn||!nav||!backdrop)return;
+    function openNav(){
+      document.body.classList.add('nav-open');
+      btn.setAttribute('aria-expanded','true');
+      backdrop.hidden=false;
+      const focusables=nav.querySelectorAll('a,button,[tabindex]:not([tabindex="-1"])');
+      if(focusables.length){focusables[0].focus();}
+      document.addEventListener('keydown',onKey);
+    }
+    function closeNav(){
+      document.body.classList.remove('nav-open');
+      btn.setAttribute('aria-expanded','false');
+      backdrop.hidden=true;
+      document.removeEventListener('keydown',onKey);
+      btn.focus();
+    }
+    function onKey(e){if(e.key==='Escape')closeNav();}
+    btn.addEventListener('click',()=>document.body.classList.contains('nav-open')?closeNav():openNav());
+    backdrop.addEventListener('click',closeNav);
+    nav.addEventListener('click',e=>{if(e.target.closest('a'))closeNav();});
+    window.addEventListener('scroll',()=>{if(document.body.classList.contains('nav-open'))closeNav();},{passive:true});
   })();
   </script>
 </body>

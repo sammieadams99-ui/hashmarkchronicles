@@ -4,8 +4,11 @@ import { fileURLToPath } from 'url';
 import fetch from 'node-fetch';
 import { writeJSON, retry, readJSON, LOG } from './lib/stability.js';
 
-const TEAM_ID = 96;
-const SEASON = 2025;
+const TEAM_ID = Number(process.env.TEAM_ID || 96);
+const TARGET_SEASON = Number(process.env.SEASON || 2025);
+const STRICT_SEASON = (process.env.STRICT_SEASON ?? 'true').toLowerCase() === 'true';
+const ESPN_BACKOFF = parseBackoff(process.env.ESPN_BACKOFF || '250,600,1200');
+const ESPN_TIMEOUT = Number(process.env.ESPN_TIMEOUT || 9000);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
 const DATA_DIR = path.join(ROOT, 'data');
@@ -21,12 +24,12 @@ const SPOTLIGHT_TARGETS = {
 
 const ESPN_SCHEDULE_URL = `https://site.web.api.espn.com/apis/common/v3/sports/football/college-football/teams/${TEAM_ID}/schedule`;
 const ESPN_SUMMARY_URL = (eventId) => `https://site.web.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=${eventId}`;
-const ESPN_LEADERS_URL = `https://sports.core.api.espn.com/v2/sports/football/leagues/college-football/teams/${TEAM_ID}/leaders?season=${SEASON}`;
+const ESPN_LEADERS_URL = `https://sports.core.api.espn.com/v2/sports/football/leagues/college-football/teams/${TEAM_ID}/leaders?season=${TARGET_SEASON}`;
 
 async function fetchPlayerStats(id) {
   const url = `https://site.api.espn.com/apis/common/v3/sports/football/college-football/athletes/${id}`;
   try {
-    const res = await fetch(url, { timeout: 8000 });
+    const res = await fetch(url, { timeout: ESPN_TIMEOUT });
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
     const statBlocks = data.athlete?.stats || [];
@@ -47,9 +50,19 @@ async function fetchPlayerStats(id) {
 async function main() {
   try {
     const rosterPath = path.join(TEAM_DIR, 'roster.json');
+    const rosterMetaPath = path.join(TEAM_DIR, 'roster_meta.json');
     const roster = readJSON(rosterPath, []);
+    const rosterMeta = readJSON(rosterMetaPath, null);
     if (!Array.isArray(roster) || roster.length === 0) {
       throw new Error('Roster unavailable — run build_espn_roster.js first');
+    }
+
+    if (!rosterMeta || typeof rosterMeta !== 'object') {
+      throw new Error('Roster metadata unavailable — aborting spotlight build');
+    }
+
+    if (STRICT_SEASON && Number(rosterMeta.season) !== TARGET_SEASON) {
+      throw new Error('Season mismatch: not publishing stale roster');
     }
 
     const rosterIds = new Set(roster.map((player) => Number(player.id)).filter((id) => Number.isFinite(id)));
@@ -58,12 +71,26 @@ async function main() {
     );
 
     const outputs = await buildSpotlightPayload(rosterIds, nameToId);
+    const keep = (row) => row && Number.isFinite(Number(row.id)) && rosterIds.has(Number(row.id));
+
+    let offense_last = ensureRosterCoverage(outputs.offense_last || [], rosterIds, nameToId, 'offense_last');
+    let defense_last = ensureRosterCoverage(outputs.defense_last || [], rosterIds, nameToId, 'defense_last');
+    let offense_season = ensureRosterCoverage(outputs.offense_season || [], rosterIds, nameToId, 'offense_season');
+    let defense_season = ensureRosterCoverage(outputs.defense_season || [], rosterIds, nameToId, 'defense_season');
+
+    offense_last = (offense_last || []).filter(keep);
+    defense_last = (defense_last || []).filter(keep);
+    offense_season = (offense_season || []).filter(keep);
+    defense_season = (defense_season || []).filter(keep);
+
+    const sanitized = { offense_last, defense_last, offense_season, defense_season };
+
     for (const [key, relativePath] of Object.entries(SPOTLIGHT_TARGETS)) {
       if (key === 'featured') {
         continue;
       }
       const filePath = path.join(ROOT, relativePath);
-      const rows = ensureRosterCoverage(outputs[key] || [], rosterIds, nameToId, key);
+      const rows = sanitized[key] || [];
       writeJSON(filePath, rows);
     }
 
@@ -84,6 +111,9 @@ async function main() {
       const liveStats = fetchId ? await fetchPlayerStats(fetchId) : null;
       featured.season = liveStats || featured.season || {};
       const featuredPath = path.join(ROOT, SPOTLIGHT_TARGETS.featured);
+      if (!keep(featured)) {
+        throw new Error('Season mismatch: featured player missing from roster');
+      }
       writeJSON(featuredPath, [featured]);
       if (liveStats) {
         console.log(`featured: ${featured.name} — live stats fetched from ESPN`);
@@ -91,6 +121,17 @@ async function main() {
         console.warn(`featured: ${featured.name} — using cached spotlight data`);
       }
     }
+
+    const strict = Boolean(rosterMeta?.strict ?? STRICT_SEASON);
+    const usedLastGood = Boolean(rosterMeta?.lastGoodReuse);
+    const metaPath = path.join(DATA_DIR, 'meta.json');
+    writeJSON(metaPath, {
+      mode: usedLastGood ? 'cache' : 'live',
+      rosterCount: rosterIds.size,
+      season: TARGET_SEASON,
+      strict,
+      generated_at: new Date().toISOString()
+    });
 
     console.log('✅ spotlight build complete');
   } catch (error) {
@@ -268,13 +309,23 @@ async function fetchJson(url) {
       headers: {
         'User-Agent': 'hashmark-chronicles/1.0 (+https://hashmarkchronicles.com)',
         Accept: 'application/json'
-      }
+      },
+      timeout: ESPN_TIMEOUT
     });
     if (!response.ok) {
       throw new Error(`Request failed (${response.status}) for ${url}`);
     }
     return response.json();
-  }, [250, 600, 1200]);
+  }, ESPN_BACKOFF);
+}
+
+function parseBackoff(input) {
+  if (!input) return [250, 600, 1200];
+  const parts = String(input)
+    .split(',')
+    .map((token) => Number(token.trim()))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  return parts.length ? parts : [250, 600, 1200];
 }
 
 main();
