@@ -1,6 +1,8 @@
 {
   "teamId": 96,
   "season": 2025,
-  "source": "espn",
-  "generated_at": "2025-10-22T22:51:27.337Z"
+  "source": "cache",
+  "strict": true,
+  "lastGoodReuse": true,
+  "generated_at": "2025-10-24T19:33:07.540Z"
 }
