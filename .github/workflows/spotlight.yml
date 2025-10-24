@@ -44,16 +44,28 @@ jobs:
           if [ -z "$(ls -A data 2>/dev/null)" ] && [ -d .lastgood ]; then rsync -a .lastgood/ data/ || true; fi
 
       - name: Season guard / purge outdated last-good
+        shell: bash
         run: |
-          set -e
-          mkdir -p data/team
-          TARGET="${{ env.SEASON }}"
-          if [ -f data/team/roster_meta.json ]; then
-            META_SEASON=$(jq -r '.season' data/team/roster_meta.json || echo "unknown")
-            if [ "${{ env.PURGE_IF_SEASON_MISMATCH }}" = "true" ] && [ "$META_SEASON" != "$TARGET" ]; then
-              echo "Purging last-good cache: $META_SEASON != $TARGET"
-              rm -rf data/team/roster.json data/team/roster_plus.json data/team/roster_meta.json ./.cache/espn* || true
+          set -euo pipefail
+          TARGET="${SEASON:-2025}"
+          PURGE="${PURGE_IF_SEASON_MISMATCH:-true}"
+
+          if [ -f "data/team/roster_meta.json" ]; then
+            # Prefer jq; fallback to grep for environments without jq
+            if command -v jq >/dev/null 2>&1; then
+              META_SEASON="$(jq -r '.season // "unknown"' data/team/roster_meta.json)"
+            else
+              META_SEASON="$(grep -oE '"season"\s*:\s*[0-9]+' data/team/roster_meta.json | grep -oE '[0-9]+' || echo "unknown")"
             fi
+
+            if [ "$PURGE" = "true" ] && [ "$META_SEASON" != "$TARGET" ]; then
+              echo "Purging last-good cache (meta=$META_SEASON, target=$TARGET)"
+              rm -rf data/team/roster.json data/team/roster_plus.json data/team/roster_meta.json ./.cache/espn* || true
+            else
+              echo "No purge needed (meta=$META_SEASON, target=$TARGET, purge=$PURGE)"
+            fi
+          else
+            echo "No roster_meta.json present; nothing to purge"
           fi
 
       - name: Install dependencies
