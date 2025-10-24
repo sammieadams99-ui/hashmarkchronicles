@@ -65,8 +65,11 @@ const roster = readJSONSafe(rosterPath, []);
 if (!meta || typeof meta !== 'object') fail('roster_meta.json missing');
 if (!Array.isArray(roster) || roster.length === 0) softExit('roster missing — builder should reuse cache');
 
-if (meta.teamId !== TEAM_ID) fail(`teamId must equal ${TEAM_ID}`);
-if (meta.season !== TARGET_SEASON) {
+const metaTeamId = Number(meta.teamId);
+if (!Number.isFinite(metaTeamId) || metaTeamId !== TEAM_ID) fail(`teamId must equal ${TEAM_ID}`);
+
+const metaSeason = Number(meta.season);
+if (!Number.isFinite(metaSeason) || metaSeason !== TARGET_SEASON) {
   if (STRICT_SEASON) {
     fail(SEASON_MISMATCH_MESSAGE);
   }
