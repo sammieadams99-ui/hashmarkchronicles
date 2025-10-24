@@ -12,9 +12,15 @@ const SPOTLIGHT_SOURCES = [
 
 const TARGET_SEASON = 2025;
 const INLINE_ENABLED = typeof window !== 'undefined' && window.__HC_INLINE__ === true;
+const BUST = `?v=${Date.now()}`;
 
 function withBust(path) {
-  return path.includes('?') ? `${path}&v=${Date.now()}` : `${path}?v=${Date.now()}`;
+  if (!BUST) return path;
+  if (path.includes('?')) {
+    const joiner = path.endsWith('?') || path.endsWith('&') ? '' : '&';
+    return `${path}${joiner}${BUST.slice(1)}`;
+  }
+  return `${path}${BUST}`;
 }
 
 const rosterState = {
@@ -283,6 +289,21 @@ function fetchList(path, errors) {
     });
 }
 
+async function fetchDataMeta(errors) {
+  const url = withBust('./data/meta.json');
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) {
+      if (Array.isArray(errors)) errors.push(`HTTP ${res.status} data_meta`);
+      return null;
+    }
+    return await res.json();
+  } catch (err) {
+    if (Array.isArray(errors)) errors.push(`data_meta ${err?.message || err}`);
+    return null;
+  }
+}
+
 async function fetchRosterMeta(errors) {
   if (rosterState.metaOk !== null) return rosterState.metaOk;
   const url = withBust('./data/team/roster_meta.json');
@@ -429,6 +450,35 @@ function statPartsFromObject(obj) {
       return `${label} ${v}`;
     })
     .filter(Boolean);
+}
+
+function numberOrNull(value) {
+  if (value == null || value === '') return null;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+
+function featuredSeasonStatline(season) {
+  if (!season || typeof season !== 'object') return '';
+  const cmpAttRaw = season.cmp_att ?? season.cmpAtt ?? '';
+  const cmpAtt = typeof cmpAttRaw === 'string' ? cmpAttRaw.trim() : String(cmpAttRaw || '').trim();
+  const yds = numberOrNull(season.yds ?? season.yards ?? season.passYards);
+  const td = numberOrNull(season.td ?? season.touchdowns ?? season.passTouchdowns);
+  const ints = numberOrNull(season.int ?? season.ints ?? season.interceptions ?? season.passInterceptions);
+  const qbParts = [];
+  if (cmpAtt) qbParts.push(`CMP/ATT ${cmpAtt}`);
+  if (yds != null) qbParts.push(`YDS ${yds}`);
+  if (td != null && ints != null) qbParts.push(`TD ${td} / INT ${ints}`);
+  if (qbParts.length) return qbParts.join(' • ');
+
+  const tkl = numberOrNull(season.tkl ?? season.tackles ?? season.tacklesTotal);
+  const tfl = numberOrNull(season.tfl ?? season.tacklesForLoss ?? season.tfls);
+  const defInts = numberOrNull(season.ints ?? season.int ?? season.interceptions);
+  const defParts = [];
+  if (tkl != null) defParts.push(`TKL ${tkl}`);
+  if (tfl != null) defParts.push(`TFL ${tfl}`);
+  if (defInts != null) defParts.push(`INT ${defInts}`);
+  return defParts.join(' • ');
 }
 
 function formatGrade(rawGrade) {
@@ -695,8 +745,39 @@ onReady(async () => {
         }
       }
 
+      const spotlightMeta = await fetchDataMeta(errors);
+      const spotlightSeason = Number(spotlightMeta?.season);
+      if (!spotlightMeta || !Number.isFinite(spotlightSeason) || spotlightSeason !== TARGET_SEASON) {
+        if (Array.isArray(errors)) {
+          errors.push(`season mismatch meta ${spotlightSeason ?? 'unknown'}`);
+        }
+        console.warn('Season mismatch — skipping spotlight hydrate.');
+        dataMode = 'stale';
+        finalized = [];
+        spotlightStats = { unique: 0, total: 0 };
+        mergedRosterStats = { total: rosterStats.total, keyed: rosterStats.keyed };
+        if (typeof window !== 'undefined') {
+          window.__HC_SPOTLIGHT_MODE = dataMode;
+        }
+        applyFilter(state.filter);
+        return;
+      }
+
       const rosterData = await loadRoster(errors);
       rosterStats = { total: rosterData.count, keyed: rosterData.byId.size };
+
+      const rosterIds = new Set(
+        (Array.isArray(rosterData.rows) ? rosterData.rows : [])
+          .map((player) => Number(player.id))
+          .filter((id) => Number.isFinite(id))
+      );
+      const keepEntry = (entry) => {
+        if (!entry || typeof entry !== 'object') return false;
+        const resolved = resolveAthleteId(entry);
+        if (Number.isFinite(resolved)) return rosterIds.has(resolved);
+        const fallback = Number(entry.id);
+        return Number.isFinite(fallback) && rosterIds.has(fallback);
+      };
 
       if (rosterData.metaOk === false || rosterData.metaSeason !== null && rosterData.metaSeason !== TARGET_SEASON) {
         dataMode = 'stale';
@@ -755,6 +836,9 @@ onReady(async () => {
           }
         }
 
+        if (Array.isArray(rows)) {
+          rows = rows.filter(keepEntry);
+        }
         if (!Array.isArray(rows) || !rows.length) continue;
 
         if (sourceMode === 'live') {
@@ -852,6 +936,16 @@ onReady(async () => {
         card.displayTag = sortedTags[0] || '';
         const topPriority = sortedTags.length ? TAG_PRIORITY.get(sortedTags[0]) ?? 9 : 9;
         card.priority = topPriority;
+        if (typeof card.statline === 'string') {
+          card.statline = card.statline.trim();
+        }
+        const isFeatured = sortedTags.includes('Featured');
+        if (isFeatured && (!card.statline || card.statline === '—')) {
+          const featuredLine = featuredSeasonStatline(card.season);
+          if (featuredLine) {
+            card.statline = featuredLine;
+          }
+        }
         if (!card.statline) card.statline = '—';
         if (!card.initials) card.initials = initials(card.name || 'UK');
         if (!card.headshot && Number.isFinite(card.id)) {
