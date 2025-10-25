@@ -1,145 +1,166 @@
 /**
- * Client renderer for the sidebar “Player Spotlight”
- * - Fetches JSON from /data/*.json
- * - Renders featured card + list for Offense/Defense in tabs [Last | Season]
- * - Robust empty-state + safe fallbacks
+ * Minimal, resilient client for the sidebar Player Spotlight.
+ * Renders top-3 Offense/Defense for Last Game and Season.
+ * Expects JSON files in /data written by the builder.
  *
- * Usage:
- *   <div id="hc-spotlight"></div>
- *   <script src="/scripts/spotlight-client.js" defer></script>
- *
- * CSS: The component ships minimal styles; inherit site fonts.
+ * Mount point in index.html:
+ *   <section id="player-spotlight"></section>
  */
 
 (function () {
-  const ROOT_ID = "hc-spotlight";
-  const root = document.getElementById(ROOT_ID);
-  if (!root) return;
+  const mount = document.getElementById("player-spotlight");
+  if (!mount) return;
 
   const state = {
     side: "offense",   // "offense" | "defense"
-    view: "last",      // "last" | "season"
-    feeds: {},         // cached JSON
+    span: "last",      // "last" | "season"
+    datasets: {},      // cache
   };
 
-  const css = document.createElement("style");
-  css.textContent = `
-  .hc-tabs{display:flex;gap:.5rem;margin:.25rem 0 .5rem}
-  .hc-tab{padding:.25rem .5rem;border:1px solid #cbd5e1;border-radius:9999px;cursor:pointer;font-size:.85rem;background:#f7fafc}
-  .hc-tab.active{background:#003087;color:#fff;border-color:#003087}
-  .hc-row{display:flex;align-items:center;gap:.6rem;padding:.5rem;border:1px solid #e6e6e6;border-radius:8px;margin:.4rem 0;background:#fff}
-  .hc-row img{width:40px;height:40px;border-radius:50%;object-fit:cover}
-  .hc-row .hc-meta{flex:1}
-  .hc-name{font-weight:600;font-size:.92rem}
-  .hc-sub{font-size:.8rem;color:#475569}
-  .hc-grade{margin-left:auto;font-weight:700;font-size:.9rem;min-width:38px;text-align:center;border-radius:14px;padding:.2rem .45rem;border:1px solid #e2e8f0}
-  .hc-grade.A{background:#ecfdf5;border-color:#10b981;color:#047857}
-  .hc-grade.B{background:#eff6ff;border-color:#60a5fa;color:#1d4ed8}
-  .hc-grade.C{background:#fefce8;border-color:#facc15;color:#854d0e}
-  .hc-grade.D{background:#fff7ed;border-color:#fb923c;color:#9a3412}
-  .hc-grade.F{background:#fef2f2;border-color:#fca5a5;color:#b91c1c}
-  .hc-empty{padding:.75rem;border:1px dashed #cbd5e1;border-radius:8px;color:#475569;background:#fff}
-  .hc-featured{display:flex;gap:.75rem;align-items:center;border:2px solid #e6e6e6;border-radius:10px;padding:.6rem;background:#fff;margin-bottom:.6rem}
-  .hc-featured img{width:54px;height:54px;border-radius:50%;object-fit:cover}
-  .hc-featured .hc-title{font-weight:700}
-  .hc-chip{display:inline-block;background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;border-radius:9999px;padding:.1rem .5rem;font-size:.75rem;margin-left:.4rem}
-  `;
-  document.head.appendChild(css);
+  const files = {
+    offense_last:  "/data/spotlight_offense_last.json",
+    offense_season:"/data/spotlight_offense_season.json",
+    defense_last:  "/data/spotlight_defense_last.json",
+    defense_season:"/data/spotlight_defense_season.json",
+    featured:      "/data/spotlight_featured.json",
+  };
 
-  root.innerHTML = `
-    <div class="hc-tabs">
-      <button class="hc-tab" data-side="offense">Offense</button>
-      <button class="hc-tab" data-side="defense">Defense</button>
-      <span style="flex:1"></span>
-      <button class="hc-tab" data-view="last">Last</button>
-      <button class="hc-tab" data-view="season">Season</button>
-    </div>
-    <div id="hc-featured"></div>
-    <div id="hc-list"></div>
-  `;
-
-  const tabs = root.querySelectorAll(".hc-tab");
-  tabs.forEach(btn => {
-    btn.addEventListener("click", () => {
-      if (btn.dataset.side) state.side = btn.dataset.side;
-      if (btn.dataset.view) state.view = btn.dataset.view;
-      render();
-    });
-  });
-
-  function pickFeed() {
-    return `/data/spotlight_${state.side}_${state.view}.json`;
+  function h(tag, attrs, ...kids) {
+    const el = document.createElement(tag);
+    for (const [k,v] of Object.entries(attrs || {})) {
+      if (k === "class") el.className = v;
+      else if (k === "html") el.innerHTML = v;
+      else el.setAttribute(k, v);
+    }
+    for (const kid of kids) {
+      if (kid == null) continue;
+      el.appendChild(typeof kid === "string" ? document.createTextNode(kid) : kid);
+    }
+    return el;
   }
 
-  async function getJSON(url) {
-    if (state.feeds[url]) return state.feeds[url];
+  function gradeBadge(letter, pct) {
+    const span = h("span", { class: "hc-grade" }, `${letter} `, h("small", {}, `${pct}%`));
+    span.style.display = "inline-flex";
+    span.style.alignItems = "center";
+    span.style.gap = "6px";
+    span.style.fontWeight = "700";
+    span.style.background = "#0b3a82";
+    span.style.color = "white";
+    span.style.padding = "2px 8px";
+    span.style.borderRadius = "12px";
+    return span;
+  }
+
+  function card(entry) {
+    const img = entry.headshot ? h("img", { src: entry.headshot, alt: entry.name, referrerpolicy: "no-referrer" }) : h("div", { class: "hc-avatar" }, entry.name.split(" ").map(w => w[0]).join("").slice(0,2));
+    const name = h("div", { class: "hc-name" }, entry.name, " ", h("span", { class: "hc-pos" }, `• ${entry.pos || ""}`));
+    const stats = h("div", { class: "hc-stat" }, entry.statline || "— ESPN →");
+    const grade = gradeBadge(entry.letter || "C", entry.pct ?? 50);
+
+    const row = h("div", { class: "hc-row" }, img, h("div", { class: "hc-meta" }, name, stats));
+    const wrap = h("div", { class: "hc-card" }, row, h("div", { class: "hc-grade-wrap" }, grade));
+
+    // styles (scoped)
+    wrap.style.display = "grid";
+    wrap.style.gridTemplateColumns = "1fr auto";
+    wrap.style.gap = "6px";
+    wrap.style.alignItems = "center";
+    wrap.style.padding = "10px";
+    wrap.style.border = "1px solid #e5e8ef";
+    wrap.style.borderRadius = "10px";
+    wrap.style.background = "white";
+
+    (img.style||{}).width = "42px";
+    (img.style||{}).height = "42px";
+    (img.style||{}).borderRadius = "50%";
+    (img.style||{}).objectFit = "cover";
+
+    const meta = wrap.querySelector(".hc-meta");
+    meta.style.display = "grid";
+    meta.style.gap = "2px";
+
+    const pos = wrap.querySelector(".hc-pos");
+    pos.style.color = "#6b7280";
+    pos.style.fontWeight = "600";
+    pos.style.marginLeft = "6px";
+
+    const stat = wrap.querySelector(".hc-stat");
+    stat.style.color = "#1f2937";
+    stat.style.fontSize = ".92rem";
+
+    return wrap;
+  }
+
+  function emptyState(msg) {
+    const box = h("div", { class: "hc-empty" }, msg);
+    box.style.padding = "12px";
+    box.style.border = "1px dashed #b6c2d9";
+    box.style.borderRadius = "10px";
+    box.style.background = "#f8fbff";
+    box.style.color = "#0b3a82";
+    return box;
+  }
+
+  function header() {
+    const off = h("button", { class: "hc-chip" }, "Offense");
+    const def = h("button", { class: "hc-chip" }, "Defense");
+    const last= h("button", { class: "hc-chip" }, "Last");
+    const seas= h("button", { class: "hc-chip" }, "Season");
+
+    off.onclick = () => { state.side = "offense"; render(); };
+    def.onclick = () => { state.side = "defense"; render(); };
+    last.onclick= () => { state.span = "last"; render(); };
+    seas.onclick= () => { state.span = "season"; render(); };
+
+    for (const b of [off, def, last, seas]) {
+      b.style.border = "1px solid #D1DAEC";
+      b.style.borderRadius = "999px";
+      b.style.padding = "6px 10px";
+      b.style.background = "white";
+      b.style.cursor = "pointer";
+    }
+
+    const bar = h("div", { class: "hc-bar" }, off, def, h("span", { style:"display:inline-block;width:10px" }), last, seas);
+    bar.style.display = "flex";
+    bar.style.gap = "8px";
+    bar.style.margin = "8px 0 12px";
+    return bar;
+  }
+
+  async function loadOnce(key) {
+    if (state.datasets[key]) return state.datasets[key];
     try {
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) throw new Error(`${res.status}`);
-      const data = await res.json();
-      state.feeds[url] = data;
-      return data;
+      const res = await fetch(files[key], { cache: "no-cache" });
+      if (!res.ok) throw new Error(`${files[key]} -> ${res.status}`);
+      const json = await res.json();
+      state.datasets[key] = json;
+      return json;
     } catch (e) {
-      console.warn("spotlight fetch failed", url, e);
+      console.warn("load failed:", e.message);
+      state.datasets[key] = [];
       return [];
     }
   }
 
-  function gradePill(g, pct) {
-    const letter = (g || "C").slice(0,1);
-    const cls = `hc-grade ${letter}`;
-    const mod = g.length > 1 ? g.slice(1) : "";
-    return `<span class="${cls}" title="${pct ?? ""}%">${letter}${mod}</span>`;
-  }
-
   async function render() {
-    // activate tabs
-    tabs.forEach(b => {
-      const active = (b.dataset.side && b.dataset.side === state.side) ||
-                     (b.dataset.view && b.dataset.view === state.view);
-      b.classList.toggle("active", active);
-    });
+    mount.innerHTML = "";
+    mount.appendChild(header());
 
-    const listEl = root.querySelector("#hc-list");
-    const featuredEl = root.querySelector("#hc-featured");
+    const key = `${state.side}_${state.span}`;
+    const arr = await loadOnce(key);
 
-    // FEATURED (only when view=last offense if exists)
-    if (state.side === "offense" && state.view === "last") {
-      const feature = await getJSON("/data/spotlight_featured.json");
-      if (Array.isArray(feature) && feature.length) {
-        const p = feature[0];
-        featuredEl.innerHTML = `
-          <div class="hc-featured">
-            <img src="${p.headshot}" alt="${p.name}">
-            <div class="hc-meta">
-              <div class="hc-title">${p.name}<span class="hc-chip">Featured</span></div>
-              <div class="hc-sub">${p.position || ""} ${p.number ? ("• #" + p.number) : ""}</div>
-            </div>
-            ${gradePill(p.grade, p.percent)}
-          </div>`;
-      } else {
-        featuredEl.innerHTML = "";
-      }
-    } else {
-      featuredEl.innerHTML = "";
-    }
-
-    // LIST
-    const rows = await getJSON(pickFeed());
-    if (!Array.isArray(rows) || rows.length === 0) {
-      listEl.innerHTML = `<div class="hc-empty">No spotlight data yet — waiting for the first completed game or stats import.</div>`;
+    if (!Array.isArray(arr) || arr.length === 0) {
+      mount.appendChild(emptyState("No spotlight data yet — waiting for the first completed game or stats import."));
       return;
     }
-    listEl.innerHTML = rows.map(p => `
-      <div class="hc-row">
-        <img src="${p.headshot}" alt="${p.name}">
-        <div class="hc-meta">
-          <div class="hc-name">${p.name}</div>
-          <div class="hc-sub">${p.position || ""} ${p.number ? ("• #" + p.number) : ""}</div>
-        </div>
-        ${gradePill(p.grade, p.percent)}
-      </div>
-    `).join("");
+
+    const list = h("div", { class: "hc-list" });
+    list.style.display = "grid";
+    list.style.gap = "8px";
+
+    arr.slice(0,3).forEach(x => list.appendChild(card(x)));
+    mount.appendChild(list);
   }
 
   render();

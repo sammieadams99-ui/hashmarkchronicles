@@ -1,27 +1,22 @@
-# SCHEDULED + MANUAL builder that writes data/*.json and pushes them.
-# IMPORTANT FIXES:
-#  - permissions: contents: write  ← required to push
-#  - commit check uses staged diff (--cached) instead of worktree diff
-
 name: Spotlight datasets
 
 on:
-  workflow_dispatch: {}
   schedule:
-    - cron: "13,43 * * * *"  # every 30 min (tweak as needed)
+    - cron: "*/30 * * * *"   # every 30 minutes
+  workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: spotlight
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      CFBD_KEY: ${{ secrets.CFBD_KEY }}
-      TEAM: Kentucky
-      YEAR: 2025
     steps:
-      - name: Check out
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node
@@ -29,22 +24,25 @@ jobs:
         with:
           node-version: 18
 
-      - name: Build spotlight JSON feeds
+      - name: Show Node
+        run: node --version
+
+      - name: Build spotlight JSON
+        env:
+          CFBD_KEY: ${{ secrets.CFBD_KEY }}
+          TEAM: Kentucky
+          YEAR: 2025
         run: node scripts/build_spotlight.js
 
-      - name: Configure git
+      - name: Commit refreshed data (only if changed)
         run: |
-          git config user.name "hc-bot"
-          git config user.email "bot@hashmarkchronicles.online"
-
-      - name: Stage data
-        run: git add data/*.json
-
-      - name: Commit if changed (staged diff)
-        run: |
+          git config user.name  "hashmark-bot"
+          git config user.email "hashmark-bot@users.noreply.github.com"
+          git add data/*.json
+          # IMPORTANT: check staged diff, not worktree
           if ! git diff --cached --quiet; then
-            git commit -m "refresh spotlight datasets [skip ci]"
+            git commit -m "Update spotlight datasets"
             git push
           else
-            echo "No data changes"
+            echo "No data changes."
           fi
