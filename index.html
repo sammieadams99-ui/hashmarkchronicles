@@ -27,7 +27,6 @@
 
   <!-- Chart.js (you had this already) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="./scripts/spotlight-client.js"></script>
 
   <style>
     :root{
@@ -110,6 +109,10 @@
     .mini-spotlight .row:hover{background:#f3f6fb}
     .mini-spotlight img{width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid var(--muted)}
     .mini-spotlight .who{font:700 14px/1.2 "Franklin Gothic Medium","Arial Narrow",Arial,sans-serif;color:#0b0d12}
+    .mini-spotlight .who .grade{ margin-left:8px; background:#111; color:#fff; border-radius:999px; padding:2px 8px; font:800 12px/1 system-ui }
+    .mini-spotlight .who .trend{ margin-left:6px; font:700 12px/1 system-ui; color:#94a3b8 }
+    .mini-spotlight .who .trend.up{ color:#16a34a } .mini-spotlight .who .trend.down{ color:#dc2626 }
+    .mini-spotlight .tile{ display:grid; place-items:center; border-radius:8px; background:#0033a0; color:#fff; font:800 14px/1 system-ui; border:1px solid #e5e7eb }
     .mini-spotlight .stat{font:600 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#475569}
     .mini-spotlight .tiny{font:600 11px/1 system-ui;color:#64748b}
     .mini-spotlight .toggles{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 8px}
@@ -251,11 +254,16 @@
     <aside aria-label="Sidebar">
       <div class="card pad mini-spotlight" id="hc-spotlight-card">
         <div class="kicker">Player Spotlight</div>
-        <div id="hc-spotlight-debug" class="debug-chip" aria-live="polite">
-          <span class="dot" aria-hidden="true"></span>
-          <span class="label">data-mode: init • roster: —</span>
+        <div id="miniSpotlight">
+          <div class="toggles" role="group" aria-label="Spotlight filters">
+            <button type="button" class="chip" data-side="offense">Offense</button>
+            <button type="button" class="chip" data-side="defense">Defense</button>
+            <button type="button" class="chip" data-span="last">Last Game</button>
+            <button type="button" class="chip" data-span="season">Season</button>
+          </div>
+          <div id="miniFeatured" aria-live="polite"></div>
+          <div id="miniList" aria-live="polite"><div class="tiny">Loading spotlight…</div></div>
         </div>
-        <div id="hc-spotlight" data-spotlight aria-live="polite"></div>
         <div class="tiny">Auto-updating from official stats (falls back if offline).</div>
       </div>
 
@@ -904,5 +912,6 @@
     window.addEventListener('scroll',()=>{if(document.body.classList.contains('nav-open'))closeNav();},{passive:true});
   })();
   </script>
+  <script src="/scripts/spotlight-client.js" defer></script>
 </body>
 </html>
