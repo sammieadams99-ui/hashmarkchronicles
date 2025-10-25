@@ -11,6 +11,8 @@
   const mount = document.getElementById("player-spotlight");
   if (!mount) return;
 
+  mount.classList.add("hc-spotlight-root");
+
   const state = {
     side: "offense",   // "offense" | "defense"
     span: "last",      // "last" | "season"
@@ -39,6 +41,26 @@
     return el;
   }
 
+  function normalizeGrade(entry) {
+    const letter =
+      entry?.letter ??
+      entry?.grade_letter ??
+      entry?.gradeLetter ??
+      entry?.grade ??
+      "C";
+    const pctRaw =
+      entry?.pct ??
+      entry?.grade_pct ??
+      entry?.gradePct ??
+      entry?.percent ??
+      entry?._score ??
+      50;
+    const pct = Number.isFinite(pctRaw)
+      ? pctRaw
+      : Number.parseFloat(typeof pctRaw === "string" ? pctRaw.replace(/[^0-9.]/g, "") : pctRaw) || 50;
+    return { letter, pct: Math.round(pct) };
+  }
+
   function gradeBadge(letter, pct) {
     const span = h("span", { class: "hc-grade" }, `${letter} `, h("small", {}, `${pct}%`));
     span.style.display = "inline-flex";
@@ -52,14 +74,45 @@
     return span;
   }
 
-  function card(entry) {
-    const img = entry.headshot ? h("img", { src: entry.headshot, alt: entry.name, referrerpolicy: "no-referrer" }) : h("div", { class: "hc-avatar" }, entry.name.split(" ").map(w => w[0]).join("").slice(0,2));
-    const name = h("div", { class: "hc-name" }, entry.name, " ", h("span", { class: "hc-pos" }, `• ${entry.pos || ""}`));
-    const stats = h("div", { class: "hc-stat" }, entry.statline || "— ESPN →");
-    const grade = gradeBadge(entry.letter || "C", entry.pct ?? 50);
+  function card(entry = {}) {
+    const initials = (entry.name || "")
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "UK";
+
+    const tag = entry.espn ? "a" : "div";
+    const attrs = { class: "hc-card" };
+    if (entry.espn) {
+      attrs.href = entry.espn;
+      attrs.target = "_blank";
+      attrs.rel = "noopener";
+    }
+
+    const img = entry.headshot
+      ? h("img", {
+          src: entry.headshot,
+          alt: entry.name || "Player headshot",
+          referrerpolicy: "no-referrer",
+          loading: "lazy",
+        })
+      : h("div", { class: "hc-avatar" }, initials);
+    const posText = entry.pos || entry.position || "";
+    const name = h(
+      "div",
+      { class: "hc-name" },
+      entry.name || "Unnamed",
+      posText ? " " : "",
+      posText ? h("span", { class: "hc-pos" }, `• ${posText}`) : null,
+    );
+    const stats = h("div", { class: "hc-stat" }, entry.statline || entry.summary || (entry.espn ? "View on ESPN" : "—"));
+    const gradeInfo = normalizeGrade(entry);
+    const grade = gradeBadge(gradeInfo.letter, gradeInfo.pct);
 
     const row = h("div", { class: "hc-row" }, img, h("div", { class: "hc-meta" }, name, stats));
-    const wrap = h("div", { class: "hc-card" }, row, h("div", { class: "hc-grade-wrap" }, grade));
+    const wrap = h(tag, attrs, row, h("div", { class: "hc-grade-wrap" }, grade));
 
     // styles (scoped)
     wrap.style.display = "grid";
@@ -70,6 +123,10 @@
     wrap.style.border = "1px solid #e5e8ef";
     wrap.style.borderRadius = "10px";
     wrap.style.background = "white";
+    if (tag === "a") {
+      wrap.style.textDecoration = "none";
+      wrap.style.color = "inherit";
+    }
 
     (img.style||{}).width = "42px";
     (img.style||{}).height = "42px";
@@ -103,28 +160,44 @@
   }
 
   function header() {
-    const off = h("button", { class: "hc-chip" }, "Offense");
-    const def = h("button", { class: "hc-chip" }, "Defense");
-    const last= h("button", { class: "hc-chip" }, "Last");
-    const seas= h("button", { class: "hc-chip" }, "Season");
-
-    off.onclick = () => { state.side = "offense"; render(); };
-    def.onclick = () => { state.side = "defense"; render(); };
-    last.onclick= () => { state.span = "last"; render(); };
-    seas.onclick= () => { state.span = "season"; render(); };
-
-    for (const b of [off, def, last, seas]) {
-      b.style.border = "1px solid #D1DAEC";
-      b.style.borderRadius = "999px";
-      b.style.padding = "6px 10px";
-      b.style.background = "white";
-      b.style.cursor = "pointer";
+    function makeChip(label, active, onClick) {
+      const chip = h("button", { class: "hc-chip", type: "button" }, label);
+      chip.onclick = onClick;
+      chip.style.border = "1px solid #D1DAEC";
+      chip.style.borderRadius = "999px";
+      chip.style.padding = "6px 12px";
+      chip.style.background = active ? "#0b3a82" : "white";
+      chip.style.color = active ? "white" : "#0b3a82";
+      chip.style.fontWeight = active ? "700" : "600";
+      chip.style.cursor = "pointer";
+      chip.style.transition = "background 0.15s ease, color 0.15s ease";
+      chip.setAttribute("aria-pressed", active ? "true" : "false");
+      return chip;
     }
 
-    const bar = h("div", { class: "hc-bar" }, off, def, h("span", { style:"display:inline-block;width:10px" }), last, seas);
+    const off = makeChip("Offense", state.side === "offense", () => {
+      state.side = "offense";
+      render();
+    });
+    const def = makeChip("Defense", state.side === "defense", () => {
+      state.side = "defense";
+      render();
+    });
+    const last = makeChip("Last", state.span === "last", () => {
+      state.span = "last";
+      render();
+    });
+    const seas = makeChip("Season", state.span === "season", () => {
+      state.span = "season";
+      render();
+    });
+
+    const spacer = h("span", { style: "display:inline-block;width:8px" });
+    const bar = h("div", { class: "hc-bar" }, off, def, spacer, last, seas);
     bar.style.display = "flex";
+    bar.style.flexWrap = "wrap";
     bar.style.gap = "8px";
-    bar.style.margin = "8px 0 12px";
+    bar.style.margin = "4px 0 12px";
     return bar;
   }
 
@@ -158,6 +231,8 @@
     const list = h("div", { class: "hc-list" });
     list.style.display = "grid";
     list.style.gap = "8px";
+    list.style.width = "100%";
+    list.style.gridTemplateColumns = "1fr";
 
     arr.slice(0,3).forEach(x => list.appendChild(card(x)));
     mount.appendChild(list);
