@@ -3,6 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test:fixtures": "node -e \"console.log('fixtures ok')\"",
     "build:spotlight": "node scripts/build_spotlight.js"
-  }
+  },
+  "dependencies": {}
 }

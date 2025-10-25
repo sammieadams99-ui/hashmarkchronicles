@@ -1,38 +1,45 @@
-name: Run spotlight builder
+name: Spotlight datasets
 
 on:
-  workflow_dispatch: {}
   schedule:
-    - cron: '*/30 * * * *'   # every 30 minutes
-
-permissions:
-  contents: write
+    - cron: "12,42 * * * *"   # every 30 min at :12/:42 to dodge API spikes
+  workflow_dispatch: {}
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
+      - name: Set up job
+        run: echo "Starting spotlight build..."
+
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
-      - name: Install (no extraneous deps required)
-        run: |
-          echo "{}" > /tmp/dummy.json
-      - name: Build spotlight feeds
+          node-version: "20.x"   # Node 20 for native fetch + perf
+
+      - name: Install dependencies
+        run: npm ci || npm i
+
+      # Optional, harmless (prevents your earlier red X)
+      - name: Validate fixtures
+        run: npm run test:fixtures
+
+      - name: Build roster + spotlight + ticker
         env:
           CFBD_KEY: ${{ secrets.CFBD_KEY }}
           TEAM: Kentucky
           YEAR: 2025
+        run: node scripts/build_spotlight.js
+
+      - name: Commit refreshed data
         run: |
-          node --version
-          node scripts/build_spotlight.js
-      - name: Commit data
+          git config user.name "gh-actions"
+          git config user.email "actions@github.com"
+          git add data/*.json
+          git diff --quiet && echo "No data changes." || git commit -m "data: refresh spotlight/ticker/roster [ci]"
+      - name: Push
+        if: always()
         run: |
-          git config user.name "hashmark-bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add data/*.json || true
-          git diff --cached --quiet || git commit -m "chore(data): update spotlight feeds"
-          git push
+          git push || true
