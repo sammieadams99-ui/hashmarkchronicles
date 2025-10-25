@@ -252,19 +252,11 @@
     </article>
 
     <aside aria-label="Sidebar">
-      <div class="card pad mini-spotlight" id="hc-spotlight-card">
+      <div class="card pad mini-spotlight">
         <div class="kicker">Player Spotlight</div>
-        <div id="miniSpotlight">
-          <div class="toggles" role="group" aria-label="Spotlight filters">
-            <button type="button" class="chip" data-side="offense">Offense</button>
-            <button type="button" class="chip" data-side="defense">Defense</button>
-            <button type="button" class="chip" data-span="last">Last Game</button>
-            <button type="button" class="chip" data-span="season">Season</button>
-          </div>
-          <div id="miniFeatured" aria-live="polite"></div>
-          <div id="miniList" aria-live="polite"><div class="tiny">Loading spotlight…</div></div>
-        </div>
-        <div class="tiny">Auto-updating from official stats (falls back if offline).</div>
+        <!-- Place this where the sidebar spotlight should render -->
+        <div id="hc-spotlight"></div>
+        <script src="/scripts/spotlight-client.js" defer></script>
       </div>
 
       <div class="card pad">
@@ -346,7 +338,7 @@
         catch(e){ return null; }
       }
 
-      const featuredEl = document.getElementById('hc-spotlight');
+      const featuredEl = document.getElementById('hc-spotlight-legacy');
       const spotlightCard = document.getElementById('hc-spotlight-card');
       const spotlightDebug = document.getElementById('hc-spotlight-debug');
       const TARGET_SEASON = 2025;
@@ -912,6 +904,5 @@
     window.addEventListener('scroll',()=>{if(document.body.classList.contains('nav-open'))closeNav();},{passive:true});
   })();
   </script>
-  <script src="/scripts/spotlight-client.js" defer></script>
 </body>
 </html>

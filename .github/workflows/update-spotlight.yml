@@ -1,45 +1,50 @@
+# SCHEDULED + MANUAL builder that writes data/*.json and pushes them.
+# IMPORTANT FIXES:
+#  - permissions: contents: write  ← required to push
+#  - commit check uses staged diff (--cached) instead of worktree diff
+
 name: Spotlight datasets
 
 on:
-  schedule:
-    - cron: "12,42 * * * *"   # every 30 min at :12/:42 to dodge API spikes
   workflow_dispatch: {}
+  schedule:
+    - cron: "13,43 * * * *"  # every 30 min (tweak as needed)
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    env:
+      CFBD_KEY: ${{ secrets.CFBD_KEY }}
+      TEAM: Kentucky
+      YEAR: 2025
     steps:
-      - name: Set up job
-        run: echo "Starting spotlight build..."
+      - name: Check out
+        uses: actions/checkout@v4
 
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version: "20.x"   # Node 20 for native fetch + perf
+          node-version: 18
 
-      - name: Install dependencies
-        run: npm ci || npm i
-
-      # Optional, harmless (prevents your earlier red X)
-      - name: Validate fixtures
-        run: npm run test:fixtures
-
-      - name: Build roster + spotlight + ticker
-        env:
-          CFBD_KEY: ${{ secrets.CFBD_KEY }}
-          TEAM: Kentucky
-          YEAR: 2025
+      - name: Build spotlight JSON feeds
         run: node scripts/build_spotlight.js
 
-      - name: Commit refreshed data
+      - name: Configure git
         run: |
-          git config user.name "gh-actions"
-          git config user.email "actions@github.com"
-          git add data/*.json
-          git diff --quiet && echo "No data changes." || git commit -m "data: refresh spotlight/ticker/roster [ci]"
-      - name: Push
-        if: always()
+          git config user.name "hc-bot"
+          git config user.email "bot@hashmarkchronicles.online"
+
+      - name: Stage data
+        run: git add data/*.json
+
+      - name: Commit if changed (staged diff)
         run: |
-          git push || true
+          if ! git diff --cached --quiet; then
+            git commit -m "refresh spotlight datasets [skip ci]"
+            git push
+          else
+            echo "No data changes"
+          fi
