@@ -1,27 +1,25 @@
-{
-  "year": "2025",
-  "team": "Kentucky",
-  "lastWeek": 8,
-  "items": [
-    {
-      "label": "Yards/Play (UK)",
-      "value": "—",
-      "trend": "steady"
-    },
-    {
-      "label": "Off SR",
-      "value": "41.7%",
-      "trend": "steady"
-    },
-    {
-      "label": "EPA/Play last 3",
-      "value": "—",
-      "trend": "steady"
-    },
-    {
-      "label": "Havoc Allowed",
-      "value": "18.3%",
-      "trend": "steady"
-    }
-  ]
-}
+[
+  {
+    "label": "Explosive PA rate",
+    "value": "+6.3%",
+    "trend": "good",
+    "suffix": "vs base"
+  },
+  {
+    "label": "Yds/Play (UK)",
+    "value": "5.7",
+    "trend": "good"
+  },
+  {
+    "label": "Havoc Allowed",
+    "value": "42%",
+    "trend": "warn",
+    "suffix": "steady"
+  },
+  {
+    "label": "3rd & 6+ defense",
+    "value": "46%",
+    "trend": "bad",
+    "suffix": "conv. allowed"
+  }
+]
