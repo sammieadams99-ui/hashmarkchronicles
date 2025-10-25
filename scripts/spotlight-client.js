@@ -569,15 +569,16 @@ function applyDebug(debugEl, rosterStats, spotlightStats, rendered, errors, filt
 }
 
 function renderCards(mount, cards) {
+  const list = Array.isArray(cards) ? cards : [];
   mount.innerHTML = '';
-  if (!cards.length) {
+  if (!list.length) {
     const empty = document.createElement('div');
     empty.className = 'tiny';
-    empty.textContent = 'No spotlight data available.';
+    empty.textContent = 'No data available for this view.';
     mount.appendChild(empty);
     return;
   }
-  for (const card of cards) {
+  for (const card of list) {
     const row = document.createElement('div');
     row.className = 'row';
     row.dataset.tags = card.tags.join(',');

@@ -104,7 +104,31 @@ async function main() {
     );
 
     const outputs = await buildSpotlightPayload(rosterIds, nameToId);
-    const keep = (row) => row && Number.isFinite(Number(row.id)) && rosterIds.has(Number(row.id));
+
+    const subsetByRoster = (arr, rosterSet) => {
+      const shouldKeep = (player) => {
+        if (!player || player.id == null) return false;
+        const id = Number(player.id);
+        return Number.isFinite(id) && rosterSet.has(id);
+      };
+      return (arr || []).filter(shouldKeep);
+    };
+
+    const topN = (arr, n = 3) => (arr || []).slice(0, n);
+
+    const backfill = (dst, src, n = 3) => {
+      const primary = Array.isArray(dst) ? [...dst] : [];
+      const existingIds = new Set(primary.map((player) => Number(player?.id)).filter(Number.isFinite));
+      for (const player of Array.isArray(src) ? src : []) {
+        if (primary.length >= n) break;
+        if (!player || player.id == null) continue;
+        const id = Number(player.id);
+        if (!Number.isFinite(id) || existingIds.has(id)) continue;
+        primary.push(player);
+        existingIds.add(id);
+      }
+      return primary;
+    };
 
     let offense_last = ensureRosterCoverage(outputs.offense_last || [], rosterIds, nameToId, 'offense_last');
     let defense_last = ensureRosterCoverage(outputs.defense_last || [], rosterIds, nameToId, 'defense_last');
@@ -112,13 +136,25 @@ async function main() {
     let defense_season = ensureRosterCoverage(outputs.defense_season || [], rosterIds, nameToId, 'defense_season');
     let featured_rows = ensureRosterCoverage(outputs.featured || [], rosterIds, nameToId, 'featured');
 
-    offense_last = (offense_last || []).filter(keep);
-    defense_last = (defense_last || []).filter(keep);
-    offense_season = (offense_season || []).filter(keep);
-    defense_season = (defense_season || []).filter(keep);
-    featured_rows = (featured_rows || []).filter(keep);
+    let offLast = topN(subsetByRoster(offense_last, rosterIds), 3);
+    let defLast = topN(subsetByRoster(defense_last, rosterIds), 3);
+    let offSeason = topN(subsetByRoster(offense_season, rosterIds), 3);
+    let defSeason = topN(subsetByRoster(defense_season, rosterIds), 3);
 
-    const sanitized = { offense_last, defense_last, offense_season, defense_season, featured: featured_rows };
+    if (offLast.length < 3) offLast = backfill(offLast, offSeason, 3);
+    if (defLast.length < 3) defLast = backfill(defLast, defSeason, 3);
+    if (offSeason.length < 3) offSeason = backfill(offSeason, offLast, 3);
+    if (defSeason.length < 3) defSeason = backfill(defSeason, defLast, 3);
+
+    featured_rows = subsetByRoster(featured_rows, rosterIds);
+
+    const sanitized = {
+      offense_last: offLast,
+      defense_last: defLast,
+      offense_season: offSeason,
+      defense_season: defSeason,
+      featured: featured_rows
+    };
 
     for (const [key, relativePath] of Object.entries(SPOTLIGHT_TARGETS)) {
       if (key === 'featured') {
