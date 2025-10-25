@@ -1,314 +1,298 @@
-/*
- * Robust spotlight builder:
- * - Pulls roster (resilient), games, game players, builds:
- *   data/roster.json
- *   data/spotlight_featured.json
- *   data/spotlight_offense_last.json
- *   data/spotlight_defense_last.json
- *   data/spotlight_offense_season.json
- *   data/spotlight_defense_season.json
- *   data/ticker.json  (left as-is if you already have a script)
+/**
+ * Build spotlight data from CFBD (and ESPN headshots where available).
+ * Zero external deps. Requires Node >=18.
  *
- * Safe-writes: never overwrite non-empty files with empty arrays.
+ * Env:
+ *   CFBD_KEY (required) — bearer token from CollegeFootballData
+ *   TEAM      (default: "Kentucky")
+ *   YEAR      (default: current UTC year)
+ *
+ * Output (in /data):
+ *   - roster.json                            (full roster with best-effort headshots)
+ *   - spotlight_offense_last.json            (top-3 from last completed game)
+ *   - spotlight_defense_last.json
+ *   - spotlight_offense_season.json          (top-3 cumulative season)
+ *   - spotlight_defense_season.json
+ *   - spotlight_featured.json                (hero card selection; 1–2 players)
  */
 
-import fs from "node:fs/promises";
-import path from "node:path";
+import fs from "fs/promises";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const DATA = path.resolve("data");
-await fs.mkdir(DATA, { recursive: true });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
+const DATA_DIR = path.join(__dirname, "..", "data");
+
+const CFBD_KEY = process.env.CFBD_KEY;
 const TEAM = process.env.TEAM || "Kentucky";
-const YEAR = Number(process.env.YEAR || 2025);
-const CFBD_KEY = process.env.CFBD_KEY || "";
+const YEAR = +(process.env.YEAR || new Date().getUTCFullYear());
+
+if (!CFBD_KEY) {
+  console.error("CFBD_KEY missing — add it as a repo secret.");
+  process.exit(1);
+}
 
 const CFBD = "https://api.collegefootballdata.com";
 
-async function j(pathname) {
-  const p = path.join(DATA, pathname);
-  try { return JSON.parse(await fs.readFile(p, "utf8")); }
-  catch { return null; }
-}
-async function w(pathname, obj) {
-  const p = path.join(DATA, pathname);
-  await fs.writeFile(p, JSON.stringify(obj, null, 2));
-  console.log(`wrote ${pathname} (${Array.isArray(obj) ? obj.length : 1})`);
-}
-
-async function safeWriteArray(file, arr) {
-  // do not overwrite with empty/short arrays
-  if (!Array.isArray(arr) || arr.length === 0) {
-    const prev = await j(file);
-    if (Array.isArray(prev) && prev.length > 0) {
-      console.log(`kept last-good ${file} (${prev.length})`);
-      return;
-    }
-  }
-  await w(file, arr);
-}
-
-async function cfbd(pathname, params = {}) {
-  const url = new URL(CFBD + pathname);
-  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-  const r = await fetch(url, {
-    headers: CFBD_KEY ? { Authorization: `Bearer ${CFBD_KEY}` } : {},
-    // Be nice to CFBD
-    cache: "no-store"
+async function cfbd(endpoint, params = {}) {
+  const url = new URL(CFBD + endpoint);
+  Object.entries(params).forEach(([k, v]) => v != null && url.searchParams.set(k, v));
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${CFBD_KEY}`,
+      Accept: "application/json",
+    },
   });
-  if (!r.ok) throw new Error(`${pathname} -> HTTP ${r.status}`);
-  return r.json();
-}
-
-/* -------------------- ROSTER (resilient) -------------------- */
-async function fetchRoster() {
-  // Try /player/roster first, then /roster
-  const tryOnce = async (p) => {
-    try {
-      const data = await cfbd(p, { year: YEAR, team: TEAM });
-      return Array.isArray(data) ? data : [];
-    } catch { return []; }
-  };
-  let roster = await tryOnce("/player/roster");
-  if (roster.length === 0) roster = await tryOnce("/roster");
-
-  // Normalize minimal shape we need
-  roster = roster.map((p) => ({
-    id: p.id ?? p.playerId ?? null,
-    name: p.player || p.name || `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim(),
-    position: p.position ?? p.pos ?? "",
-    jersey: p.jersey ?? p.number ?? null,
-  })).filter((p) => p.name);
-
-  // Fallback to last-good if empty
-  if (roster.length === 0) {
-    const last = await j("roster.json");
-    if (Array.isArray(last) && last.length > 0) {
-      console.log("roster empty from CFBD; using last-good roster.json");
-      return last;
-    }
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`CFBD ${endpoint} ${res.status}: ${text}`);
   }
-  return roster;
+  return res.json();
 }
 
-/* -------------------- GAMES & PLAYERS -------------------- */
-async function completedGames() {
-  const regs = await cfbd("/games", { year: YEAR, team: TEAM, seasonType: "regular" });
-  const posts = await cfbd("/games", { year: YEAR, team: TEAM, seasonType: "postseason" });
-  const all = [...(regs || []), ...(posts || [])];
-  // CFBD marks completed with 'completed' OR we infer from non-null points
-  const done = all.filter(g =>
-    g.completed === true ||
-    (g.home_points != null && g.away_points != null)
-  );
-  // sort newest -> oldest
-  return done.sort((a,b) => new Date(b.start_date||b.startDate) - new Date(a.start_date||a.startDate));
+// --- helpers -----------------------------------------------------------------
+const OFF_POS = new Set(["QB","RB","TB","FB","HB","WR","TE","OL","C","G","T"]);
+const DEF_POS = new Set(["DL","DE","DT","EDGE","NT","LB","MLB","OLB","DB","CB","S","FS","SS","STAR","NICKEL","NB"]);
+
+function byNumberDesc(key) {
+  return (a, b) => (b[key] ?? 0) - (a[key] ?? 0);
+}
+function sumBy(rows, key) {
+  return rows.reduce((acc, r) => acc + (+r[key] || 0), 0);
+}
+function safeNum(x) {
+  const n = +x;
+  return Number.isFinite(n) ? n : 0;
 }
 
-async function gamePlayers(gameId) {
-  // CFBD: /games/players?gameId=xxxx
-  const gp = await cfbd("/games/players", { gameId: gameId });
-  // Shape: [{ team, players:[{ name, statCategories:[{name,stat}], ...}] }]
-  return gp;
+// Scoring utilities (quick—but sensible—MVP formulas)
+function offenseScore(s) {
+  // s: aggregate of pass/rush/rec etc (game or season)
+  const pass = 0.07 * safeNum(s.passingYards) + 4.0 * safeNum(s.passingTD) - 45 * safeNum(s.interceptions);
+  const rush = 0.25 * safeNum(s.rushingYards) + 6.0 * safeNum(s.rushingTD) + 0.05 * safeNum(s.carries);
+  const rec  = 0.30 * safeNum(s.receivingYards) + 6.0 * safeNum(s.receivingTD) + 0.3 * safeNum(s.receptions);
+  const bonus= 2.0 * safeNum(s.twoPt); // tiny bump
+  return pass + rush + rec + bonus;
+}
+function defenseScore(s) {
+  const tackles = 0.7 * safeNum(s.tackles) + 0.8 * safeNum(s.soloTackles);
+  const havoc   = 5.0 * safeNum(s.sacks) + 3.0 * safeNum(s.tfl);
+  const ball    = 6.0 * safeNum(s.interceptions) + 3.0 * safeNum(s.passesDefended) +
+                  4.0 * safeNum(s.forcedFumbles) + 3.0 * safeNum(s.fumblesRecovered);
+  const score   = tackles + havoc + ball;
+  return score;
 }
 
-/* -------------------- RANKERS (scores) -------------------- */
-function num(n){ return (n==null||n==="") ? 0 : Number(n); }
+// Map score -> 0..100 percentile-ish scaler (robust to small samples)
+function scale100(val, min, max) {
+  if (!Number.isFinite(val)) return 0;
+  if (max <= min) return 50;
+  const z = (val - min) / (max - min);
+  return Math.round(100 * Math.max(0, Math.min(1, z)));
+}
+function toLetter(percent) {
+  // with +/- bands
+  const p = Math.max(0, Math.min(100, Math.round(percent)));
+  let letter, mod = "";
+  if (p >= 93) letter = "A"; else
+  if (p >= 85) letter = "A"; else
+  if (p >= 77) letter = "B"; else
+  if (p >= 70) letter = "C"; else
+  if (p >= 63) letter = "D"; else
+                letter = "F";
 
-// Extract tallies for a player entry (one game or season aggregate)
-function offensiveScore(p) {
-  // sum: passing, rushing, receiving
-  const passY = num(p.passYds||p.passingYards);
-  const passTD = num(p.passTD||p.passingTDs);
-  const ints = num(p.interceptions||p.passInt);
-  const rushY = num(p.rushYds||p.rushingYards);
-  const rushTD = num(p.rushTD||p.rushingTDs);
-  const recY = num(p.recYds||p.receivingYards);
-  const recTD = num(p.recTD||p.receivingTDs);
-
-  // A lightweight, stable score
-  return (passY*0.05 + passTD*5 - ints*6) +
-         (rushY*0.08 + rushTD*6) +
-         (recY*0.07 + recTD*5);
+  const band = p % 7; // 0..6 bands inside each letter bucket
+  if (letter !== "A" && letter !== "F") {
+    if (band >= 5) mod = "+";
+    else if (band <= 1) mod = "-";
+  } else if (letter === "A") {
+    if (p < 89) mod = "-";
+    else if (p >= 97) mod = "+";
+  }
+  return { letter, mod, percent: p };
 }
 
-function defensiveScore(p) {
-  const tkl = num(p.tackles||p.totalTackles||p.tacklesTotal);
-  const tfl = num(p.tfl||p.tacklesForLoss);
-  const sack = num(p.sacks);
-  const pbu = num(p.passDefended||p.passesDefended);
-  const ints = num(p.interceptions);
-  const ff = num(p.forcedFumbles||p.fumblesForced);
-  const fr = num(p.fumblesRecovered);
-
-  // Give big plays weight; tackles provide floor
-  return tkl*1 + tfl*2 + sack*4 + pbu*1.5 + ints*6 + ff*3 + fr*3;
+function headshotUrl(espnId) {
+  if (espnId) return `https://a.espncdn.com/i/headshots/college-football/players/full/${espnId}.png`;
+  return "https://ui-avatars.com/api/?name=UK&background=003087&color=fff&bold=true";
 }
 
-/* -------------------- HELPERS -------------------- */
-function indexByName(roster) {
-  const m = new Map();
-  roster.forEach(p => m.set(p.name.toLowerCase(), p));
-  return m;
+// Write JSON helper
+async function writeJSON(file, data) {
+  await fs.mkdir(DATA_DIR, { recursive: true });
+  const fp = path.join(DATA_DIR, file);
+  await fs.writeFile(fp, JSON.stringify(data, null, 2), "utf8");
+  console.log("wrote", file, `(${Array.isArray(data) ? data.length : Object.keys(data||{}).length})`);
 }
 
-function materializeFromGamePlayers(gp, rosterIndex, side /* "offense"|"defense" */) {
-  // gp (from CFBD) includes both teams; pick Kentucky
-  const block = (gp||[]).find(b => (b.team||"").toLowerCase().includes("kentucky"));
-  if (!block || !Array.isArray(block.players)) return [];
+// --- fetch CFBD datasets -----------------------------------------------------
+async function loadRoster() {
+  // https://api.collegefootballdata.com/roster?team=Kentucky&year=2025
+  const rows = await cfbd("/roster", { team: TEAM, year: YEAR });
+  // CFBD roster rows: id, athleteId, firstName, lastName, team, position, jersey, height, weight, year, homeCity, homeState, ... may include "espnId" in some datasets; if not, null.
+  const players = rows.map(r => ({
+    id: r.athleteId || r.id || undefined,
+    name: (r.firstName && r.lastName) ? `${r.firstName} ${r.lastName}` : r.name,
+    firstName: r.firstName || undefined,
+    lastName: r.lastName || undefined,
+    number: r.jersey || r.jerseyNumber || undefined,
+    position: r.position || r.pos || undefined,
+    class: r.year || undefined,
+    height: r.height || undefined,
+    weight: r.weight || undefined,
+    hometown: [r.homeCity, r.homeState].filter(Boolean).join(", ") || undefined,
+    espnId: r.espnId || undefined,
+    headshot: headshotUrl(r.espnId),
+  }));
+  return players;
+}
 
-  // Flatten per-player stats into a simple object
-  const rows = block.players.map(pl => {
-    const row = { name: pl.name, position: pl.position || "" };
-    (pl.statCategories||[]).forEach(cat => {
-      (cat.stats||[]).forEach(s => {
-        const key = s.name?.replace(/\s+/g,'') || "";
-        const v = Number(s.stat ?? s.value ?? 0);
-        // map some common CFBD names
-        if (/PassingYards/i.test(s.name)) row.passingYards = v;
-        if (/PassingTDs?/i.test(s.name)) row.passingTDs = v;
-        if (/InterceptionsThrown/i.test(s.name)) row.passInt = v;
-        if (/RushingYards/i.test(s.name)) row.rushingYards = v;
-        if (/RushingTDs?/i.test(s.name)) row.rushingTDs = v;
-        if (/ReceivingYards/i.test(s.name)) row.receivingYards = v;
-        if (/ReceivingTDs?/i.test(s.name)) row.receivingTDs = v;
+async function lastCompletedGameId() {
+  // https://api.collegefootballdata.com/games?year=2025&team=Kentucky&seasonType=regular
+  const gamesReg = await cfbd("/games", { year: YEAR, team: TEAM, seasonType: "regular" });
+  const gamesPost= await cfbd("/games", { year: YEAR, team: TEAM, seasonType: "postseason" });
+  const games = [...gamesReg, ...gamesPost].filter(g => g.completed || g.status === "final" || /final/i.test(g.notes||""));
+  if (!games.length) return null;
+  // sort by start date/time
+  games.sort((a,b) => new Date(a.start_date||a.startDate||a.start) - new Date(b.start_date||b.startDate||b.start));
+  const g = games[games.length - 1];
+  return g.id || g.game_id || g.gameId || g.cid || null;
+}
 
-        if (/TotalTackles/i.test(s.name)) row.totalTackles = v;
-        if (/TacklesForLoss/i.test(s.name)) row.tacklesForLoss = v;
-        if (/Sacks/i.test(s.name)) row.sacks = v;
-        if (/PassesDefended/i.test(s.name)) row.passesDefended = v;
-        if (/Interceptions$/i.test(s.name)) row.interceptions = v;
-        if (/FumblesForced/i.test(s.name)) row.fumblesForced = v;
-        if (/FumblesRecovered/i.test(s.name)) row.fumblesRecovered = v;
-      });
-    });
-    return row;
-  });
+async function loadPlayerGameStats(gameId) {
+  // https://api.collegefootballdata.com/player/game?year=2025&team=Kentucky&gameId=40123456789
+  if (!gameId) return [];
+  const rows = await cfbd("/player/game", { year: YEAR, team: TEAM, gameId });
+  return rows;
+}
+async function loadPlayerSeasonStats() {
+  // https://api.collegefootballdata.com/player/season?year=2025&team=Kentucky
+  const rows = await cfbd("/player/season", { year: YEAR, team: TEAM });
+  return rows;
+}
 
-  const scored = rows.map(r => {
-    const rkey = (r.name||"").toLowerCase();
-    if (!rosterIndex.has(rkey)) return null;  // ensure roster subset
-    const base = rosterIndex.get(rkey);
-    const score = (side==="offense") ? offensiveScore(r) : defensiveScore(r);
-    return {
-      name: r.name,
-      pos: base.position || r.position || "",
-      score,
-      last_game: r
+// Normalize CFBD stat rows into a common shape we can score
+function normalizeStats(rows) {
+  const byPlayer = new Map();
+  for (const r of rows) {
+    const id = r.athleteId || r.playerId || r.id || `${r.firstName ?? ""} ${r.lastName ?? ""}`.trim();
+    if (!id) continue;
+    const cur = byPlayer.get(id) || {
+      id,
+      name: r.player || r.name || `${r.firstName ?? ""} ${r.lastName ?? ""}`.trim(),
+      position: r.position || r.pos || undefined,
+      number: r.jersey || r.jerseyNumber || undefined,
+      // offense
+      passingYards: 0, passingTD: 0, interceptions: 0,
+      rushingYards: 0, rushingTD: 0, carries: 0,
+      receivingYards: 0, receivingTD: 0, receptions: 0,
+      twoPt: 0,
+      // defense
+      tackles: 0, soloTackles: 0, sacks: 0, tfl: 0,
+      passesDefended: 0, interceptionsDef: 0, forcedFumbles: 0, fumblesRecovered: 0,
     };
-  }).filter(Boolean);
+    // Offense fields (CFBD names vary by feed type)
+    cur.passingYards    += safeNum(r.passingYards ?? r.passYards);
+    cur.passingTD       += safeNum(r.passingTD ?? r.passTD);
+    cur.interceptions   += safeNum(r.interceptions ?? r.passInt);
+    cur.rushingYards    += safeNum(r.rushingYards ?? r.rushYards);
+    cur.rushingTD       += safeNum(r.rushingTD ?? r.rushTD);
+    cur.carries         += safeNum(r.carries ?? r.rushAttempts);
+    cur.receivingYards  += safeNum(r.receivingYards ?? r.recYards);
+    cur.receivingTD     += safeNum(r.receivingTD ?? r.recTD);
+    cur.receptions      += safeNum(r.receptions ?? r.rec);
+    cur.twoPt           += safeNum(r.twoPointConv ?? r.twoPt ?? r.twoPoint);
 
-  return scored.sort((a,b)=>b.score - a.score);
+    // Defense fields
+    cur.tackles         += safeNum(r.tackles);
+    cur.soloTackles     += safeNum(r.soloTackles ?? r.solo ?? r.soloTackles);
+    cur.sacks           += safeNum(r.sacks);
+    cur.tfl             += safeNum(r.tfl ?? r.tacklesForLoss);
+    cur.passesDefended  += safeNum(r.passesDefended ?? r.pd ?? r.breakups);
+    cur.interceptionsDef+= safeNum(r.interceptions ?? r.interceptionsThrown); // prefer defensive INTs, CFBD field is 'interceptions'
+    cur.forcedFumbles   += safeNum(r.forcedFumbles ?? r.ff);
+    cur.fumblesRecovered+= safeNum(r.fumblesRecovered ?? r.fr);
+
+    byPlayer.set(id, cur);
+  }
+  return [...byPlayer.values()];
 }
 
-function compactTop3(list) {
-  // unique by name, top 3
-  const seen = new Set();
-  const out = [];
-  for (const x of list) {
-    const k = x.name.toLowerCase();
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push(x);
-    if (out.length===3) break;
-  }
-  return out;
+function pickTop3(rows, kind /*"offense"|"defense"*/) {
+  const scored = rows.map(r => {
+    const score = kind === "offense" ? offenseScore(r) : defenseScore(r);
+    return { ...r, score };
+  });
+  // compute scaling
+  const max = Math.max(...scored.map(s => s.score), 0);
+  const min = Math.min(...scored.map(s => s.score), 0);
+  const withGrade = scored
+    .sort((a,b) => b.score - a.score)
+    .slice(0, 3)
+    .map(s => {
+      const pct = scale100(s.score, min, max);
+      const g = toLetter(pct);
+      return { ...s, grade: g.letter + (g.mod || ""), percent: g.percent };
+    });
+  return withGrade;
 }
 
-/* -------------------- SEASON ACCUMULATION -------------------- */
-function addAgg(dst, src, keys) {
-  keys.forEach(k => dst[k]=(dst[k]||0)+num(src[k]));
+function rosterSubset(players, idsWanted) {
+  const set = new Set(idsWanted);
+  return players.filter(p => set.has(p.id) || set.has(p.name));
 }
 
-function seasonFromGames(gameBlocks, rosterIndex, side) {
-  const book = new Map(); // name -> totals
-  for (const gp of gameBlocks) {
-    const rows = materializeFromGamePlayers(gp, rosterIndex, side);
-    for (const r of rows) {
-      const k = r.name.toLowerCase();
-      const dst = book.get(k) || { name: r.name, pos: r.pos };
-      if (side==="offense") {
-        addAgg(dst, r.last_game, [
-          "passingYards","passingTDs","passInt",
-          "rushingYards","rushingTDs",
-          "receivingYards","receivingTDs"
-        ]);
-      } else {
-        addAgg(dst, r.last_game, [
-          "totalTackles","tacklesForLoss","sacks",
-          "passesDefended","interceptions","fumblesForced","fumblesRecovered"
-        ]);
-      }
-      book.set(k, dst);
-    }
-  }
-  // score and rank
-  const list = [];
-  for (const item of book.values()) {
-    const score = (side==="offense") ? offensiveScore(item) : defensiveScore(item);
-    list.push({ name: item.name, pos: item.pos, score, season: item });
-  }
-  return list.sort((a,b)=>b.score-a.score);
+// --- main --------------------------------------------------------------------
+async function run() {
+  console.log("TEAM:", TEAM, "YEAR:", YEAR);
+  const roster = await loadRoster();
+
+  // Write roster
+  await writeJSON("roster.json", { team: TEAM, year: YEAR, count: roster.length, players: roster });
+
+  // SEASON leaders
+  const seasonStatsRows = await loadPlayerSeasonStats();
+  const season = normalizeStats(seasonStatsRows);
+  const seasonOff = season.filter(p => OFF_POS.has(p.position));
+  const seasonDef = season.filter(p => DEF_POS.has(p.position));
+  const topSeasonOff = pickTop3(seasonOff, "offense");
+  const topSeasonDef = pickTop3(seasonDef, "defense");
+
+  // LAST GAME leaders
+  const gid = await lastCompletedGameId();
+  const gameRows = await loadPlayerGameStats(gid);
+  const last = normalizeStats(gameRows);
+  const lastOff = last.filter(p => OFF_POS.has(p.position));
+  const lastDef = last.filter(p => DEF_POS.has(p.position));
+  const topLastOff = pickTop3(lastOff, "offense");
+  const topLastDef = pickTop3(lastDef, "defense");
+
+  // Attach headshots (if CFBD lacked espnId, keep generic avatar)
+  const byName = new Map(roster.map(r => [r.name, r]));
+  const attach = (arr) => arr.map(x => {
+    const hit = byName.get(x.name);
+    const headshot = hit?.headshot || headshotUrl(hit?.espnId);
+    const number = x.number ?? hit?.number;
+    const position = x.position ?? hit?.position;
+    return { ...x, number, position, headshot, espnId: hit?.espnId };
+  });
+
+  // Write spotlight feeds
+  await writeJSON("spotlight_offense_season.json", attach(topSeasonOff));
+  await writeJSON("spotlight_defense_season.json", attach(topSeasonDef));
+  await writeJSON("spotlight_offense_last.json",   attach(topLastOff));
+  await writeJSON("spotlight_defense_last.json",   attach(topLastDef));
+
+  // Featured: best of last offense if present, else best season offense
+  const featured = (topLastOff[0] || topSeasonOff[0]) ? [attach([topLastOff[0] || topSeasonOff[0]])[0]] : [];
+  await writeJSON("spotlight_featured.json", featured);
+
+  console.log("done");
 }
 
-/* -------------------- MAIN -------------------- */
-(async function run(){
-  // 1) Roster
-  const roster = await fetchRoster();
-  await safeWriteArray("roster.json", roster);
-
-  const rosterIdx = indexByName(roster);
-  console.log(`roster loaded: ${roster.length}`);
-
-  // 2) Games
-  const games = await completedGames();
-  if (games.length === 0) {
-    console.warn("No completed games found; keeping last-good spotlight files.");
-    return;
-  }
-
-  // 3) LAST game
-  const last = games[0];
-  const gpLast = await gamePlayers(last.id || last.gameId || last.idGame || last.game_id);
-  const offLastRank = compactTop3(materializeFromGamePlayers(gpLast, rosterIdx, "offense"));
-  const defLastRank = compactTop3(materializeFromGamePlayers(gpLast, rosterIdx, "defense"));
-
-  await safeWriteArray("spotlight_offense_last.json", offLastRank);
-  await safeWriteArray("spotlight_defense_last.json", defLastRank);
-
-  // 4) SEASON (aggregate all completed games)
-  //    If API is hot, keep it to most recent 12 games for safety.
-  const keep = games.slice(0, 12);
-  const allBlocks = [];
-  for (const g of keep) {
-    try {
-      const b = await gamePlayers(g.id || g.gameId || g.idGame || g.game_id);
-      allBlocks.push(b);
-    } catch(e) {
-      console.warn("games/players failed for a game, continuing:", e.message);
-    }
-  }
-  const offSeasonRank = compactTop3(seasonFromGames(allBlocks, rosterIdx, "offense"));
-  const defSeasonRank = compactTop3(seasonFromGames(allBlocks, rosterIdx, "defense"));
-
-  await safeWriteArray("spotlight_offense_season.json", offSeasonRank);
-  await safeWriteArray("spotlight_defense_season.json", defSeasonRank);
-
-  // 5) Featured: first entry from offense season if available,
-  //    else offense last, else keep existing.
-  let featured = null;
-  if (offSeasonRank.length > 0) featured = offSeasonRank[0];
-  else if (offLastRank.length > 0) featured = offLastRank[0];
-
-  if (featured) {
-    await w("spotlight_featured.json", featured);
-  } else {
-    const prev = await j("spotlight_featured.json");
-    if (prev) console.log("kept spotlight_featured.json (no new)");
-  }
-
-  // NOTE: ticker.json is handled by your existing script.
-  console.log("done.");
-})().catch(err => {
-  console.error("build_spotlight error:", err);
-  process.exitCode = 1;
+run().catch(err => {
+  console.error(err);
+  process.exit(1);
 });
