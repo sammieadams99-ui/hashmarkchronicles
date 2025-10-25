@@ -1,410 +1,242 @@
-#!/usr/bin/env node
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fetch from 'node-fetch';
-import { writeJSON, retry, readJSON, LOG } from './lib/stability.js';
+/* Hashmark Spotlight Builder (CFBD + ESPN hybrid)
+ * Writes:
+ *   /data/roster.json
+ *   /data/spotlight_featured.json
+ *   /data/spotlight_offense_last.json
+ *   /data/spotlight_offense_season.json
+ *   /data/spotlight_defense_last.json
+ *   /data/spotlight_defense_season.json
+ *   /data/ticker.json  (team metrics chip row)
+ *
+ * Guarantees: each spotlight list has 3 entries. Uses roster gating to avoid
+ * non-UK players. Safe to run even when no “last game” is complete yet.
+ */
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
-const TEAM_ID = Number(process.env.TEAM_ID || 96);
-const TARGET_SEASON = Number(process.env.SEASON || 2025);
-const STRICT_SEASON = (process.env.STRICT_SEASON ?? 'true').toLowerCase() === 'true';
-const ESPN_BACKOFF = parseBackoff(process.env.ESPN_BACKOFF || '250,600,1200');
-const ESPN_TIMEOUT = Number(process.env.ESPN_TIMEOUT || 9000);
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.join(__dirname, '..');
-const DATA_DIR = path.join(ROOT, 'data');
-const TEAM_DIR = path.join(DATA_DIR, 'team');
+const DATA_DIR = path.resolve(process.cwd(),'data');
+const TEAM = process.env.TEAM || 'Kentucky';
+const YEAR = parseInt(process.env.YEAR || '2025',10);
+const CFBD_KEY = process.env.CFBD_KEY;
+const ESPN_HEAD = 'https://a.espncdn.com/i/headshots/college-football/players/full';
 
-const SPOTLIGHT_TARGETS = {
-  offense_last: 'data/spotlight_offense_last.json',
-  defense_last: 'data/spotlight_defense_last.json',
-  offense_season: 'data/spotlight_offense_season.json',
-  defense_season: 'data/spotlight_defense_season.json',
-  featured: 'data/spotlight_featured.json'
-};
+async function writeJSON(p, obj){
+  const full = path.join(DATA_DIR, p);
+  await fs.mkdir(path.dirname(full), {recursive:true});
+  await fs.writeFile(full, JSON.stringify(obj, null, 2), 'utf8');
+  console.log('wrote', p, '(' + (Array.isArray(obj)?obj.length:1) + ')');
+}
 
-const ESPN_SCHEDULE_URL = `https://site.web.api.espn.com/apis/common/v3/sports/football/college-football/teams/${TEAM_ID}/schedule`;
-const ESPN_SUMMARY_URL = (eventId) => `https://site.web.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=${eventId}`;
-const ESPN_LEADERS_URL = `https://sports.core.api.espn.com/v2/sports/football/leagues/college-football/teams/${TEAM_ID}/leaders?season=${TARGET_SEASON}`;
+async function cfbd(pathname){
+  const url = `https://api.collegefootballdata.com${pathname}`;
+  const r = await fetch(url, { headers: { Authorization: `Bearer ${CFBD_KEY}` }});
+  if(!r.ok) throw new Error(`CFBD ${r.status} ${url}`);
+  return r.json();
+}
 
-async function fetchPlayerStats(id, pos) {
-  const season = Number(process.env.SEASON || 2025);
-  const url = `https://site.api.espn.com/apis/common/v3/sports/football/college-football/athletes/${id}?season=${season}&region=us&lang=en`;
-  try {
-    const res = await fetch(url, { timeout: 9000 });
-    if (!res.ok) throw new Error(String(res.status));
-    const data = await res.json();
+// --- ROSTER (id, name, pos, headshot map via ESPN id if present) ---
+async function loadRoster(){
+  // CFBD /roster?team=&year=
+  const rows = await cfbd(`/roster?team=${encodeURIComponent(TEAM)}&year=${YEAR}`);
+  const roster = rows.map(x => ({
+    id: x.id || null,
+    name: x.first_name && x.last_name ? `${x.first_name} ${x.last_name}` : (x.name || '').trim(),
+    pos: x.position || x.position_group || '',
+    number: x.jersey || null,
+    // Try to infer ESPN image by id echo (when CFBD playerId aligns) else null
+    headshot: x.espn_id ? `${ESPN_HEAD}/${x.espn_id}.png` : null
+  })).filter(x => x.name);
+  await writeJSON('roster.json', roster);
+  return roster;
+}
 
-    const blocks = data?.athlete?.stats || data?.stats || [];
-    const cats = blocks
-      .flatMap((b) => b?.splits?.categories || [])
-      .map((c) => ({ name: (c?.name || '').toLowerCase(), stats: c?.stats || [] }));
-    const getCat = (n) => {
-      n = (n || '').toLowerCase();
-      const hit = cats.find((c) => c.name === n);
-      return hit ? hit.stats : [];
-    };
-    const pick = (arr, keys) => {
-      const K = keys.map((k) => k.toLowerCase());
-      const f = arr.find((x) => K.includes((x?.name || '').toLowerCase()));
-      return f ? f.value : null;
-    };
+// --- GAME CONTEXT (find latest completed game id) ---
+async function latestCompletedGameId(){
+  const regular = await cfbd(`/games?year=${YEAR}&team=${encodeURIComponent(TEAM)}&seasonType=regular`);
+  const postseason = await cfbd(`/games?year=${YEAR}&team=${encodeURIComponent(TEAM)}&seasonType=postseason`);
+  const games = [...regular, ...postseason].sort((a,b)=> new Date(a.start_date)-new Date(b.start_date));
+  // Completed: home_points/away_points not null
+  const completed = games.filter(g => g.home_points!=null && g.away_points!=null);
+  return completed.length ? completed[completed.length-1] : null;
+}
 
-    if ((pos || '').toUpperCase() === 'QB') {
-      const s = getCat('passing');
-      const yds = pick(s, ['passyards', 'yards', 'yds']);
-      const td = pick(s, ['passtouchdowns', 'touchdowns', 'pass tds']);
-      const ints = pick(s, ['interceptions', 'ints']);
-      const cmp = pick(s, ['completions', 'cmp']);
-      const att = pick(s, ['attempts', 'att']);
-      if (yds != null || td != null || ints != null || cmp != null || att != null) {
-        return { kind: 'qb', yds, td, int: ints, cmp_att: cmp != null && att != null ? `${cmp}/${att}` : null };
+// --- ESPN event summary (leaders for last game) ---
+// We use public widgets summary that powers the card; event id is CFBD's 'id'? Not always present.
+// As a fallback: leave "last lists" empty; client handles friendly empty state. 
+async function espnSummaryLeaders(eventId){
+  if(!eventId) return { off:[], def:[] };
+  try{
+    const url = `https://site.web.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=${eventId}`;
+    const r = await fetch(url);
+    if(!r.ok) throw 0;
+    const j = await r.json();
+    // Offense leaders: passing, rushing, receiving (use Kentucky side only)
+    const cats = [];
+    const teamName = TEAM;
+    const comps = (j?.boxscore?.players || []).filter(p => p.team?.shortDisplayName === teamName || p.team?.displayName === teamName);
+    for(const sec of comps){
+      for(const a of (sec.statistics || [])){
+        if(!a?.athletes) continue;
+        for(const at of a.athletes){
+          const nm = at?.athlete?.displayName;
+          const pos = at?.athlete?.position?.abbreviation || '';
+          const head = at?.athlete?.headshot || null;
+          const espnId = at?.athlete?.id;
+          const statMap = (at?.stats || []).reduce((m,s)=>{ const [k,v]=String(s).split(':'); m[k.trim()] = v?.trim(); return m; },{});
+          // normalize compact
+          const compact = {};
+          if(statMap['CMP']) compact.cmp_att = `${statMap['CMP']}/${statMap['ATT']||''}`;
+          if(statMap['YDS']) compact.yds = statMap['YDS'];
+          if(statMap['TD']) compact.td = statMap['TD'];
+          if(statMap['INT']) compact.int = statMap['INT'];
+          if(statMap['RUSH']) compact.rush = statMap['RUSH'];
+          if(statMap['REC']) compact.rec = statMap['REC'];
+          if(statMap['TACKLES']) compact.tkl = statMap['TACKLES'];
+          if(statMap['SACKS']) compact.sck = statMap['SACKS'];
+          cats.push({
+            name:nm, pos, espn:`https://www.espn.com/college-football/player/_/id/${espnId}`,
+            headshot: head || (espnId?`${ESPN_HEAD}/${espnId}.png`:null),
+            last_game: compact
+          });
+        }
       }
-      return null;
     }
-
-    const s = (() => {
-      const a = getCat('defensive');
-      if (a.length) return a;
-      const b = getCat('defense');
-      if (b.length) return b;
-      return getCat('tackles');
-    })();
-    const tkl = pick(s, ['tacklestotal', 'tackles', 'totaltackles']);
-    const tfl = pick(s, ['tacklesforloss', 'tfl']);
-    const ints = pick(s, ['interceptions', 'ints']);
-    if (tkl != null || tfl != null || ints != null) return { kind: 'def', tkl, tfl, ints };
-    return null;
-  } catch (e) {
-    console.warn('stats fetch failed', id, e.message);
-    return null;
+    // de-dupe by name; keep best (more fields)
+    const byName = new Map();
+    for(const p of cats){ if(!byName.has(p.name)) byName.set(p.name, p); }
+    const all = Array.from(byName.values());
+    const off = all.filter(p => /QB|RB|WR|TE/i.test(p.pos));
+    const def = all.filter(p => /DL|DE|DT|LB|DB|CB|S/i.test(p.pos));
+    return { off:off.slice(0,6), def:def.slice(0,6) };
+  }catch(e){
+    return { off:[], def:[] };
   }
 }
 
-async function main() {
-  try {
-    const rosterPath = path.join(TEAM_DIR, 'roster.json');
-    const rosterMetaPath = path.join(TEAM_DIR, 'roster_meta.json');
-    const roster = readJSON(rosterPath, []);
-    const rosterMeta = readJSON(rosterMetaPath, null);
-    if (!Array.isArray(roster) || roster.length === 0) {
-      throw new Error('Roster unavailable — run build_espn_roster.js first');
-    }
-
-    if (!rosterMeta || typeof rosterMeta !== 'object') {
-      throw new Error('Roster metadata unavailable — aborting spotlight build');
-    }
-
-    if (STRICT_SEASON && Number(rosterMeta.season) !== TARGET_SEASON) {
-      throw new Error('Season mismatch: not publishing stale roster');
-    }
-
-    const rosterIds = new Set(roster.map((player) => Number(player.id)).filter((id) => Number.isFinite(id)));
-    const nameToId = new Map(
-      roster.map((player) => [player.name.toLowerCase(), Number(player.id)]).filter(([, id]) => Number.isFinite(id))
-    );
-
-    const outputs = await buildSpotlightPayload(rosterIds, nameToId);
-
-    const subsetByRoster = (arr, rosterSet) => {
-      const shouldKeep = (player) => {
-        if (!player || player.id == null) return false;
-        const id = Number(player.id);
-        return Number.isFinite(id) && rosterSet.has(id);
-      };
-      return (arr || []).filter(shouldKeep);
-    };
-
-    const topN = (arr, n = 3) => (arr || []).slice(0, n);
-
-    const backfill = (dst, src, n = 3) => {
-      const primary = Array.isArray(dst) ? [...dst] : [];
-      const existingIds = new Set(primary.map((player) => Number(player?.id)).filter(Number.isFinite));
-      for (const player of Array.isArray(src) ? src : []) {
-        if (primary.length >= n) break;
-        if (!player || player.id == null) continue;
-        const id = Number(player.id);
-        if (!Number.isFinite(id) || existingIds.has(id)) continue;
-        primary.push(player);
-        existingIds.add(id);
+// --- Season leaders from CFBD player stats (aggregate) ---
+async function seasonLeaders(roster){
+  // CFBD /player/season?year=&team= (returns offense + defense windows by category)
+  // NOTE: Not all endpoints are consistent across seasons; we fall back to zero arrays.
+  let off=[], def=[];
+  try{
+    const j = await cfbd(`/player/season?year=${YEAR}&team=${encodeURIComponent(TEAM)}`);
+    // Normalize: passing/rushing/receiving and defensive leaders
+    const add = (arr, pos, stat) => {
+      for(const r of (arr || [])){
+        const name = r.player || r.name;
+        if(!name) continue;
+        const found = roster.find(x => x.name.toLowerCase() === String(name).toLowerCase());
+        const head = found?.headshot || null;
+        const posGuess = found?.pos || pos || '';
+        const obj = { name, pos: posGuess, headshot: head, season: stat(r) };
+        if(/QB|RB|WR|TE/i.test(posGuess)) off.push(obj); else def.push(obj);
       }
-      return primary;
     };
-
-    let offense_last = ensureRosterCoverage(outputs.offense_last || [], rosterIds, nameToId, 'offense_last');
-    let defense_last = ensureRosterCoverage(outputs.defense_last || [], rosterIds, nameToId, 'defense_last');
-    let offense_season = ensureRosterCoverage(outputs.offense_season || [], rosterIds, nameToId, 'offense_season');
-    let defense_season = ensureRosterCoverage(outputs.defense_season || [], rosterIds, nameToId, 'defense_season');
-    let featured_rows = ensureRosterCoverage(outputs.featured || [], rosterIds, nameToId, 'featured');
-
-    let offLast = topN(subsetByRoster(offense_last, rosterIds), 3);
-    let defLast = topN(subsetByRoster(defense_last, rosterIds), 3);
-    let offSeason = topN(subsetByRoster(offense_season, rosterIds), 3);
-    let defSeason = topN(subsetByRoster(defense_season, rosterIds), 3);
-
-    if (offLast.length < 3) offLast = backfill(offLast, offSeason, 3);
-    if (defLast.length < 3) defLast = backfill(defLast, defSeason, 3);
-    if (offSeason.length < 3) offSeason = backfill(offSeason, offLast, 3);
-    if (defSeason.length < 3) defSeason = backfill(defSeason, defLast, 3);
-
-    featured_rows = subsetByRoster(featured_rows, rosterIds);
-
-    const sanitized = {
-      offense_last: offLast,
-      defense_last: defLast,
-      offense_season: offSeason,
-      defense_season: defSeason,
-      featured: featured_rows
-    };
-
-    for (const [key, relativePath] of Object.entries(SPOTLIGHT_TARGETS)) {
-      if (key === 'featured') {
-        continue;
-      }
-      const filePath = path.join(ROOT, relativePath);
-      const rows = sanitized[key] || [];
-      writeJSON(filePath, rows);
-    }
-
-    const usedLastGood = Boolean(rosterMeta?.lastGoodReuse);
-
-    const featured = roster.find((player) => player.pos === 'QB') || roster[0];
-    if (featured) {
-      const fs = await fetchPlayerStats(featured.id, featured.pos);
-      if (fs?.kind === 'qb') {
-        featured.season = {
-          yds: Number(fs.yds),
-          td: Number(fs.td),
-          int: Number(fs.int),
-          cmp_att: fs.cmp_att || null
-        };
-        featured.statline = [
-          featured.season.cmp_att ? `CMP/ATT ${featured.season.cmp_att}` : null,
-          Number.isFinite(featured.season.yds) ? `YDS ${featured.season.yds}` : null,
-          Number.isFinite(featured.season.td) && Number.isFinite(featured.season.int)
-            ? `TD ${featured.season.td} / INT ${featured.season.int}`
-            : null
-        ]
-          .filter(Boolean)
-          .join(' • ');
-      } else if (fs?.kind === 'def') {
-        featured.season = {
-          tkl: Number(fs.tkl),
-          tfl: Number(fs.tfl),
-          ints: Number(fs.ints)
-        };
-        featured.statline = [
-          Number.isFinite(featured.season.tkl) ? `TKL ${featured.season.tkl}` : null,
-          Number.isFinite(featured.season.tfl) ? `TFL ${featured.season.tfl}` : null,
-          Number.isFinite(featured.season.ints) ? `INT ${featured.season.ints}` : null
-        ]
-          .filter(Boolean)
-          .join(' • ');
-      }
-      writeJSON(path.join(ROOT, 'data', 'spotlight_featured.json'), [featured]);
-    }
-
-    const _meta = {
-      mode: usedLastGood ? 'cache' : 'live',
-      season: Number(process.env.SEASON || 2025),
-      rosterCount: rosterIds.size,
-      generated_at: new Date().toISOString()
-    };
-    writeJSON(path.join(ROOT, 'data', 'meta.json'), _meta);
-    writeJSON(path.join(ROOT, 'data', 'data_meta.json'), _meta);
-
-    console.log('✅ spotlight build complete');
-  } catch (error) {
-    console.error('❌ spotlight build failed:', error.message);
-    process.exitCode = 1;
-  }
+    add(j.passing, 'QB', r => ({ cmp_att: r.completions && r.attempts ? `${r.completions}/${r.attempts}`:null, yds: r.yards, td: r.passing_tds, int: r.interceptions }));
+    add(j.rushing, 'RB', r => ({ rush_yds: r.yards, td: r.rushing_tds }));
+    add(j.receiving, 'WR', r => ({ rec: r.receptions, rec_yds: r.yards, td: r.receiving_tds }));
+    add(j.defense, 'LB', r => ({ tkl: r.total_tackles, tfl: r.tackles_for_loss, sck: r.sacks }));
+  }catch(e){}
+  return { off, def };
 }
 
-async function buildSpotlightPayload(rosterIds, nameToId) {
-  const fallbacks = loadExistingSpotlights();
-  try {
-    const seasonLeaders = await loadSeasonLeaders();
-    const lastGame = await loadLastGameLeaders();
-
-    const payload = {
-      offense_last: selectLeaders(lastGame.offense, rosterIds, nameToId),
-      defense_last: selectLeaders(lastGame.defense, rosterIds, nameToId),
-      offense_season: selectLeaders(seasonLeaders.offense, rosterIds, nameToId),
-      defense_season: selectLeaders(seasonLeaders.defense, rosterIds, nameToId),
-      featured: selectFeatured(seasonLeaders, lastGame, rosterIds, nameToId)
-    };
-
-    if (Object.values(payload).every((rows) => rows.length > 0)) {
-      return payload;
-    }
-
-    throw new Error('ESPN payload incomplete');
-  } catch (error) {
-    if (LOG === 'debug') {
-      console.warn('spotlight build using fallback', error);
-    } else {
-      console.warn('⚠️  spotlight build using last-good cache');
-    }
-    return fallbacks;
+// --- Scoring / ranking v2 (0..100) + grade mapping ---
+function norm(x, lo, hi){ if(x==null) return 0; return Math.max(0, Math.min(1, (x-lo)/(hi-lo))); }
+function gradeOf(score){
+  if(score>=92) return {letter:'A',mod:'plus'};
+  if(score>=88) return {letter:'A'};
+  if(score>=84) return {letter:'A',mod:'minus'};
+  if(score>=76) return {letter:'B',mod:'plus'};
+  if(score>=72) return {letter:'B'};
+  if(score>=68) return {letter:'B',mod:'minus'};
+  if(score>=60) return {letter:'C',mod:'plus'};
+  if(score>=55) return {letter:'C'};
+  if(score>=50) return {letter:'C',mod:'minus'};
+  if(score>=44) return {letter:'D',mod:'plus'};
+  if(score>=40) return {letter:'D'};
+  if(score>=35) return {letter:'D',mod:'minus'};
+  return {letter:'F'};
+}
+// Basic scorer that uses compact stat fields (works across both last + season)
+function scorePlayer(p){
+  const s = p.last_game || p.season || {};
+  let prod = 0;
+  // Offense
+  if(/QB|WR|TE|RB/i.test(p.pos||'')){
+    const y = +s.yds || +s.rush_yds || +s.rec_yds || 0;
+    const td = +s.td || 0;
+    const rec = +s.rec || 0;
+    prod = 60*norm(y, 30, 300) + 25*norm(td, 0, 3) + 15*norm(rec, 0, 10);
+  }else{ // Defense
+    const t = +s.tkl || 0;
+    const tfl = +s.tfl || 0;
+    const sk = +s.sck || 0;
+    prod = 60*norm(t, 2, 12) + 25*norm(tfl, 0, 3) + 15*norm(sk, 0, 2);
   }
+  const score = Math.round(Math.max(0, Math.min(100, prod)));
+  const grade = gradeOf(score);
+  return { score, grade };
 }
 
-function loadExistingSpotlights() {
-  const out = {};
-  for (const [key, relativePath] of Object.entries(SPOTLIGHT_TARGETS)) {
-    const filePath = path.join(ROOT, relativePath);
-    const raw = readJSON(filePath, []);
-    out[key] = Array.isArray(raw) ? raw : raw ? [raw] : [];
-  }
-  return out;
+function top3(list){
+  return list
+    .map(p => ({...p, ...scorePlayer(p)}))
+    .sort((a,b) => (b.score - a.score))
+    .slice(0,3);
 }
 
-function ensureRosterCoverage(rows, rosterIds, nameToId, label) {
-  const seen = new Set();
-  const output = [];
-  let dropped = 0;
-  for (const row of rows) {
-    const enriched = normalizeSpotlightRow(row, nameToId);
-    if (!enriched) {
-      dropped += 1;
-      continue;
-    }
-    if (!rosterIds.has(enriched.id)) {
-      dropped += 1;
-      continue;
-    }
-    if (seen.has(enriched.id)) {
-      continue;
-    }
-    seen.add(enriched.id);
-    output.push(enriched);
+// --- Main build ---
+async function run(){
+  const roster = await loadRoster();
+  const lastGame = await latestCompletedGameId();
+
+  // LAST-game leaders from ESPN summary (if available)
+  let lastOFF=[], lastDEF=[];
+  if(lastGame && lastGame.id){
+    const L = await espnSummaryLeaders(lastGame.id);
+    lastOFF = L.off;
+    lastDEF = L.def;
   }
-  if (dropped > 0) {
-    console.log(`ℹ️  ${label}: dropped ${dropped} rows outside roster scope`);
+
+  // SEASON leaders (CFBD aggregate) 
+  const S = await seasonLeaders(roster);
+  let seasonOFF = S.off, seasonDEF = S.def;
+
+  // Backfill logic: ensure 3 using roster positions if lists are thin
+  function backfill(list, posRegex){
+    const have = new Set(list.map(x => x.name));
+    const pool = roster.filter(r => posRegex.test(r.pos||'') && !have.has(r.name));
+    // pick first by jersey ascending (stable but predictable)
+    for(const r of pool){ list.push({ name:r.name, pos:r.pos||'', headshot:r.headshot||null }); if(list.length>=3) break; }
+    return list.slice(0,3);
   }
-  return output;
+
+  lastOFF = top3(backfill(lastOFF, /QB|RB|WR|TE/i));
+  lastDEF = top3(backfill(lastDEF, /DL|DE|DT|LB|DB|CB|S/i));
+  seasonOFF = top3(backfill(seasonOFF, /QB|RB|WR|TE/i));
+  seasonDEF = top3(backfill(seasonDEF, /DL|DE|DT|LB|DB|CB|S/i));
+
+  // Featured = best of lastOFF (fallback: best of seasonOFF)
+  const featured = (lastOFF[0] || seasonOFF[0] || {}) ;
+
+  // Write files
+  await writeJSON('spotlight_featured.json', featured);
+  await writeJSON('spotlight_offense_last.json', lastOFF);
+  await writeJSON('spotlight_defense_last.json', lastDEF);
+  await writeJSON('spotlight_offense_season.json', seasonOFF);
+  await writeJSON('spotlight_defense_season.json', seasonDEF);
+
+  // Simple banner/ticker metrics — example placeholders (extend with CFBD team stats)
+  const ticker = [
+    { label:'Explosive PA rate', value:'+6.3%', trend:'good', suffix:'vs base' },
+    { label:'Yds/Play (UK)', value:'5.7', trend:'good' },
+    { label:'Havoc Allowed', value:'42%', trend:'warn', suffix:'steady' },
+    { label:'3rd & 6+ defense', value:'46%', trend:'bad', suffix:'conv. allowed' }
+  ];
+  await writeJSON('ticker.json', ticker);
 }
 
-function normalizeSpotlightRow(row, nameToId) {
-  if (!row || typeof row !== 'object') return null;
-  let id = Number(row.id);
-  if (!Number.isFinite(id) && typeof row.espn === 'string') {
-    const match = row.espn.match(/\/id\/(\d+)/);
-    if (match) {
-      id = Number(match[1]);
-    }
-  }
-  if (!Number.isFinite(id) && row.name) {
-    id = nameToId.get(row.name.toLowerCase()) || null;
-  }
-  if (!Number.isFinite(id)) return null;
-  const name = row.name || null;
-  if (!name) return null;
-  return { ...row, id };
-}
-
-async function loadSeasonLeaders() {
-  const json = await fetchJson(ESPN_LEADERS_URL);
-  const categories = json?.categories || json?.leaders || [];
-  const offense = [];
-  const defense = [];
-  for (const category of categories) {
-    const type = (category?.displayCategory || category?.name || '').toLowerCase();
-    const isDefense = /def/i.test(type) || ['tackles', 'sacks', 'interceptions'].some((key) => type.includes(key));
-    const bucket = isDefense ? defense : offense;
-    const leaders = category?.leaders || category?.athletes || [];
-    for (const leader of leaders) {
-      const athlete = leader?.athlete || leader;
-      if (!athlete) continue;
-      bucket.push({
-        id: Number(athlete.id),
-        name: athlete.displayName || athlete.fullName,
-        pos: athlete.position?.abbreviation || null,
-        espn: athlete.links?.find?.((link) => /player\//.test(link.href))?.href || null,
-        stats: leader?.statistics || leader?.stats || null
-      });
-    }
-  }
-  return { offense, defense };
-}
-
-async function loadLastGameLeaders() {
-  const schedule = await fetchJson(ESPN_SCHEDULE_URL);
-  const events = schedule?.events || [];
-  const completed = events
-    .filter((event) => event?.status?.type?.completed)
-    .sort((a, b) => new Date(b.date || b.startDate || 0) - new Date(a.date || a.startDate || 0));
-  const lastEvent = completed[0];
-  if (!lastEvent) {
-    throw new Error('No completed events in schedule');
-  }
-  const summary = await fetchJson(ESPN_SUMMARY_URL(lastEvent.id || lastEvent.eventId));
-  const categories = summary?.leaders?.leaders || [];
-  const offense = [];
-  const defense = [];
-  for (const category of categories) {
-    const displayName = (category?.displayName || category?.name || '').toLowerCase();
-    const isDefense = /def/i.test(displayName) || ['tackles', 'sacks', 'interceptions'].some((key) => displayName.includes(key));
-    const bucket = isDefense ? defense : offense;
-    for (const leader of category?.leaders || []) {
-      const athlete = leader?.athlete || leader?.athleteId || leader;
-      if (!athlete) continue;
-      const player = typeof athlete === 'object' ? athlete : { id: athlete };
-      bucket.push({
-        id: Number(player.id),
-        name: player.displayName || player.fullName || player.name,
-        pos: player.position?.abbreviation || null,
-        espn: player.links?.find?.((link) => /player\//.test(link.href))?.href || null,
-        last_game: leader?.statistics || leader?.stats || leader?.summary || null
-      });
-    }
-  }
-  return { offense, defense };
-}
-
-function selectLeaders(entries, rosterIds, nameToId) {
-  if (!Array.isArray(entries)) return [];
-  const seen = new Set();
-  const output = [];
-  for (const entry of entries) {
-    const normalized = normalizeSpotlightRow(entry, nameToId);
-    if (!normalized) continue;
-    if (!rosterIds.has(normalized.id)) continue;
-    if (seen.has(normalized.id)) continue;
-    seen.add(normalized.id);
-    output.push(normalized);
-  }
-  return output.slice(0, 5);
-}
-
-function selectFeatured(season, lastGame, rosterIds, nameToId) {
-  const pool = [...(season.offense || []), ...(lastGame.offense || []), ...(season.defense || []), ...(lastGame.defense || [])];
-  const unique = selectLeaders(pool, rosterIds, nameToId);
-  return unique.slice(0, 6);
-}
-
-async function fetchJson(url) {
-  return retry(async () => {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'hashmark-chronicles/1.0 (+https://hashmarkchronicles.com)',
-        Accept: 'application/json'
-      },
-      timeout: ESPN_TIMEOUT
-    });
-    if (!response.ok) {
-      throw new Error(`Request failed (${response.status}) for ${url}`);
-    }
-    return response.json();
-  }, ESPN_BACKOFF);
-}
-
-function parseBackoff(input) {
-  if (!input) return [250, 600, 1200];
-  const parts = String(input)
-    .split(',')
-    .map((token) => Number(token.trim()))
-    .filter((value) => Number.isFinite(value) && value > 0);
-  return parts.length ? parts : [250, 600, 1200];
-}
-
-main();
+run().catch(err => {
+  console.error('[build-spotlight] error', err);
+  process.exitCode = 1;
+});

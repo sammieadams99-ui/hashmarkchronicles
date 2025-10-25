@@ -1,0 +1,38 @@
+name: Run spotlight builder
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '*/30 * * * *'   # every 30 minutes
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install (no extraneous deps required)
+        run: |
+          echo "{}" > /tmp/dummy.json
+      - name: Build spotlight feeds
+        env:
+          CFBD_KEY: ${{ secrets.CFBD_KEY }}
+          TEAM: Kentucky
+          YEAR: 2025
+        run: |
+          node --version
+          node scripts/build_spotlight.js
+      - name: Commit data
+        run: |
+          git config user.name "hashmark-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/*.json || true
+          git diff --cached --quiet || git commit -m "chore(data): update spotlight feeds"
+          git push
