@@ -1,3 +1,444 @@
-<!-- Place this where your sidebar lives -->
-<section id="player-spotlight"></section>
-<script defer src="/scripts/spotlight-client.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hashmark Chronicles</title>
+    <meta
+      name="description"
+      content="Hashmark Chronicles – mobile-first Kentucky football dashboard with player spotlights, trending numbers, and fast roster insights."
+    />
+    <style>
+      :root {
+        color-scheme: light;
+        --hc-blue-900: #0b1d3d;
+        --hc-blue-700: #1b3f76;
+        --hc-blue-500: #2563eb;
+        --hc-blue-200: #d6e3ff;
+        --hc-surface: #ffffff;
+        --hc-surface-muted: #f3f6fc;
+        --hc-border: #d9e2f4;
+        --hc-good: #0f7b4d;
+        --hc-bad: #b4232a;
+        --hc-warn: #b06a00;
+        --hc-text: #0f172a;
+        --hc-text-muted: #4b5563;
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: inherit;
+        background: var(--hc-surface-muted);
+        color: var(--hc-text);
+        min-height: 100vh;
+      }
+
+      img {
+        max-width: 100%;
+        display: block;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .page {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        background: linear-gradient(180deg, #0b1d3d 0%, #0b1d3d 56%, rgba(11, 29, 61, 0) 56%);
+      }
+
+      .hero {
+        padding: 3.25rem 1.5rem 4.5rem;
+        color: #fff;
+      }
+
+      .hero__inner {
+        width: min(1100px, 100%);
+        margin: 0 auto;
+        display: grid;
+        gap: 1rem;
+      }
+
+      .hero__eyebrow {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.25em;
+        opacity: 0.9;
+      }
+
+      .hero__title {
+        margin: 0;
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 700;
+      }
+
+      .hero__lead {
+        margin: 0;
+        font-size: 1.05rem;
+        max-width: 60ch;
+        line-height: 1.6;
+        opacity: 0.95;
+      }
+
+      .hero__meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.35rem 0.9rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        background: rgba(15, 46, 96, 0.65);
+        font-size: 0.85rem;
+      }
+
+      .layout {
+        width: min(1100px, 100%);
+        margin: 0 auto;
+        padding: 0 1.25rem 3rem;
+        display: grid;
+        gap: 1.5rem;
+      }
+
+      .layout__main {
+        display: grid;
+        gap: 1.5rem;
+      }
+
+      .layout__aside {
+        display: contents;
+      }
+
+      @media (min-width: 960px) {
+        .layout {
+          grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+          align-items: start;
+        }
+
+        .layout__aside {
+          display: block;
+        }
+      }
+
+      .panel {
+        background: var(--hc-surface);
+        border-radius: 18px;
+        border: 1px solid var(--hc-border);
+        box-shadow: 0 24px 45px rgba(15, 23, 42, 0.08);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+      }
+
+      .panel--sticky {
+        position: sticky;
+        top: 1.25rem;
+      }
+
+      .panel__header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+
+      .panel__title {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 700;
+      }
+
+      .panel__subtitle {
+        font-size: 0.9rem;
+        color: var(--hc-text-muted);
+      }
+
+      .panel__content {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .panel__empty {
+        margin: 0;
+        font-size: 0.95rem;
+        color: var(--hc-text-muted);
+      }
+
+      .ticker-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      }
+
+      .ticker-card {
+        border-radius: 14px;
+        border: 1px solid var(--hc-border);
+        background: #f8fbff;
+        padding: 1rem;
+        display: grid;
+        gap: 0.5rem;
+        position: relative;
+        overflow: hidden;
+        min-height: 130px;
+      }
+
+      .ticker-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        border: 2px solid transparent;
+      }
+
+      .ticker-card[data-trend="good"]::before {
+        border-color: rgba(15, 123, 77, 0.45);
+      }
+
+      .ticker-card[data-trend="bad"]::before {
+        border-color: rgba(180, 35, 42, 0.45);
+      }
+
+      .ticker-card[data-trend="warn"]::before {
+        border-color: rgba(176, 106, 0, 0.45);
+      }
+
+      .ticker-card__label {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--hc-text-muted);
+      }
+
+      .ticker-card__value {
+        font-size: clamp(1.5rem, 4vw, 2.35rem);
+        font-weight: 700;
+        color: var(--hc-blue-900);
+      }
+
+      .ticker-card__suffix {
+        font-size: 0.9rem;
+        color: var(--hc-text-muted);
+      }
+
+      .ticker-card__trend {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--hc-blue-700);
+      }
+
+      .featured-grid {
+        display: grid;
+        gap: 1rem;
+      }
+
+      @media (min-width: 720px) {
+        .featured-grid {
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        }
+      }
+
+      .featured-card {
+        border-radius: 16px;
+        border: 1px solid var(--hc-border);
+        background: linear-gradient(145deg, #ffffff, #f5f7ff);
+        padding: 1rem;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 1rem;
+        text-decoration: none;
+        color: inherit;
+        align-items: center;
+      }
+
+      .featured-card:hover,
+      .featured-card:focus-visible {
+        box-shadow: 0 14px 24px rgba(37, 99, 235, 0.18);
+        transform: translateY(-2px);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .featured-card__avatar {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        overflow: hidden;
+        background: #dbeafe;
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        color: var(--hc-blue-700);
+        font-size: 1.1rem;
+        text-transform: uppercase;
+      }
+
+      .featured-card__meta {
+        display: grid;
+        gap: 0.35rem;
+      }
+
+      .featured-card__name {
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: baseline;
+        gap: 0.4rem;
+      }
+
+      .featured-card__pos {
+        font-size: 0.9rem;
+        color: var(--hc-text-muted);
+        font-weight: 600;
+      }
+
+      .featured-card__statline {
+        font-size: 0.92rem;
+        color: var(--hc-text-muted);
+      }
+
+      .featured-card__grade {
+        margin-top: 0.25rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: #fff;
+        background: var(--hc-blue-700);
+        padding: 0.25rem 0.6rem;
+        border-radius: 12px;
+      }
+
+      .spotlight-shell {
+        padding: 0.25rem;
+        border-radius: 12px;
+        background: #f5f7ff;
+      }
+
+      .site-footer {
+        margin-top: auto;
+        padding: 2rem 1.5rem 2.5rem;
+        color: rgba(255, 255, 255, 0.85);
+        background: linear-gradient(180deg, rgba(11, 29, 61, 0) 0%, #0b1d3d 45%);
+      }
+
+      .site-footer__inner {
+        width: min(1100px, 100%);
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        font-size: 0.9rem;
+      }
+
+      @media (min-width: 768px) {
+        .site-footer__inner {
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: center;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .panel {
+          padding: 1.25rem;
+        }
+      }
+
+      .spotlight-shell #player-spotlight {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <div class="hero__inner">
+          <span class="hero__eyebrow">Kentucky football analytics</span>
+          <h1 class="hero__title">Hashmark Chronicles</h1>
+          <p class="hero__lead">
+            A mobile-first game day companion featuring live roster intelligence, spotlight grades, and the metrics that matter for Big Blue Nation.
+          </p>
+          <div class="hero__meta">
+            <span class="pill" data-meta-season>Season —</span>
+            <span class="pill" data-meta-roster>Roster —</span>
+            <span class="pill" data-meta-updated>Updated —</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="layout">
+        <div class="layout__main">
+          <section class="panel" aria-labelledby="ticker-heading">
+            <div class="panel__header">
+              <h2 class="panel__title" id="ticker-heading">Trending game numbers</h2>
+              <span class="panel__subtitle" data-ticker-updated>Waiting for data…</span>
+            </div>
+            <div class="panel__content">
+              <div class="ticker-grid" data-ticker-grid></div>
+              <p class="panel__empty" data-ticker-empty hidden>
+                Numbers update once the latest dataset arrives.
+              </p>
+            </div>
+          </section>
+
+          <section class="panel" aria-labelledby="featured-heading">
+            <div class="panel__header">
+              <h2 class="panel__title" id="featured-heading">Featured Wildcats</h2>
+              <span class="panel__subtitle" data-featured-source></span>
+            </div>
+            <div class="panel__content">
+              <div class="featured-grid" data-featured-grid></div>
+              <p class="panel__empty" data-featured-empty hidden>
+                No spotlight picks yet — check back after the next game.
+              </p>
+            </div>
+          </section>
+        </div>
+
+        <aside class="layout__aside">
+          <div class="panel panel--sticky" aria-labelledby="spotlight-heading">
+            <div class="panel__header">
+              <h2 class="panel__title" id="spotlight-heading">Player spotlight</h2>
+              <span class="panel__subtitle">Top performers by game and season</span>
+            </div>
+            <div class="panel__content spotlight-shell">
+              <section id="player-spotlight"></section>
+            </div>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="site-footer">
+        <div class="site-footer__inner">
+          <span>&copy; <span data-year></span> Hashmark Chronicles</span>
+          <span data-footer-updated>Data pending…</span>
+        </div>
+      </footer>
+    </div>
+
+    <script type="module" src="/scripts/site.js"></script>
+    <script defer src="/scripts/spotlight-client.js"></script>
+  </body>
+</html>
