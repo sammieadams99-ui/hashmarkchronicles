@@ -27,63 +27,55 @@ const ESPN_SUMMARY_URL = (eventId) => `https://site.web.api.espn.com/apis/site/v
 const ESPN_LEADERS_URL = `https://sports.core.api.espn.com/v2/sports/football/leagues/college-football/teams/${TEAM_ID}/leaders?season=${TARGET_SEASON}`;
 
 async function fetchPlayerStats(id, pos) {
-  const season = Number(process.env.SEASON || TARGET_SEASON);
+  const season = Number(process.env.SEASON || 2025);
   const url = `https://site.api.espn.com/apis/common/v3/sports/football/college-football/athletes/${id}?season=${season}&region=us&lang=en`;
   try {
-    const res = await fetch(url, { timeout: ESPN_TIMEOUT });
+    const res = await fetch(url, { timeout: 9000 });
     if (!res.ok) throw new Error(String(res.status));
     const data = await res.json();
 
     const blocks = data?.athlete?.stats || data?.stats || [];
-    const categories = blocks
+    const cats = blocks
       .flatMap((b) => b?.splits?.categories || [])
       .map((c) => ({ name: (c?.name || '').toLowerCase(), stats: c?.stats || [] }));
-
-    const get = (name) => {
-      const entry = categories.find((c) => c.name === name);
-      return entry ? entry.stats : [];
+    const getCat = (n) => {
+      n = (n || '').toLowerCase();
+      const hit = cats.find((c) => c.name === n);
+      return hit ? hit.stats : [];
     };
-    const val = (arr, keys) => {
-      const lookup = keys.map((k) => k.toLowerCase());
-      const hit = arr.find((x) => lookup.includes((x?.name || '').toLowerCase()));
-      return hit ? hit.value : null;
+    const pick = (arr, keys) => {
+      const K = keys.map((k) => k.toLowerCase());
+      const f = arr.find((x) => K.includes((x?.name || '').toLowerCase()));
+      return f ? f.value : null;
     };
 
     if ((pos || '').toUpperCase() === 'QB') {
-      const s = get('passing');
-      const yds = val(s, ['passYards', 'yards']);
-      const td = val(s, ['passTouchdowns', 'touchdowns']);
-      const ints = val(s, ['interceptions', 'ints']);
-      const cmp = val(s, ['completions']);
-      const att = val(s, ['attempts']);
+      const s = getCat('passing');
+      const yds = pick(s, ['passyards', 'yards', 'yds']);
+      const td = pick(s, ['passtouchdowns', 'touchdowns', 'pass tds']);
+      const ints = pick(s, ['interceptions', 'ints']);
+      const cmp = pick(s, ['completions', 'cmp']);
+      const att = pick(s, ['attempts', 'att']);
       if (yds != null || td != null || ints != null || cmp != null || att != null) {
-        return {
-          kind: 'qb',
-          yds,
-          td,
-          int: ints,
-          cmp_att: cmp != null && att != null ? `${cmp}/${att}` : null
-        };
+        return { kind: 'qb', yds, td, int: ints, cmp_att: cmp != null && att != null ? `${cmp}/${att}` : null };
       }
       return null;
     }
 
-    const def = (() => {
-      const a = get('defensive');
+    const s = (() => {
+      const a = getCat('defensive');
       if (a.length) return a;
-      const b = get('defense');
+      const b = getCat('defense');
       if (b.length) return b;
-      return get('tackles');
+      return getCat('tackles');
     })();
-    const tkl = val(def, ['tacklesTotal', 'tackles', 'totalTackles']);
-    const tfl = val(def, ['tacklesForLoss', 'tfl']);
-    const ints = val(def, ['interceptions', 'ints']);
-    if (tkl != null || tfl != null || ints != null) {
-      return { kind: 'def', tkl, tfl, ints };
-    }
+    const tkl = pick(s, ['tacklestotal', 'tackles', 'totaltackles']);
+    const tfl = pick(s, ['tacklesforloss', 'tfl']);
+    const ints = pick(s, ['interceptions', 'ints']);
+    if (tkl != null || tfl != null || ints != null) return { kind: 'def', tkl, tfl, ints };
     return null;
   } catch (e) {
-    console.warn(`⚠️ stats fetch failed for ${id}:`, e.message);
+    console.warn('stats fetch failed', id, e.message);
     return null;
   }
 }
@@ -137,96 +129,52 @@ async function main() {
       writeJSON(filePath, rows);
     }
 
-    const defaultFeatured = roster.find((player) => player.pos === 'QB') || roster[0] || null;
-    const availableFeatured = featured_rows || [];
-    const spotlightFeatured = availableFeatured.find((player) => Number(player.id) === Number(defaultFeatured?.id))
-      || availableFeatured.find((player) => (player.pos || '').toUpperCase() === 'QB')
-      || availableFeatured[0]
-      || null;
-    const rosterFeatured = spotlightFeatured
-      ? roster.find((player) => Number(player.id) === Number(spotlightFeatured.id)) || null
-      : null;
-    let featured = null;
-    if (spotlightFeatured || defaultFeatured) {
-      featured = { ...(defaultFeatured || {}), ...(rosterFeatured || {}), ...(spotlightFeatured || {}) };
-    }
-
-    if (featured) {
-      let fetchId = Number(featured.id);
-      if (!Number.isFinite(fetchId) && rosterFeatured) {
-        fetchId = Number(rosterFeatured.id);
-        if (Number.isFinite(fetchId)) {
-          featured.id = fetchId;
-        }
-      }
-      if (!Number.isFinite(fetchId) && defaultFeatured) {
-        fetchId = Number(defaultFeatured.id);
-        if (Number.isFinite(fetchId)) {
-          featured.id = fetchId;
-        }
-      }
-
-      const liveStats = Number.isFinite(fetchId) ? await fetchPlayerStats(fetchId, featured.pos) : null;
-      if (liveStats?.kind === 'qb') {
-        const season = {
-          yds: toNumber(liveStats.yds),
-          td: toNumber(liveStats.td),
-          int: toNumber(liveStats.int),
-          cmp_att: liveStats.cmp_att || null
-        };
-        featured.season = season;
-        const parts = [
-          season.cmp_att ? `CMP/ATT ${season.cmp_att}` : null,
-          season.yds != null ? `YDS ${season.yds}` : null,
-          season.td != null && season.int != null ? `TD ${season.td} / INT ${season.int}` : null
-        ].filter(Boolean);
-        const statline = parts.join(' • ');
-        if (statline) {
-          featured.statline = statline;
-        }
-      } else if (liveStats?.kind === 'def') {
-        const season = {
-          tkl: toNumber(liveStats.tkl),
-          tfl: toNumber(liveStats.tfl),
-          ints: toNumber(liveStats.ints)
-        };
-        featured.season = season;
-        const parts = [
-          season.tkl != null ? `TKL ${season.tkl}` : null,
-          season.tfl != null ? `TFL ${season.tfl}` : null,
-          season.ints != null ? `INT ${season.ints}` : null
-        ].filter(Boolean);
-        const statline = parts.join(' • ');
-        if (statline) {
-          featured.statline = statline;
-        }
-      } else if (liveStats) {
-        featured.season = liveStats;
-      }
-
-      const featuredPath = path.join(ROOT, SPOTLIGHT_TARGETS.featured);
-      if (!keep(featured)) {
-        throw new Error('Season mismatch: featured player missing from roster');
-      }
-      writeJSON(featuredPath, [featured]);
-      if (liveStats) {
-        console.log(`featured: ${featured.name} — live stats fetched from ESPN`);
-      } else {
-        console.warn(`featured: ${featured?.name || 'Unknown'} — using cached spotlight data`);
-      }
-    }
-
-    const strict = Boolean(rosterMeta?.strict ?? STRICT_SEASON);
     const usedLastGood = Boolean(rosterMeta?.lastGoodReuse);
-    const metaPath = path.join(DATA_DIR, 'meta.json');
-    const metaSeason = Number(process.env.SEASON || TARGET_SEASON);
-    writeJSON(metaPath, {
+
+    const featured = roster.find((player) => player.pos === 'QB') || roster[0];
+    if (featured) {
+      const fs = await fetchPlayerStats(featured.id, featured.pos);
+      if (fs?.kind === 'qb') {
+        featured.season = {
+          yds: Number(fs.yds),
+          td: Number(fs.td),
+          int: Number(fs.int),
+          cmp_att: fs.cmp_att || null
+        };
+        featured.statline = [
+          featured.season.cmp_att ? `CMP/ATT ${featured.season.cmp_att}` : null,
+          Number.isFinite(featured.season.yds) ? `YDS ${featured.season.yds}` : null,
+          Number.isFinite(featured.season.td) && Number.isFinite(featured.season.int)
+            ? `TD ${featured.season.td} / INT ${featured.season.int}`
+            : null
+        ]
+          .filter(Boolean)
+          .join(' • ');
+      } else if (fs?.kind === 'def') {
+        featured.season = {
+          tkl: Number(fs.tkl),
+          tfl: Number(fs.tfl),
+          ints: Number(fs.ints)
+        };
+        featured.statline = [
+          Number.isFinite(featured.season.tkl) ? `TKL ${featured.season.tkl}` : null,
+          Number.isFinite(featured.season.tfl) ? `TFL ${featured.season.tfl}` : null,
+          Number.isFinite(featured.season.ints) ? `INT ${featured.season.ints}` : null
+        ]
+          .filter(Boolean)
+          .join(' • ');
+      }
+      writeJSON(path.join(ROOT, 'data', 'spotlight_featured.json'), [featured]);
+    }
+
+    const _meta = {
       mode: usedLastGood ? 'cache' : 'live',
-      season: Number.isFinite(metaSeason) ? metaSeason : TARGET_SEASON,
+      season: Number(process.env.SEASON || 2025),
       rosterCount: rosterIds.size,
-      strict,
       generated_at: new Date().toISOString()
-    });
+    };
+    writeJSON(path.join(ROOT, 'data', 'meta.json'), _meta);
+    writeJSON(path.join(ROOT, 'data', 'data_meta.json'), _meta);
 
     console.log('✅ spotlight build complete');
   } catch (error) {
@@ -412,12 +360,6 @@ async function fetchJson(url) {
     }
     return response.json();
   }, ESPN_BACKOFF);
-}
-
-function toNumber(value) {
-  if (value == null || value === '') return null;
-  const num = Number(value);
-  return Number.isFinite(num) ? num : null;
 }
 
 function parseBackoff(input) {
