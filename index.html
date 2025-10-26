@@ -365,9 +365,120 @@
       }
 
       .spotlight-shell #player-spotlight {
+        display: grid;
+        gap: 1.25rem;
+      }
+
+      .hc-spotlight-root {
+        display: grid;
+        gap: 1.25rem;
+      }
+
+      .hc-spotlight-grid {
+        display: grid;
+        gap: 1.25rem;
+      }
+
+      @media (min-width: 720px) {
+        .hc-spotlight-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      .hc-spotlight-group {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .hc-spotlight-group__header {
         display: flex;
-        flex-direction: column;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 0.5rem;
+      }
+
+      .hc-spotlight-group__title {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--hc-blue-900);
+      }
+
+      .hc-spotlight-group__subtitle {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--hc-text-muted);
+        font-weight: 500;
+      }
+
+      .hc-spotlight-tiles {
+        display: grid;
+        gap: 1rem;
+      }
+
+      @media (min-width: 860px) {
+        .hc-spotlight-tiles {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      .hc-spotlight-tile {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #dbe3f5;
+        box-shadow: 0 18px 30px rgba(11, 29, 61, 0.08);
+        padding: 1rem;
+        display: grid;
         gap: 0.75rem;
+      }
+
+      .hc-spotlight-tile__title {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--hc-blue-900);
+      }
+
+      .hc-spotlight-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .hc-spotlight-list-item {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.75rem;
+        align-items: stretch;
+      }
+
+      .hc-spotlight-rank {
+        width: 36px;
+        height: 36px;
+        border-radius: 999px;
+        background: var(--hc-blue-700);
+        color: #ffffff;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .hc-spotlight-list-item--empty {
+        grid-template-columns: 1fr;
+      }
+
+      .hc-spotlight-empty {
+        border: 1px dashed #c8d5f0;
+        border-radius: 12px;
+        padding: 0.75rem;
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--hc-blue-700);
+        background: #f5f8ff;
       }
     </style>
   </head>
